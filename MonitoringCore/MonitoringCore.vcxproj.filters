@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="TrendMonitoring">
+      <UniqueIdentifier>{19f9f129-357c-4a9d-b2fa-6b2e60699655}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Configuration">
+      <UniqueIdentifier>{7ef74747-0792-47ad-963d-40f2dba892d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Configuration\Serialization">
+      <UniqueIdentifier>{a7d6c9ec-4a7c-4799-82be-f98c49799e27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Configuration\Serialization\SerializatorFabric">
+      <UniqueIdentifier>{08ae2ab2-4d28-4d30-82e7-bb3ecedd83df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Configuration\Serialization\pugixml">
+      <UniqueIdentifier>{d4b32d85-65bf-4f50-ac70-b875e8c0b770}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TelegramBot">
+      <UniqueIdentifier>{34c4a16a-4577-458b-b412-bb5850909444}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MonitoringThread">
+      <UniqueIdentifier>{872fdb83-4b1a-461b-af7e-c50bdbca1e4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MonitoringThread\ChannelDataGetter">
+      <UniqueIdentifier>{6888f0e1-0ce8-4d89-8b68-b3a5d62306e0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ApplicationConfiguration.h">
+      <Filter>Configuration</Filter>
+    </ClInclude>
+    <ClInclude Include="$(UtilsDir)pugixml-1.4\src\pugiconfig.hpp">
+      <Filter>Configuration\Serialization\pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="$(UtilsDir)pugixml-1.4\src\pugixml.hpp">
+      <Filter>Configuration\Serialization\pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="src\TrendMonitoring.h">
+      <Filter>TrendMonitoring</Filter>
+    </ClInclude>
+    <ClInclude Include="ITrendMonitoring.h">
+      <Filter>TrendMonitoring</Filter>
+    </ClInclude>
+    <ClInclude Include="src\TelegramBot.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ITelegramUsersList.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\IMonitoringTasksService.h">
+      <Filter>MonitoringThread</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MonitoringTasksServiceImpl.h">
+      <Filter>MonitoringThread</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)COM.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Messages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Serialization\ISerializable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Serialization\SerializationUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Serialization\SerializatorFabric.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Singleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)TickService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)ZetDirs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelDataGetter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelsHelpHeader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(UtilsDir)pugixml-1.4\src\pugixml.cpp">
+      <Filter>Configuration\Serialization\pugixml</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TrendMonitoring.cpp">
+      <Filter>TrendMonitoring</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ApplicationConfiguration.cpp">
+      <Filter>Configuration</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TelegramBot.cpp">
+      <Filter>TelegramBot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MonitoringTasksServiceImpl.cpp">
+      <Filter>MonitoringThread</Filter>
+    </ClCompile>
+    <ClCompile Include="$(CommonHeadersDir)Serialization\SerializatorFabric.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MyIncludeDir)ChannelDataCorrector\ChannelDataGetter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

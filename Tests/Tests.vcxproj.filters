@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="TestCOM.cpp">
+      <Filter>TestSources</Filter>
+    </ClCompile>
+    <ClCompile Include="TestSerialization.cpp">
+      <Filter>TestSources</Filter>
+    </ClCompile>
+    <ClCompile Include="testInit.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="$(UtilsDir)CommonFiles\Serialization\ISerializable.h">
+      <Filter>Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="$(UtilsDir)CommonFiles\Serialization\SerializationUtils.h">
+      <Filter>Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="$(UtilsDir)CommonFiles\Serialization\SerializatorFabric.h">
+      <Filter>Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="TestSerialization.h">
+      <Filter>TestSources</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="TestSources">
+      <UniqueIdentifier>{32fcd626-b7ed-43ac-a71d-dd11639d2635}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Serialization">
+      <UniqueIdentifier>{d4070935-01ed-4251-b0d3-c8f3134d4859}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Samples">
+      <UniqueIdentifier>{7c1242f9-4ea8-4b23-add3-b1e99a0604ee}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Samples\TestXMLFileValid.xml">
+      <Filter>Samples</Filter>
+    </Xml>
+    <Xml Include="Samples\TestXMLSerialization.xml">
+      <Filter>Samples</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Tests.rc" />
+  </ItemGroup>
+</Project>

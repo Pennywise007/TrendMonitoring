@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<TestSerializing>
+    <m_bValue>false</m_bValue>
+    <m_iValue>5</m_iValue>
+    <m_uiValue>15</m_uiValue>
+    <m_lValue>-5</m_lValue>
+    <m_llValue>12</m_llValue>
+    <m_ulValue>15</m_ulValue>
+    <m_ullValue>14</m_ullValue>
+    <m_fValue>7,000000</m_fValue>
+    <m_dValue>8,000000</m_dValue>
+    <m_CStrValue>Test</m_CStrValue>
+    <m_strValue>String</m_strValue>
+    <m_CTimeValue>20.05.2020 12:00:00</m_CTimeValue>
+    <m_vectorInt>
+        <ind_0>1</ind_0>
+        <ind_1>2</ind_1>
+        <ind_2>3</ind_2>
+    </m_vectorInt>
+    <m_listBool>
+        <ind_0>false</ind_0>
+        <ind_1>true</ind_1>
+        <ind_2>false</ind_2>
+    </m_listBool>
+    <m_mapLongFloat>
+        <ind_1>100,000000</ind_1>
+        <ind_2>32,000000</ind_2>
+        <ind_3>42,000000</ind_3>
+    </m_mapLongFloat>
+    <m_setLong>
+        <ind_10>10</ind_10>
+        <ind_20>20</ind_20>
+        <ind_30>30</ind_30>
+    </m_setLong>
+</TestSerializing>
