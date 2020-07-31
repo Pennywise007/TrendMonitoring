@@ -90,7 +90,6 @@ public:
     enum TimerType
     {
         eUpdatingData = 0,      // таймер обновления текущих данных
-        eFallenOffReporting,    // таймер с оповещением об отваливании датчиков
         eEveryDayReporting      // таймер с ежедневным отчетом
     };
 
@@ -141,18 +140,29 @@ private:
     void addMonitoringTaskForChannels(const ChannelParametersList& channelList,
                                       const TaskInfo::TaskType taskType,
                                       CTimeSpan monitoringInterval);
+    // Добавить задания мониторинга, каждому таску соответствует канал
+    void addMonitoringTaskForChannels(const ChannelParametersList& channelList,
+                                      const std::list<TaskParameters::Ptr>& taskParams,
+                                      const TaskInfo::TaskType taskType);
+
     // Удалить задания запроса новых данных мониторинга для указанного канала
     void delMonitoringTaskForChannel(const ChannelParameters::Ptr& channelParams);
 
-    // Получен результат запроса данных по интервалу
-    void handleIntervalInfoResult(const MonitoringResult::ResultData& monitoringResult,
-                                  ChannelParameters::Ptr& channelParams);
-    // поулчен результат обновления данных
-    void handleUpdatingResult(const MonitoringResult::ResultData& monitoringResult,
-                              ChannelParameters::Ptr& channelParams);
-    // получены данные для ежедневного отчёта
-    void handleEveryDayReportResult(const MonitoringResult::ResultsList& monitoringResults,
-                                    const ChannelParametersList& channelParameters);
+
+    // Обработка результатов мониторинга для канала
+    // @param monitoringResult - результат мониторинга
+    // @param channelParameters - параметры канала
+    // @param allertText - текст о котором нужно сообщить
+    // @return true - в случае необходимости обновить данные по каналам
+    bool handleIntervalInfoResult(const MonitoringResult::ResultData& monitoringResult,
+                                  ChannelParameters* channelParameters,
+                                  CString& allertText);   // запрос данных за интервал
+    bool handleUpdatingResult(const MonitoringResult::ResultData& monitoringResult,
+                              ChannelParameters* channelParameters,
+                              CString& allertText);       // обновление данных
+    bool handleEveryDayReportResult(const MonitoringResult::ResultData& monitoringResult,
+                                    ChannelParameters* channelParameters,
+                                    CString& allertText); // ежедневный отчёт
 
 private:
     // мапа с соответствием идентификатора задания и параметрами задания

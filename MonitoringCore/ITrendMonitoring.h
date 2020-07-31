@@ -50,7 +50,7 @@ struct TrendChannelData
 // интервалы для мониторинга данных
 enum class MonitoringInterval
 {
-    eOneDay = 0,        // один день
+    eOneDay,            // один день
     eOneWeek,           // одна неделя
     eTwoWeeks,          // две недели
     eOneMonth,          // один месяц

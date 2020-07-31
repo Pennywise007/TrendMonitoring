@@ -27,10 +27,10 @@
     <Filter Include="TelegramBot">
       <UniqueIdentifier>{34c4a16a-4577-458b-b412-bb5850909444}</UniqueIdentifier>
     </Filter>
-    <Filter Include="MonitoringThread">
+    <Filter Include="MonitoringTasksService">
       <UniqueIdentifier>{872fdb83-4b1a-461b-af7e-c50bdbca1e4e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="MonitoringThread\ChannelDataGetter">
+    <Filter Include="MonitoringTasksService\ChannelDataGetter">
       <UniqueIdentifier>{6888f0e1-0ce8-4d89-8b68-b3a5d62306e0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -63,27 +63,15 @@
       <Filter>TelegramBot</Filter>
     </ClInclude>
     <ClInclude Include="src\IMonitoringTasksService.h">
-      <Filter>MonitoringThread</Filter>
+      <Filter>MonitoringTasksService</Filter>
     </ClInclude>
     <ClInclude Include="src\MonitoringTasksServiceImpl.h">
-      <Filter>MonitoringThread</Filter>
+      <Filter>MonitoringTasksService</Filter>
     </ClInclude>
     <ClInclude Include="$(CommonHeadersDir)COM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="$(CommonHeadersDir)Messages.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(CommonHeadersDir)Serialization\ISerializable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(CommonHeadersDir)Serialization\SerializationUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(CommonHeadersDir)Serialization\SerializatorFabric.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="$(CommonHeadersDir)Singleton.h">
@@ -96,10 +84,22 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelDataGetter.h">
-      <Filter>Header Files</Filter>
+      <Filter>MonitoringTasksService\ChannelDataGetter</Filter>
     </ClInclude>
     <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelsHelpHeader.h">
-      <Filter>Header Files</Filter>
+      <Filter>MonitoringTasksService\ChannelDataGetter</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Serialization\SerializationUtils.h">
+      <Filter>Configuration\Serialization\SerializatorFabric</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Serialization\SerializatorFabric.h">
+      <Filter>Configuration\Serialization\SerializatorFabric</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.h">
+      <Filter>Configuration\Serialization\SerializatorFabric</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Serialization\ISerializable.h">
+      <Filter>Configuration\Serialization</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -119,16 +119,16 @@
       <Filter>TelegramBot</Filter>
     </ClCompile>
     <ClCompile Include="src\MonitoringTasksServiceImpl.cpp">
-      <Filter>MonitoringThread</Filter>
-    </ClCompile>
-    <ClCompile Include="$(CommonHeadersDir)Serialization\SerializatorFabric.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>MonitoringTasksService</Filter>
     </ClCompile>
     <ClCompile Include="$(MyIncludeDir)ChannelDataCorrector\ChannelDataGetter.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>MonitoringTasksService\ChannelDataGetter</Filter>
+    </ClCompile>
+    <ClCompile Include="$(CommonHeadersDir)Serialization\SerializatorFabric.cpp">
+      <Filter>Configuration\Serialization\SerializatorFabric</Filter>
+    </ClCompile>
+    <ClCompile Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.cpp">
+      <Filter>Configuration\Serialization\SerializatorFabric</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

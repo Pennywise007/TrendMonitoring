@@ -81,11 +81,6 @@ private:
     // используется при необходимости отработать потоком что-либо
     std::condition_variable m_cvTasks;
 
-    // список идентификаторов заданий и заданий/результатов мониторинга
-    /*std::multimap<TaskId, MonitoringTaskPtr> m_tasksResultsList;
-    // мьютекс на список результатов
-    std::mutex m_tasksResultsMutex;*/
-
     // список идентификаторов заданий и результатов мониторинга
     std::map<TaskId, MonitoringResultHelper, TaskComparer> m_resultsList;
     // мьютекс на список результатов

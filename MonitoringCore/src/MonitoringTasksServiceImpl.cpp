@@ -85,9 +85,9 @@ TaskId MonitoringTasksServiceImpl::addTaskList(const std::list<TaskParameters::P
 
         for (const auto& taskParams : listTaskParams)
         {
-            insertIter = m_queueTasks.emplace(insertIter, new MonitoringTask(taskParams,
-                                                                             priority,
-                                                                             newTaskId));
+            insertIter = ++m_queueTasks.emplace(insertIter, new MonitoringTask(taskParams,
+                                                                               priority,
+                                                                               newTaskId));
         }
 
 #ifdef DETAILED_LOGGING
@@ -282,7 +282,11 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
                                 taskResult.emptyDataTime,
                                 emptyValuesCount,
                                 channelData.size(),
-                                std::count(channelData.begin(), channelData.end(), 0.f));
+                                std::count_if(channelData.begin(), channelData.end(),
+                                              [](const auto& val)
+                                              {
+                                                  return abs(val) <= FLT_MIN;
+                                              }));
 #endif
 
                 // если были не пустые данные
@@ -306,9 +310,6 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
 
 #ifdef DETAILED_LOGGING
                 OUTPUT_LOG_TEXT(L"Возникла ошибка при получении данных. Текущее количество пропусков %lld. Ошибка: %s",
-                                channelName.GetString(),
-                                lastLoadedTime.Format(L"%d.%m.%Y").GetString(),
-                                (lastLoadedTime + loadingSeconds).Format(L"%d.%m.%Y").GetString(),
                                 taskResult.emptyDataTime,
                                 logMessage.GetString());
 #endif
@@ -372,8 +373,7 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
     }
 
     OUTPUT_LOG_ADD_COMMENT(L"Загрузка данных по каналу %s завершена. Результат : %s",
-                            channelName.GetString(),
-                            loadingResult.GetString());
+                           channelName.GetString(), loadingResult.GetString());
 #endif
 
     // заносим результат задания в список результатов
@@ -381,7 +381,7 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
         std::lock_guard<std::mutex> lock(m_resultsMutex);
 
         auto resultIt = m_resultsList.find(pMonitoringTask->m_taskId);
-        // проверяем что задание не удалили
+        // проверяем что задание не удалили пока мы его выполняли
         if (resultIt != m_resultsList.end())
         {
             MonitoringResult::ResultsList& resultsList = resultIt->second.m_pMonitoringResult->m_taskResults;

@@ -632,12 +632,12 @@ void CTelegramBot::executeCallbackReport(const TgBot::CallbackQuery::Ptr query,
         keyboard->inlineKeyboard.resize((size_t)MonitoringInterval::eLast);
 
         // добавляем кнопки со всеми интервалами
-        for (int i = (int)MonitoringInterval::eLast; i != 0; --i)
+        for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
         {
             auto intervalButton = createKeyboardButton(
-                monitoring_interval_to_string(MonitoringInterval(i - 1)),
+                monitoring_interval_to_string(MonitoringInterval(i)),
                 KeyboardCallback(defCallBack).
-                addCallbackParam(reportCallBack::kParamInterval, std::to_wstring(i - 1)));
+                addCallbackParam(reportCallBack::kParamInterval, std::to_wstring(i)));
 
             keyboard->inlineKeyboard[i] = { intervalButton };
         }
