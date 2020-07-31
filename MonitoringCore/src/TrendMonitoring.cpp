@@ -440,8 +440,8 @@ bool TrendMonitoring::handleUpdatingResult(const MonitoringResult::ResultData& m
                 }
 
                 // проверяем количество пропусков, оповещаем если секунд без данных больше чем половина времени обновления интервала
-                if (auto emptySeconds = monitoringResult.emptyDataTime.GetTotalSeconds();
-                    emptySeconds > std::chrono::duration_cast<std::chrono::seconds>(kUpdateDataInterval).count() / 2)
+                if (auto emptySeconds = monitoringResult.emptyDataTime.GetTotalMinutes();
+                    emptySeconds > kUpdateDataInterval.count() / 2)
                 {
                     allertText.Append(CString(allertText.IsEmpty() ? L"" : L" ") + L"Много пропусков данных.");
 
