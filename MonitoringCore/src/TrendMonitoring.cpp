@@ -40,7 +40,8 @@ TrendMonitoring::TrendMonitoring()
     // передаем боту настройки из конфигов
     m_telegramBot.setBotSettings(getBotSettings());
 
-    // запускам задания для мониторинга
+    // запускам задания для мониторинга, делаем отдельными заданиями ибо могут
+    // долго грузиться данные для интервалов
     for (auto& channel : m_appConfig->m_chanelParameters)
         addMonitoringTaskForChannel(channel, TaskInfo::TaskType::eIntervalInfo);
 
@@ -196,6 +197,27 @@ size_t TrendMonitoring::removeMonitoringChannelByIndex(const size_t channelIndex
     onMonitoringChannelsListChanged();
 
     return result;
+}
+
+//----------------------------------------------------------------------------//
+// ITrendMonitoring
+void TrendMonitoring::changeMonitoingChannelNotify(const size_t channelIndex,
+                                                   const bool newNotifyState)
+{
+    if (channelIndex >= m_appConfig->m_chanelParameters.size())
+    {
+        ::MessageBox(NULL, L"Канала нет в списке", L"Невозможно изменить нотификацию канала", MB_OK | MB_ICONERROR);
+        return;
+    }
+
+    // получаем параметры канала по которому меняем имя
+    ChannelParameters::Ptr channelParams = *std::next(m_appConfig->m_chanelParameters.begin(),
+                                                      channelIndex);
+    if (!channelParams->changeNotification(newNotifyState))
+        return;
+
+    // сообщаем об изменении в списке каналов
+    onMonitoringChannelsListChanged(true);
 }
 
 //----------------------------------------------------------------------------//
@@ -613,8 +635,8 @@ void TrendMonitoring::onEvent(const EventId& code, float eventValue,
                 break;
             }
 
-            // если возникла ошибка при получении данных
-            if (!channelError.IsEmpty())
+            // если возникла ошибка при получении данных и можно о ней оповещать
+            if (!channelError.IsEmpty() && (*channelIt)->bNotify)
             {
                 reportText.AppendFormat(L"Канал \"%s\": %s\n",
                                         (*channelIt)->channelName.GetString(),
@@ -826,35 +848,19 @@ void TrendMonitoring::addMonitoringTaskForChannels(const ChannelParametersList& 
                                                    const TaskInfo::TaskType taskType,
                                                    CTimeSpan monitoringInterval)
 {
-    if (channelList.empty())
-    {
-        assert(!"Передали пустой список каналов для задания!");
-        return;
-    }
-
     // формируем интервалы по которым будем запускать задание
     CTime stopTime = CTime::GetCurrentTime();
     CTime startTime = stopTime - monitoringInterval;
 
     // список параметров заданий
     std::list<TaskParameters::Ptr> listTaskParams;
-
-    // запоминаем конец интервала по которому были загружены данные
     for (auto& channelParams : channelList)
     {
-        channelParams->m_loadingParametersIntervalEnd = stopTime;
-
         listTaskParams.emplace_back(new TaskParameters(channelParams->channelName,
                                                        startTime, stopTime));
     }
 
-    TaskInfo taskInfo;
-    taskInfo.taskType = taskType;
-    taskInfo.channelParameters = channelList;
-
-    m_monitoringTasksInfo.try_emplace(
-        get_monitoing_tasks_service()->addTaskList(listTaskParams, IMonitoringTasksService::eNormal),
-        taskInfo);
+    addMonitoringTaskForChannels(channelList, listTaskParams, taskType);
 }
 
 //----------------------------------------------------------------------------//
@@ -874,12 +880,16 @@ void TrendMonitoring::addMonitoringTaskForChannels(const ChannelParametersList& 
         return;
     }
 
-    auto channelsIt = channelList.begin(), channelsItEnd = channelList.end();
-    auto taskIt = taskParams.cbegin(), taskItEnd = taskParams.cend();
-    for (; taskIt != taskItEnd && channelsIt != channelsItEnd; ++taskIt, ++channelsIt)
+    if (taskType != TaskInfo::TaskType::eEveryDayReport)
     {
-        // запоминаем интервал окончания загрузки
-        (*channelsIt)->m_loadingParametersIntervalEnd = (*taskIt)->endTime;
+        // для заданий запроса данных запоминаем время концов загружаемых интервалов
+        auto channelsIt = channelList.begin(), channelsItEnd = channelList.end();
+        auto taskIt = taskParams.cbegin(), taskItEnd = taskParams.cend();
+        for (; taskIt != taskItEnd && channelsIt != channelsItEnd; ++taskIt, ++channelsIt)
+        {
+            // запоминаем интервал окончания загрузки
+            (*channelsIt)->m_loadingParametersIntervalEnd = (*taskIt)->endTime;
+        }
     }
 
     TaskInfo taskInfo;

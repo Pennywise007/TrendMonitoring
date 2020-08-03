@@ -279,8 +279,6 @@ void CTelegramBot::onEvent(const EventId& code, float eventValue,
         {
             m_telegramThread->sendMessage(chatId, errorData->messageText, false, 0, keyboard);
         }
-
-
     }
     else
         assert(!"Неизвестное событие");
@@ -291,34 +289,48 @@ void CTelegramBot::fillCommandHandlers(std::map<std::string, CommandFunction>& c
                                        CommandFunction& onUnknownCommand,
                                        CommandFunction& onNonCommandMessage)
 {
-    m_botCommands.clear();
+    m_commandHelper = std::make_shared<CommandsHelper>();
+
+    // список пользователей которым доступны все команды по умолчанию
+    const std::vector<ITelegramUsersList::UserStatus> kDefaultAvailability =
+    {   ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };
+
+    static_assert(ITelegramUsersList::UserStatus::eLastStatus == 3,
+                  "Список пользовтеля изменился, возможно стоит пересмотреть доступность команд");
+
     // добавлеение команды в список
-    auto addCommand = [&commandsList, &botCommands = m_botCommands]
-        (const CString& command, const CString& descr, const CommandFunction& funct)
+    auto addCommand = [&]
+        (const Command command, const CString& commandText, const CString& descr,
+         const std::vector<ITelegramUsersList::UserStatus>& availabilityStatuses)
     {
-        botCommands .try_emplace(command, descr);
-        commandsList.try_emplace(getUtf8Str(command), funct);
+        m_commandHelper ->addCommand(command, commandText,
+                                     descr, availabilityStatuses);
+        commandsList.try_emplace(getUtf8Str(commandText),
+                                 [this, command](const auto message)
+                                 {
+                                     this->onCommandMessage(command, message);
+                                 });
     };
 
-    // TODO C++20 сделать общую шаблонную лямбду
+    static_assert(Command::eLastCommand == 6,
+                  "Количество командл изменилось, надо добавить обработчик!");
+    // TODO C++20 сделать общую шаблонную лямбду и передавать в нее функцию
 
     // !все команды будем выполнять в основном потоке чтобы везде не добавлять синхронизацию
-    addCommand(L"info", L"Перечень команд бота.",
-               [this](const auto param)
-               {
-                   get_service<CMassages>().call([this, &param]() { this->onCommandInfo(param); });
-               });
-    addCommand(L"report", L"Сформировать отчёт.",
-               [this](const auto param)
-               {
-                   get_service<CMassages>().call([this, &param]() { this->onCommandReport(param); });
-               });
+    addCommand(Command::eInfo,    L"info",    L"Перечень команд бота.", kDefaultAvailability);
+    addCommand(Command::eReport,  L"report",  L"Сформировать отчёт.",   kDefaultAvailability);
+    addCommand(Command::eRestart, L"restart", L"Перезапустить систему мониторинга.",
+               { ITelegramUsersList::eAdmin });
+    addCommand(Command::eAllertionsOn,  L"allertionOn",  L"Перезапустить систему мониторинга.",
+               { ITelegramUsersList::eAdmin });
+    addCommand(Command::eAllertionsOff, L"allertionOff", L"Перезапустить систему мониторинга.",
+               { ITelegramUsersList::eAdmin });
 
     // команда выполняемая при получении любого сообщения
     onUnknownCommand = onNonCommandMessage =
-        [this](const auto param)
+        [this](const auto message)
         {
-            get_service<CMassages>().call([this, &param]() { this->onNonCommandMessage(param); });
+            get_service<CMassages>().call([this, &message]() { this->onNonCommandMessage(message); });
         };
     // отработка колбэков на нажатие клавиатуры
     m_telegramThread->getBotEvents().onCallbackQuery(
@@ -326,37 +338,6 @@ void CTelegramBot::fillCommandHandlers(std::map<std::string, CommandFunction>& c
         {
             get_service<CMassages>().call([this, &param]() { this->onCallbackQuery(param); });
         });
-}
-
-//----------------------------------------------------------------------------//
-CString CTelegramBot::fillCommandListAndHint()
-{
-    CString message = L"Поддерживаемые команды бота:\n\n\n";
-
-    for (auto& command : m_botCommands)
-    {
-        message += L"/" + command.first + L" - " + command.second + L"\n";
-    }
-
-    return message + L"\n\nДля того чтобы их использовать необходимо написать их этому боту(обязательно использовать слэш перед текстом команды(/)!). Или нажать в этом окне, они должны подсвечиваться.";
-}
-
-//----------------------------------------------------------------------------//
-bool CTelegramBot::needAnswerOnMessage(const MessagePtr message, CString& messageToUser)
-{
-    // пользователь отправивший сообщение
-    TgBot::User::Ptr pUser = message->from;
-
-    // убеждаемся что есть такой пользователь
-    m_telegramUsers->ensureExist(pUser, message->chat->id);
-
-    if (m_telegramUsers->getUserStatus(pUser) != ITelegramUsersList::UserStatus::eNotAuthorized)
-        return true;
-    else
-    {
-        messageToUser = L"Для работы необходимо авторизоваться, введите пароль ответным сообщением.";
-        return false;
-    }
 }
 
 //----------------------------------------------------------------------------//
@@ -413,10 +394,9 @@ void CTelegramBot::onNonCommandMessage(const MessagePtr commandMessage)
     }
     else
     {
-        if (needAnswerOnMessage(commandMessage, messageToUser))
-            messageToUser = fillCommandListAndHint();
-
-        messageToUser = L"Не известная команда.\n" + messageToUser;
+        // особо убеждаться не в чем, прросто на eUnknown возвращается текст ошибки
+        m_commandHelper->ensureNeedAnswerOnCommand(m_telegramUsers, Command::eUnknown,
+                                                   commandMessage, messageToUser);
     }
 
     if (!messageToUser.IsEmpty())
@@ -424,14 +404,49 @@ void CTelegramBot::onNonCommandMessage(const MessagePtr commandMessage)
 }
 
 //----------------------------------------------------------------------------//
+void CTelegramBot::onCommandMessage(const Command command, const MessagePtr message)
+{
+    // т.к. команда может придти из другого потока то чтобы не делать дополнительную
+    // синхронизацию переправляем все в основной поток
+    get_service<CMassages>().call(
+        [this, &command, &message]()
+        {
+            CString messageToUser;
+            // проверяем что есть необходимость отвечать на команду этому пользователю
+            if (m_commandHelper->ensureNeedAnswerOnCommand(m_telegramUsers, command,
+                                                           message, messageToUser))
+            {
+                switch (command)
+                {
+                default:
+                    assert(!"Неизвестная команда!.");
+                    [[fallthrough]];
+                case Command::eInfo:
+                    onCommandInfo(message);
+                    break;
+                case Command::eReport:
+                    onCommandReport(message);
+                    break;
+                case Command::eRestart:
+                    onCommandRestart(message);
+                    break;
+                }
+            }
+            else if (!messageToUser.IsEmpty())
+                // если пользователю команда не доступна возвращаем ему оповещение об этомы
+                m_telegramThread->sendMessage(message->chat->id, messageToUser);
+            else
+                assert(!"Должен быть текст сообщений пользователю");
+        });
+}
+
+//----------------------------------------------------------------------------//
 void CTelegramBot::onCommandInfo(const MessagePtr commandMessage)
 {
-    // сообщение которое будет отправлено пользователю в ответ
-    CString messageToUser;
+    ITelegramUsersList::UserStatus userStatus =
+        m_telegramUsers->getUserStatus(commandMessage->from);
 
-    if (needAnswerOnMessage(commandMessage, messageToUser))
-        messageToUser = fillCommandListAndHint();
-
+    CString messageToUser = m_commandHelper->getAvailableCommandsWithDescr(userStatus);
     if (!messageToUser.IsEmpty())
         m_telegramThread->sendMessage(commandMessage->chat->id, messageToUser);
     else
@@ -441,15 +456,6 @@ void CTelegramBot::onCommandInfo(const MessagePtr commandMessage)
 //----------------------------------------------------------------------------//
 void CTelegramBot::onCommandReport(const MessagePtr commandMessage)
 {
-    // сообщение которое будет отправлено пользователю в ответ
-    CString messageToUser;
-
-    if (!needAnswerOnMessage(commandMessage, messageToUser))
-    {
-        m_telegramThread->sendMessage(commandMessage->chat->id, messageToUser);
-        return;
-    }
-
     // получаем список каналов
     std::list<CString> monitoringChannels = get_monitoing_service()->getNamesOfMonitoringChannels();
     if (monitoringChannels.empty())
@@ -484,6 +490,15 @@ void CTelegramBot::onCommandReport(const MessagePtr commandMessage)
                                   false, 0, keyboard);
 }
 
+//----------------------------------------------------------------------------//
+void CTelegramBot::onCommandRestart(const MessagePtr commandMessage)
+{
+    // перезапуск системы делаем через батник так как надо много всего сделать для рахных систем
+
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // парсинг колбэков
 namespace CallbackParser
 {
@@ -695,7 +710,17 @@ void CTelegramBot::executeCallbackRestart(const TgBot::CallbackQuery::Ptr query,
 {
     assert(params.empty() && "Параметров не предусмотрено");
 
-
+    CString messageToUser;
+    if (!m_commandHelper->ensureNeedAnswerOnCommand(m_telegramUsers, Command::eRestart,
+                                                    query->message, messageToUser))
+    {
+        assert(!"Пользователь запросил перезапуск без разрешения на выполнение такого действия.");
+        m_telegramThread->sendMessage(query->message->chat->id,
+                                      L"У вас нет разрешения на перезапуск системы, обратитесь к администратору!");
+        return;
+    }
+    // имитируем что пользователь выполнил запрос рестарта
+    onCommandRestart(query->message);
 }
 
 //----------------------------------------------------------------------------//
@@ -797,4 +822,75 @@ std::string KeyboardCallback::buildReport() const
     assert(resultReport.GetLength() <= maxReportSize);
 
     return getUtf8Str(resultReport);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// вспомогательный клас для работы с командами телеграма
+void CTelegramBot::CommandsHelper::
+addCommand(const CTelegramBot::Command command,
+           const CString& commandText, const CString& descr,
+           const std::vector<AvailableStatus>& availabilityStatuses)
+{
+    auto commandDescrIt = m_botCommands.try_emplace(command);
+    assert(commandDescrIt.second);
+
+    CommandDescription& commandDescr = commandDescrIt.first->second;
+    commandDescr.m_text = commandText;
+    commandDescr.m_description = descr;
+    for (auto& status : availabilityStatuses)
+        commandDescrIt.first->second.m_availabilityForUsers[status] = true;
+}
+
+//----------------------------------------------------------------------------//
+CString CTelegramBot::CommandsHelper::
+getAvailableCommandsWithDescr(const AvailableStatus userStatus) const
+{
+    CString message = L"Поддерживаемые команды бота:\n\n\n";
+
+    for (auto& command : m_botCommands)
+    {
+        if (command.second.m_availabilityForUsers[userStatus])
+            message += L"/" + command.second.m_text + L" - " + command.second.m_description + L"\n";
+    }
+
+    return message + L"\n\nДля того чтобы их использовать необходимо написать их этому боту(обязательно использовать слэш перед текстом команды(/)!). Или нажать в этом окне, они должны подсвечиваться.";
+}
+
+//----------------------------------------------------------------------------//
+bool CTelegramBot::CommandsHelper::
+ensureNeedAnswerOnCommand(ITelegramUsersList* usersList,
+                          const CTelegramBot::Command command,
+                          const MessagePtr commandMessage,
+                          CString& messageToUser) const
+{
+
+    // пользователь отправивший сообщение
+    const TgBot::User::Ptr& pUser = commandMessage->from;
+
+    // убеждаемся что есть такой пользователь
+    usersList->ensureExist(pUser, commandMessage->chat->id);
+    // получаем статус пользователя
+    auto userStatus = usersList->getUserStatus(pUser);
+    // проверяем что пользователь может использовать команду
+    auto commandIt = m_botCommands.find(command);
+    if (commandIt == m_botCommands.end() ||
+        !commandIt->second.m_availabilityForUsers[userStatus])
+    {
+        // формируем ответ пользователю со списком доступных ему команд
+        CString availableCommands = getAvailableCommandsWithDescr(userStatus);
+        if (availableCommands.IsEmpty())
+        {
+            if (userStatus == ITelegramUsersList::eNotAuthorized)
+                messageToUser = L"Для работы бота вам необходимо авторизоваться.";
+            else
+                messageToUser = L"Неизвестная команда. У вас нет доступных команд, обратитесь к администратору";
+        }
+        else
+            messageToUser = L"Неизвестная команда. " + std::move(availableCommands);
+        assert(!messageToUser.IsEmpty());
+
+        return false;
+    }
+
+    return true;
 }

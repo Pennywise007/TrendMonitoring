@@ -66,32 +66,32 @@ struct MonitoringChannelData
 {
     // Название канала
     CString channelName;
+    // Оповещать об изменениях пользователей
+    bool bNotify = true;
     // наблюдаемый интервал
     MonitoringInterval monitoringInterval = MonitoringInterval::eOneMonth;
+    // значение, достугнув которое необходимо оповестить. Не оповещать - NAN
+    float allarmingValue = NAN;
+    // данные по наблюдаемому каналу, пока не eDataLoaded - не валидные/пустые
+    TrendChannelData trendData;
 
     // Состояние канала
     enum ChannelState
     {
         // данные
-       //eWaitingForData,           // ждем загрузки данных
+        //eWaitingForData,           // ждем загрузки данных
         eDataLoaded,                // данные загружены успешно
         eLoadingError,              // ошибка при загрузке данных
-        //eErrorOnUpdatingData,       // возникла ошибка при обновлении данных
+                                    //eErrorOnUpdatingData,       // возникла ошибка при обновлении данных
 
-        // оповещения
-        eReportedFallenOff,         // произошло оповещение пользователей об отваливании датчика
-        eReportedExcessOfValue,     // произошло оповещение пользователей о превышении допустимого значения
-        eReportedALotOfEmptyData,   // произошло оповещение пользователей о большом количестве пропусков
+                                    // оповещения
+                                    eReportedFallenOff,         // произошло оповещение пользователей об отваливании датчика
+                                    eReportedExcessOfValue,     // произошло оповещение пользователей о превышении допустимого значения
+                                    eReportedALotOfEmptyData,   // произошло оповещение пользователей о большом количестве пропусков
 
-        eLast
+                                    eLast
     };
     std::bitset<ChannelState::eLast> channelState;
-
-    // данные по наблюдаемому каналу, пока не eDataLoaded - не валидные/пустые
-    TrendChannelData trendData;
-
-    // значение, достугнув которое необходимо оповестить. Не оповещать - NAN
-    float allarmingValue = NAN;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -157,6 +157,11 @@ interface ITrendMonitoring
     /// <returns>Индекс выделения после удаления.</returns>
     virtual size_t removeMonitoringChannelByIndex(const size_t channelIndex) = 0;
 
+    /// <summary>Изменить флаг оповещения у канала по номеру.</summary>
+    /// <param name="channelIndex">Индекс канала в списке каналов.</param>
+    /// <param name="newNotifyState">Новое состояние оповещения.</param>
+    virtual void changeMonitoingChannelNotify(const size_t channelIndex,
+                                              const bool newNotifyState) = 0;
     /// <summary>Изменить имя наблюдаемого канала.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newChannelName">Новое имя канала.</param>

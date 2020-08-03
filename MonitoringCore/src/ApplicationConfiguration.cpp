@@ -49,6 +49,16 @@ bool ChannelParameters::changeName(const CString& newName)
 }
 
 //----------------------------------------------------------------------------//
+bool ChannelParameters::changeNotification(const bool state)
+{
+    if (bNotify == state)
+        return false;
+
+    bNotify = state;
+    return true;
+}
+
+//----------------------------------------------------------------------------//
 bool ChannelParameters::changeInterval(const MonitoringInterval newInterval)
 {
     if (monitoringInterval == newInterval)
@@ -144,7 +154,7 @@ void TelegramUsersList::onEndDeserializing()
 }
 
 //----------------------------------------------------------------------------//
-void TelegramUsersList::ensureExist(const TgBot::User::Ptr pUser, const int64_t chatId)
+void TelegramUsersList::ensureExist(const TgBot::User::Ptr& pUser, const int64_t chatId)
 {
     std::lock_guard lock(m_usersMutex);
 
@@ -173,7 +183,7 @@ void TelegramUsersList::ensureExist(const TgBot::User::Ptr pUser, const int64_t 
 }
 
 //----------------------------------------------------------------------------//
-ITelegramUsersList::UserStatus TelegramUsersList::getUserStatus(const TgBot::User::Ptr pUser)
+ITelegramUsersList::UserStatus TelegramUsersList::getUserStatus(const TgBot::User::Ptr& pUser)
 {
     std::lock_guard lock(m_usersMutex);
 
@@ -181,7 +191,7 @@ ITelegramUsersList::UserStatus TelegramUsersList::getUserStatus(const TgBot::Use
 }
 
 //----------------------------------------------------------------------------//
-void TelegramUsersList::setUserStatus(const TgBot::User::Ptr _pUser, const UserStatus newStatus)
+void TelegramUsersList::setUserStatus(const TgBot::User::Ptr& _pUser, const UserStatus newStatus)
 {
     std::lock_guard lock(m_usersMutex);
 
@@ -210,7 +220,7 @@ std::list<int64_t> TelegramUsersList::getAllChatIdsByStatus(const UserStatus use
 
 //----------------------------------------------------------------------------//
 std::list<TelegramUser::Ptr>::iterator
-    TelegramUsersList::getUserIterator(const TgBot::User::Ptr pUser)
+    TelegramUsersList::getUserIterator(const TgBot::User::Ptr& pUser)
 {
     // проверяем что мьютекс на данные уже заблокирован
     assert(!m_usersMutex.try_lock());
@@ -225,7 +235,8 @@ std::list<TelegramUser::Ptr>::iterator
 }
 
 //----------------------------------------------------------------------------//
-std::list<TelegramUser::Ptr>::iterator TelegramUsersList::getOrCreateUsertIterator(const TgBot::User::Ptr pUser)
+std::list<TelegramUser::Ptr>::iterator
+TelegramUsersList::getOrCreateUsertIterator(const TgBot::User::Ptr& pUser)
 {
     auto userIt = getUserIterator(pUser);
     if (userIt == m_telegramUsers.end())

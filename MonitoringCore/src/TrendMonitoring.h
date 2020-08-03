@@ -48,6 +48,11 @@ public:
     /// <returns>Индекс выделения после удаления.</returns>
     size_t removeMonitoringChannelByIndex(const size_t channelIndex) override;
 
+    /// <summary>Изменить флаг оповещения у канала по номеру.</summary>
+    /// <param name="channelIndex">Индекс канала в списке каналов.</param>
+    /// <param name="newNotifyState">Новое состояние оповещения.</param>
+    void changeMonitoingChannelNotify(const size_t channelIndex,
+                                      const bool newNotifyState) override;
     /// <summary>Изменить имя наблюдаемого канала.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newChannelName">Новое имя канала.</param>

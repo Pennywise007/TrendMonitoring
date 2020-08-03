@@ -66,6 +66,7 @@ BEGIN_MESSAGE_MAP(CTrendMonitorDlg, CDialogEx)
     ON_NOTIFY(NM_CUSTOMDRAW, IDC_LIST_MONITORING_CHANNELS, &CTrendMonitorDlg::OnNMCustomdrawListMonitoringChannels)
     ON_WM_SYSCOMMAND()
     ON_WM_WINDOWPOSCHANGING()
+    ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST_MONITORING_CHANNELS, &CTrendMonitorDlg::OnLvnItemchangedListMonitoringChannels)
 END_MESSAGE_MAP()
 
 //----------------------------------------------------------------------------//
@@ -256,7 +257,10 @@ void CTrendMonitorDlg::processCommandLine()
 //----------------------------------------------------------------------------//
 void CTrendMonitorDlg::initControls()
 {
+    m_monitorChannelsList.ModifyStyle(0, LVS_EX_CHECKBOXES);
+
     // создаем колонки таблицы
+    m_monitorChannelsList.InsertColumn(TableColumns::eNotify,           L"Оповещать", -1, 45);
     m_monitorChannelsList.InsertColumn(TableColumns::eChannelName,      L"Название канала",         LVCFMT_LEFT, 145, -1,
                                        [](const CString& str1, const CString& str2) mutable
                                        {
@@ -403,6 +407,7 @@ void CTrendMonitorDlg::initControls()
                         get_monitoing_service()->changeMonitoingChannelAllarmingValue(pParams->iItem, (float)_wtof(text));
                 });
             break;
+        case TableColumns::eNotify:
         case TableColumns::eLastDataExistTime:
         case TableColumns::eNoDataTime:
         case TableColumns::eStartValue:
@@ -497,7 +502,8 @@ void CTrendMonitorDlg::reloadChannelsList()
          channelIndex < channelsCount; ++channelIndex)
     {
         const MonitoringChannelData& channelData = monitoingService->getMonitoringChannelData(channelIndex);
-
+        // отрабатываем оповещения
+        m_monitorChannelsList.SetCheck(channelIndex, channelData.bNotify);
         m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eChannelName,     channelData.channelName);
         m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eInterval,        monitoring_interval_to_string(channelData.monitoringInterval));
 
@@ -720,4 +726,28 @@ void CTrendMonitorDlg::OnWindowPosChanging(WINDOWPOS* lpwndpos)
         lpwndpos->flags &= ~SWP_SHOWWINDOW;
 
     __super::OnWindowPosChanging(lpwndpos);
+}
+
+
+void CTrendMonitorDlg::OnLvnItemchangedListMonitoringChannels(NMHDR *pNMHDR, LRESULT *pResult)
+{
+    LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
+
+    if (pNMLV->uChanged & LVIF_STATE)
+    {
+        bool bNotify = false;
+
+        switch (pNMLV->uNewState & LVIS_STATEIMAGEMASK)
+        {
+        case INDEXTOSTATEIMAGEMASK(2):
+            get_monitoing_service()->changeMonitoingChannelNotify(pNMLV->iItem, false);
+            break;
+        case INDEXTOSTATEIMAGEMASK(1):
+            get_monitoing_service()->changeMonitoingChannelNotify(pNMLV->iItem, false);
+            break;
+        }
+    }
+
+    // TODO: Add your control notification handler code here
+    *pResult = 0;
 }

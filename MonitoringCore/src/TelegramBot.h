@@ -1,6 +1,7 @@
 #pragma once
 
 #include <afx.h>
+#include <bitset>
 #include <map>
 #include <memory>
 #include <time.h>
@@ -47,17 +48,31 @@ private:
     void fillCommandHandlers(std::map<std::string, CommandFunction>& commandsList,
                              CommandFunction& onUnknownCommand,
                              CommandFunction& onNonCommandMessage);
-    // возвращает спискок команд с подсказкой ввода в конце
-    CString fillCommandListAndHint();
-    // проверка возможности ответить на сообщение
-    // если ответить нельзя - пользователю нужно вернуть messageToUser
-    bool needAnswerOnMessage(const MessagePtr message, CString& messageToUser);
-    // команда выполняемая при получении любого сообщения
+    // пришло сообщение от пользователя не являющееся зарегистрированной командой
     void onNonCommandMessage(const MessagePtr commandMessage);
+
+    // Перечень команд
+    enum class Command
+    {
+        eUnknown,       // Неизвестная комнада бота
+        eInfo,          // Запрос информации бота
+        eReport,        // Запрос отчёта за период
+        eRestart,       // перезапуск мониторинга
+        eAllertionsOn,  // включить оповещения о событиях канала
+        eAllertionsOff, // выключить оповещения о событиях канала
+        // Последняя команда
+        eLastCommand
+    };
+
+    // изначальный обработчик всех команд
+    void onCommandMessage(const Command command, const MessagePtr message);
+
     // обработка команды /info
     void onCommandInfo(const MessagePtr commandMessage);
     // обработка команды /report
     void onCommandReport(const MessagePtr commandMessage);
+    // обработка команды /restart
+    void onCommandRestart(const MessagePtr commandMessage);
 
 // парсинг колбэков
 private:
@@ -88,11 +103,9 @@ private:
     ITelegramThreadPtr m_telegramThread;
     // текущие настройки бота
     TelegramBotSettings m_botSettings;
-
-    // перечень команд бота
-    //   название команды  описание
-    std::map<CString, CString> m_botCommands;
-
+    // вспомогательный класс для работы с командами бота
+    class CommandsHelper;
+    std::shared_ptr<CommandsHelper> m_commandHelper = std::make_shared<CommandsHelper>();
     // данные о пользователях телеграмма
     ITelegramUsersListPtr m_telegramUsers;
 
@@ -136,6 +149,54 @@ private:
     const size_t kMaxErrorInfoCount = 200;
     // ошибки которые возникали в мониторинге
     std::list<ErrorInfo> m_monitoringErrors;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// вспомогательный клас для работы с командами телеграма
+class CTelegramBot::CommandsHelper
+{
+public:
+    // статус пользователей которым доступно использование команды
+    typedef ITelegramUsersList::UserStatus AvailableStatus;
+    CommandsHelper() = default;
+
+public:
+    // Добавление описания команды
+    // @param command - идентификатор исполняемой команды
+    // @param commandtext - текст команды
+    // @param descr - описание команды
+    // @param availabilityStatuses - перечень статусов пользователей которым доступна команда
+    void addCommand(const CTelegramBot::Command command,
+                    const CString& commandText, const CString& descr,
+                    const std::vector<AvailableStatus>& availabilityStatuses);
+
+    // Получить список команд с описанием для определенного пользователя
+    CString getAvailableCommandsWithDescr(const AvailableStatus userStatus) const;
+
+    // Проверка что надо ответить на команду пользователю
+    // если false - в messageToUser будет ответ пользователю
+    bool ensureNeedAnswerOnCommand(ITelegramUsersList* usersList,
+                                   const CTelegramBot::Command command,
+                                   const MessagePtr commandMessage,
+                                   CString& messageToUser) const;
+
+private:
+    // Описание команды телеграм бота
+    struct CommandDescription
+    {
+        CommandDescription() = default;
+
+        // тект который надо отправить для выполнения команды
+        CString m_text;
+        // описание команды
+        CString m_description;
+        // доступность команды для различных типов пользователей
+        std::bitset<AvailableStatus::eLastStatus> m_availabilityForUsers;
+    };
+
+    // перечень команд бота
+    //   название команды  описание
+    std::map<CTelegramBot::Command, CommandDescription> m_botCommands;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

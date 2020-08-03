@@ -88,7 +88,8 @@ public:
     // Колонки таблицы с каналами для мониторинга
     enum TableColumns
     {
-        eChannelName = 0,       // название канала
+        eNotify,                // Оповещатья
+        eChannelName,           // название канала
         eInterval,              // интервал мониторинга
         eAllarmingValue,        // значение, достигнув которое необходимо оповестить
 
@@ -115,4 +116,5 @@ public:
         eTabLog = 0,    // вкладка с логом событий
         eTabReport      // таб с отчетом
     };
+    afx_msg void OnLvnItemchangedListMonitoringChannels(NMHDR *pNMHDR, LRESULT *pResult);
 };

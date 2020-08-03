@@ -95,8 +95,10 @@ BOOL CTrendMonitorApp::InitInstance()
                         ::EnumWindows(
                             [](HWND handle, LPARAM lParam)
                             {
-                                // не основное окно
-                                if (::GetWindow(handle, GW_OWNER) != (HWND)0)
+                                // фильтруем не основные окна, считаем что это окна без владельцев
+                                // и кона со стилем WS_EX_APPWINDOW(вспомогательные окна могут быть тоже без родителя
+                                if (::GetWindow(handle, GW_OWNER) != (HWND)0 ||
+                                    !(GetWindowLongPtr(handle, GWL_EXSTYLE) & WS_EX_APPWINDOW))
                                     return TRUE;
 
                                 // процесс который ищем
@@ -108,13 +110,13 @@ BOOL CTrendMonitorApp::InitInstance()
                                 if (searchProcessId != windowProcessId)
                                     return TRUE;
 
-                                // если окно запущено показываем его
-                                if (::IsWindowVisible(handle))
-                                {
-                                    ::OpenIcon(handle);
-                                    ::SetActiveWindow(handle);
-                                    ::SetForegroundWindow(handle);
-                                }
+                                // если окно скрыто - показываем его
+                                if (!::IsWindowVisible(handle))
+                                    ::ShowWindow(handle, SW_SHOW);
+
+                                ::OpenIcon(handle);
+                                ::SetActiveWindow(handle);
+                                ::SetForegroundWindow(handle);
 
                                 return FALSE;
                             },

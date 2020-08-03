@@ -17,20 +17,23 @@ constexpr EventId onUsersListChangedEvent =
 DECLARE_COM_INTERFACE(ITelegramUsersList, "EFB00D0B-3B37-4AEC-B63A-9ECEA34C0802")
 {
     // статус пользовател€
-    enum class UserStatus
+    enum UserStatus
     {
         eNotAuthorized,     // Ќе авторизованный
         eOrdinaryUser,      // ќбычный пользователь системы
-        eAdmin              // јдминистратор системы
+        eAdmin,             // јдминистратор системы
+        // ѕоследний статус
+        eLastStatus
     };
 
     // убедитьс€ что пользователь существует
-    virtual void ensureExist(const TgBot::User::Ptr pUser, const int64_t chatId) = 0;
+    virtual void ensureExist(const TgBot::User::Ptr& pUser, const int64_t chatId) = 0;
 
     // получение статуса пользовател€
-    virtual UserStatus getUserStatus(const TgBot::User::Ptr pUser) = 0;
+    virtual UserStatus getUserStatus(const TgBot::User::Ptr& pUser) = 0;
     // установка статуса пользовател€
-    virtual void setUserStatus(const TgBot::User::Ptr pUser, const UserStatus newStatus) = 0;
+    virtual void setUserStatus(const TgBot::User::Ptr& pUser,
+                               const UserStatus newStatus) = 0;
     // получить все идентификаторы чатов пользователей с определенным статусом
     virtual std::list<int64_t> getAllChatIdsByStatus(const UserStatus usertatus) = 0;
 };
