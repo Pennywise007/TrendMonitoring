@@ -6,13 +6,16 @@
 #include "afxdialogex.h"
 #include "TrendMonitor.h"
 
-#include <boost/program_options.hpp>
-
+#include <filesystem>
 #include <set>
+
+#include <boost/program_options.hpp>
+#include <boost/scope_exit.hpp>
 
 #include <Controls/ComboBox/CComboBoxWithSearch/ComboWithSearch.h>
 
 #include <ITrendMonitoring.h>
+#include <DirsService.h>
 
 #include "BotSettingDlg.h"
 #include "TrendMonitorDlg.h"
@@ -63,10 +66,11 @@ BEGIN_MESSAGE_MAP(CTrendMonitorDlg, CDialogEx)
     ON_BN_CLICKED(IDC_MFCBUTTON_MOVE_UP, &CTrendMonitorDlg::OnBnClickedMfcbuttonMoveUp)
     ON_BN_CLICKED(IDC_MFCBUTTON_MOVE_DOWN, &CTrendMonitorDlg::OnBnClickedMfcbuttonMoveDown)
     ON_BN_CLICKED(IDC_MFCBUTTON_REFRESH, &CTrendMonitorDlg::OnBnClickedMfcbuttonRefresh)
-    ON_NOTIFY(NM_CUSTOMDRAW, IDC_LIST_MONITORING_CHANNELS, &CTrendMonitorDlg::OnNMCustomdrawListMonitoringChannels)
+    ON_BN_CLICKED(IDC_MFCBUTTON_SHOW_TRENDS, &CTrendMonitorDlg::OnBnClickedMfcbuttonShowTrends)
+    ON_NOTIFY(NM_CUSTOMDRAW,    IDC_LIST_MONITORING_CHANNELS, &CTrendMonitorDlg::OnNMCustomdrawListMonitoringChannels)
+    ON_NOTIFY(LVN_ITEMCHANGED,  IDC_LIST_MONITORING_CHANNELS, &CTrendMonitorDlg::OnLvnItemchangedListMonitoringChannels)
     ON_WM_SYSCOMMAND()
     ON_WM_WINDOWPOSCHANGING()
-    ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST_MONITORING_CHANNELS, &CTrendMonitorDlg::OnLvnItemchangedListMonitoringChannels)
 END_MESSAGE_MAP()
 
 //----------------------------------------------------------------------------//
@@ -119,7 +123,7 @@ void CTrendMonitorDlg::onEvent(const EventId& code, float /*eventValue*/,
                              [tabControl = &m_tabCtrl]()
                              {
                                  // переклчюаемся не вкладку с логом
-                                 tabControl->SetCurSel(TabInices::eTabLog);
+                                 tabControl->SetCurSel(TabIndiсes::eTabLog);
                              });
 
     }
@@ -131,127 +135,11 @@ void CTrendMonitorDlg::onEvent(const EventId& code, float /*eventValue*/,
                              [tabControl = &m_tabCtrl]()
                              {
                                  // переклчюаемся не вкладку с логом
-                                 tabControl->SetCurSel(TabInices::eTabReport);
+                                 tabControl->SetCurSel(TabIndiсes::eTabReport);
                              });
     }
     else
         assert(!"Возникло не обработанное событие на которое подписались");
-}
-
-//----------------------------------------------------------------------------//
-void CTrendMonitorDlg::OnPaint()
-{
-    if (IsIconic())
-    {
-        CPaintDC dc(this); // device context for painting
-
-        SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
-
-        // Center icon in client rectangle
-        int cxIcon = GetSystemMetrics(SM_CXICON);
-        int cyIcon = GetSystemMetrics(SM_CYICON);
-        CRect rect;
-        GetClientRect(&rect);
-        int x = (rect.Width() - cxIcon + 1) / 2;
-        int y = (rect.Height() - cyIcon + 1) / 2;
-
-        // Draw the icon
-        dc.DrawIcon(x, y, m_hIcon);
-    }
-    else
-    {
-        CDialogEx::OnPaint();
-    }
-}
-
-//----------------------------------------------------------------------------//
-HCURSOR CTrendMonitorDlg::OnQueryDragIcon()
-{
-    return static_cast<HCURSOR>(m_hIcon);
-}
-
-//----------------------------------------------------------------------------//
-void CTrendMonitorDlg::OnOK()
-{
-    // не даем закрыться по Enter`у
-}
-
-//----------------------------------------------------------------------------//
-void CTrendMonitorDlg::OnClose()
-{
-    // отписываемся от событий
-    EventRecipientImpl::unsubscribe(onMonitoringListChanged);
-    EventRecipientImpl::unsubscribe(onNewLogMessageEvent);
-    EventRecipientImpl::unsubscribe(onReportPreparedEvent);
-
-    m_trayHelper.removeTrayIcon();
-
-    __super::OnClose();
-}
-
-//----------------------------------------------------------------------------//
-void CTrendMonitorDlg::OnBnClickedMfcbuttonAdd()
-{
-    selectChannelsListItem(get_monitoing_service()->addMonitoingChannel());
-}
-
-//----------------------------------------------------------------------------//
-void CTrendMonitorDlg::OnBnClickedMfcbuttonRemove()
-{
-    POSITION pos = m_monitorChannelsList.GetFirstSelectedItemPosition();
-    if (pos != NULL)
-    {
-        int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
-
-        selectChannelsListItem(get_monitoing_service()->removeMonitoringChannelByIndex(nItem));
-    }
-}
-
-//----------------------------------------------------------------------------//
-void CTrendMonitorDlg::OnBnClickedMfcbuttonMoveUp()
-{
-    POSITION pos = m_monitorChannelsList.GetFirstSelectedItemPosition();
-    if (pos != NULL)
-    {
-        int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
-
-        selectChannelsListItem(get_monitoing_service()->moveUpMonitoingChannelByIndex((size_t)nItem));
-    }
-}
-
-//----------------------------------------------------------------------------//
-void CTrendMonitorDlg::OnBnClickedMfcbuttonMoveDown()
-{
-    POSITION pos = m_monitorChannelsList.GetFirstSelectedItemPosition();
-    if (pos != NULL)
-    {
-        int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
-        selectChannelsListItem(get_monitoing_service()->moveDownMonitoingChannelByIndex((size_t)nItem));
-    }
-}
-
-//----------------------------------------------------------------------------//
-void CTrendMonitorDlg::OnBnClickedMfcbuttonRefresh()
-{
-    get_monitoing_service()->updateDataForAllChannels();
-}
-
-//----------------------------------------------------------------------------//
-void CTrendMonitorDlg::processCommandLine()
-{
-    // получаем командную строку
-    int nArgc = 0;
-    LPWSTR *pArgv = ::CommandLineToArgvW(::GetCommandLine(), &nArgc);
-
-    // заполняем параметрами командной строки
-    boost::program_options::options_description desc("Allowed options");
-    desc.add_options()
-        ("hidden", "Скрытый режим запуска программы");
-
-    boost::program_options::variables_map vm;
-    boost::program_options::store(boost::program_options::parse_command_line(nArgc, pArgv, desc), vm);
-
-    m_bHiddenDialog = !vm["hidden"].empty();
 }
 
 //----------------------------------------------------------------------------//
@@ -260,7 +148,7 @@ void CTrendMonitorDlg::initControls()
     m_monitorChannelsList.ModifyStyle(0, LVS_EX_CHECKBOXES);
 
     // создаем колонки таблицы
-    m_monitorChannelsList.InsertColumn(TableColumns::eNotify,           L"Оповещать", -1, 45);
+    m_monitorChannelsList.InsertColumn(TableColumns::eNotify,           L"Оповещать", -1, 25);
     m_monitorChannelsList.InsertColumn(TableColumns::eChannelName,      L"Название канала",         LVCFMT_LEFT, 145, -1,
                                        [](const CString& str1, const CString& str2) mutable
                                        {
@@ -274,7 +162,7 @@ void CTrendMonitorDlg::initControls()
                                        });
     m_monitorChannelsList.InsertColumn(TableColumns::eAllarmingValue,   L"Оповестить при достижении", LVCFMT_CENTER, 90);
     m_monitorChannelsList.InsertColumn(TableColumns::eLastDataExistTime,L"Последние существующие данные",   LVCFMT_CENTER, 140);
-    m_monitorChannelsList.InsertColumn(TableColumns::eNoDataTime,       L"Нет данных",     LVCFMT_CENTER, 120);
+    m_monitorChannelsList.InsertColumn(TableColumns::eNoDataTime,       L"Нет данных",              LVCFMT_CENTER, 120);
 
     const int kValueSize = 100;
     m_monitorChannelsList.InsertColumn(TableColumns::eStartValue,       L"Начальное значение",      LVCFMT_CENTER, kValueSize);
@@ -424,10 +312,50 @@ void CTrendMonitorDlg::initControls()
     }
 
     // вставляем табы с логом и отчётами
-    m_tabCtrl.InsertTab(TabInices::eTabLog, L"Лог событий",
+    m_tabCtrl.InsertTab(TabIndiсes::eTabLog, L"Лог событий",
                         std::make_shared<СTabTrendLog>(), IDD_TAB_EVENTS_LOG);
-    m_tabCtrl.InsertTab(TabInices::eTabReport, L"Отчёты",
+    m_tabCtrl.InsertTab(TabIndiсes::eTabReport, L"Отчёты",
                         std::make_shared<CTabReports>(), IDD_TAB_REPORTS);
+}
+
+//----------------------------------------------------------------------------//
+void CTrendMonitorDlg::processCommandLine()
+{
+    // получаем командную строку
+    int nArgc = 0;
+    LPWSTR *pArgv = ::CommandLineToArgvW(::GetCommandLine(), &nArgc);
+
+    try
+    {
+        // заполняем параметрами командной строки
+        boost::program_options::options_description desc("Allowed options");
+        desc.add_options()
+            ("hidden", "Скрытый режим запуска программы");
+
+        int xstyle = 0;
+        {
+            using namespace boost::program_options::command_line_style;
+            // если хотим настроить стиль - надо поставить стандартные стили
+            // в частности нужен allow_long для long_case_insensitive
+            xstyle = default_style | case_insensitive;
+        }
+
+        // делаем так, а не через boost::program_options::parse_command_line ибо нам надо allow_unregistered
+        // чтобы если ввели не корректную командную строку мы что-то да распарсили
+        boost::program_options::wparsed_options parsed =
+            boost::program_options::wcommand_line_parser(nArgc, pArgv)
+            .options(desc).style(xstyle).allow_unregistered().run();
+        // опции которые есть в результате
+        boost::program_options::variables_map vm;
+        boost::program_options::store(parsed, vm);
+
+        m_bHiddenDialog = !vm["hidden"].empty();
+    }
+    catch (const boost::program_options::error& err)
+    {
+        ::MessageBox(NULL, CString(err.what()),
+                     L"Возникло исключение при анализе командной строки", MB_ICONERROR | MB_OK);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -480,6 +408,13 @@ namespace
 void CTrendMonitorDlg::reloadChannelsList()
 {
     // Перезаполняем нашу таблицу
+
+    m_bUpdatingTable = true;
+    // TODO при внедрении автосеттеров переделать
+    BOOST_SCOPE_EXIT(&m_bUpdatingTable)
+    {
+        m_bUpdatingTable = false;
+    } BOOST_SCOPE_EXIT_END;
 
     // получаем сервис с данными
     ITrendMonitoring* monitoingService = get_monitoing_service();
@@ -700,6 +635,28 @@ void CTrendMonitorDlg::OnNMCustomdrawListMonitoringChannels(NMHDR *pNMHDR, LRESU
 }
 
 //----------------------------------------------------------------------------//
+void CTrendMonitorDlg::OnLvnItemchangedListMonitoringChannels(NMHDR* pNMHDR,
+                                                              LRESULT* pResult)
+{
+    LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
+
+    if (!m_bUpdatingTable && pNMLV->uChanged & LVIF_STATE)
+    {
+        switch (pNMLV->uNewState & LVIS_STATEIMAGEMASK)
+        {
+        case INDEXTOSTATEIMAGEMASK(2):
+            get_monitoing_service()->changeMonitoingChannelNotify(pNMLV->iItem, true);
+            break;
+        case INDEXTOSTATEIMAGEMASK(1):
+            get_monitoing_service()->changeMonitoingChannelNotify(pNMLV->iItem, false);
+            break;
+        }
+    }
+
+    *pResult = 0;
+}
+
+//----------------------------------------------------------------------------//
 void CTrendMonitorDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
     switch (nID)
@@ -728,26 +685,175 @@ void CTrendMonitorDlg::OnWindowPosChanging(WINDOWPOS* lpwndpos)
     __super::OnWindowPosChanging(lpwndpos);
 }
 
-
-void CTrendMonitorDlg::OnLvnItemchangedListMonitoringChannels(NMHDR *pNMHDR, LRESULT *pResult)
+//----------------------------------------------------------------------------//
+void CTrendMonitorDlg::OnPaint()
 {
-    LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
-
-    if (pNMLV->uChanged & LVIF_STATE)
+    if (IsIconic())
     {
-        bool bNotify = false;
+        CPaintDC dc(this); // device context for painting
 
-        switch (pNMLV->uNewState & LVIS_STATEIMAGEMASK)
+        SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
+
+        // Center icon in client rectangle
+        int cxIcon = GetSystemMetrics(SM_CXICON);
+        int cyIcon = GetSystemMetrics(SM_CYICON);
+        CRect rect;
+        GetClientRect(&rect);
+        int x = (rect.Width() - cxIcon + 1) / 2;
+        int y = (rect.Height() - cyIcon + 1) / 2;
+
+        // Draw the icon
+        dc.DrawIcon(x, y, m_hIcon);
+    }
+    else
+    {
+        CDialogEx::OnPaint();
+    }
+}
+
+//----------------------------------------------------------------------------//
+HCURSOR CTrendMonitorDlg::OnQueryDragIcon()
+{
+    return static_cast<HCURSOR>(m_hIcon);
+}
+
+//----------------------------------------------------------------------------//
+void CTrendMonitorDlg::OnOK()
+{
+    // не даем закрыться по Enter`у
+}
+
+//----------------------------------------------------------------------------//
+void CTrendMonitorDlg::OnClose()
+{
+    // отписываемся от событий
+    EventRecipientImpl::unsubscribe(onMonitoringListChanged);
+    EventRecipientImpl::unsubscribe(onNewLogMessageEvent);
+    EventRecipientImpl::unsubscribe(onReportPreparedEvent);
+
+    m_trayHelper.removeTrayIcon();
+
+    __super::OnClose();
+}
+
+//----------------------------------------------------------------------------//
+void CTrendMonitorDlg::OnBnClickedMfcbuttonAdd()
+{
+    selectChannelsListItem(get_monitoing_service()->addMonitoingChannel());
+}
+
+//----------------------------------------------------------------------------//
+void CTrendMonitorDlg::OnBnClickedMfcbuttonRemove()
+{
+    POSITION pos = m_monitorChannelsList.GetFirstSelectedItemPosition();
+    if (pos != NULL)
+    {
+        int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
+
+        selectChannelsListItem(get_monitoing_service()->removeMonitoringChannelByIndex(nItem));
+    }
+}
+
+//----------------------------------------------------------------------------//
+void CTrendMonitorDlg::OnBnClickedMfcbuttonMoveUp()
+{
+    POSITION pos = m_monitorChannelsList.GetFirstSelectedItemPosition();
+    if (pos != NULL)
+    {
+        int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
+
+        selectChannelsListItem(get_monitoing_service()->moveUpMonitoingChannelByIndex((size_t)nItem));
+    }
+}
+
+//----------------------------------------------------------------------------//
+void CTrendMonitorDlg::OnBnClickedMfcbuttonMoveDown()
+{
+    POSITION pos = m_monitorChannelsList.GetFirstSelectedItemPosition();
+    if (pos != NULL)
+    {
+        int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
+        selectChannelsListItem(get_monitoing_service()->moveDownMonitoingChannelByIndex((size_t)nItem));
+    }
+}
+
+//----------------------------------------------------------------------------//
+void CTrendMonitorDlg::OnBnClickedMfcbuttonRefresh()
+{
+    get_monitoing_service()->updateDataForAllChannels();
+}
+
+//----------------------------------------------------------------------------//
+void CTrendMonitorDlg::OnBnClickedMfcbuttonShowTrends()
+{
+    auto monitoringService = get_monitoing_service();
+
+    size_t countChannels = monitoringService->getNumberOfMonitoringChannels();
+    if (countChannels == 0)
+    {
+        MessageBox(L"", L"Нет выбранных каналов!", MB_OK);
+        return;
+    }
+
+    // получаем полный пусть к программе с трендами
+    CString trendsFullPath;
+    {
+        CString zetInstallFolder = get_service<DirsService>().getZetInstallDir();
+        if (zetInstallFolder.IsEmpty())
         {
-        case INDEXTOSTATEIMAGEMASK(2):
-            get_monitoing_service()->changeMonitoingChannelNotify(pNMLV->iItem, false);
-            break;
-        case INDEXTOSTATEIMAGEMASK(1):
-            get_monitoing_service()->changeMonitoingChannelNotify(pNMLV->iItem, false);
-            break;
+            MessageBox(L"", L"Директория установки зетлаба не найдена.", MB_OK);
+            return;
+        }
+
+        trendsFullPath = std::move(zetInstallFolder + L"ZETTrends.exe");
+        if (!std::filesystem::is_regular_file(trendsFullPath.GetString()))
+        {
+            MessageBox(L"", L"Программа просмотра трендов не найдена!", MB_OK);
+            return;
         }
     }
 
-    // TODO: Add your control notification handler code here
-    *pResult = 0;
+    // список каналдов через ;
+    CString channels;
+    // максимальный временной промежуток мониторинга
+    CTimeSpan maxTimeSpan = 0;
+    for (size_t ind = 0; ind < countChannels; ++ind)
+    {
+        const MonitoringChannelData& channelData = monitoringService->getMonitoringChannelData(ind);
+        channels.AppendFormat(L"%s;", channelData.channelName.GetString());
+        maxTimeSpan = std::max<CTimeSpan>(maxTimeSpan, monitoring_interval_to_timespan(channelData.monitoringInterval));
+    }
+
+    // начальный и конечный интервал
+    CTime endTime = CTime::GetCurrentTime();
+    CTime startTime = endTime - maxTimeSpan;
+
+    // дополнительный отступ чтобы было удобнее смотреть
+    CTimeSpan extraTime(std::max<LONGLONG>(maxTimeSpan.GetDays() / 10, 1), 0, 0, 0);
+    endTime += extraTime;
+    startTime -= extraTime;
+
+    // запускаем тренды
+    CString commandLine;
+    commandLine.Format(L" -ip 127.0.0.1 -start %s -end %s -channels \"%s\" -autoscale",
+                       startTime.Format(L"%d.%m.%Y").GetString(),
+                       endTime  .Format(L"%d.%m.%Y").GetString(),
+                       channels.GetString());
+
+    STARTUPINFO cif = { sizeof(STARTUPINFO) };
+    PROCESS_INFORMATION m_ProcInfo = { 0 };
+    if (FALSE != CreateProcess(trendsFullPath.GetBuffer(),  // имя исполняемого модуля
+                               commandLine.GetBuffer(),	    // Командная строка
+                               NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
+                               NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
+                               0,                           // Флаг наследования текущего процесса
+                               NULL,                        // Флаги способов создания процесса
+                               NULL,                        // Указатель на блок среды
+                               NULL,                        // Текущий диск или каталог
+                               &cif,                        // Указатель на структуру STARTUPINFO
+                               &m_ProcInfo))                // Указатель на структуру PROCESS_INFORMATION)
+    {	// идентификатор потока не нужен
+        CloseHandle(m_ProcInfo.hThread);
+        CloseHandle(m_ProcInfo.hProcess);
+    }
 }

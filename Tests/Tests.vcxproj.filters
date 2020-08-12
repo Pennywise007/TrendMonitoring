@@ -9,6 +9,9 @@
       <Filter>TestSources</Filter>
     </ClCompile>
     <ClCompile Include="testInit.cpp" />
+    <ClCompile Include="TestTrendMonitoring.cpp">
+      <Filter>TestSources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

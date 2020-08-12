@@ -35,7 +35,7 @@ protected:
     HICON m_hIcon;
 
     DECLARE_MESSAGE_MAP()
-
+    // оконные сообщения
     virtual BOOL OnInitDialog();
     virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
     virtual void OnOK();
@@ -50,13 +50,17 @@ protected:
     afx_msg void OnBnClickedMfcbuttonMoveUp();
     afx_msg void OnBnClickedMfcbuttonMoveDown();
     afx_msg void OnBnClickedMfcbuttonRefresh();
+    // показ трендов по каналам
+    afx_msg void OnBnClickedMfcbuttonShowTrends();
+    // сообщения от списка каналов
     afx_msg void OnNMCustomdrawListMonitoringChannels(NMHDR* pNMHDR, LRESULT* pResult);
+    afx_msg void OnLvnItemchangedListMonitoringChannels(NMHDR *pNMHDR, LRESULT *pResult);
 
 private:
-    // обработать параметры командной строки
-    void processCommandLine();
     // инициализация контролов
     void initControls();
+    // обработать параметры командной строки
+    void processCommandLine();
     // перезагрузка списка каналов из сервиса
     void reloadChannelsList();
     // выделить элемент в списке каналов по индексу
@@ -83,7 +87,8 @@ private:
 private:
     // фдаг необходимости спрятать диалог
     bool m_bHiddenDialog = false;
-
+    // флаг обновления таблицы
+    bool m_bUpdatingTable = false;
 public:
     // Колонки таблицы с каналами для мониторинга
     enum TableColumns
@@ -111,10 +116,9 @@ public:
     };
 
     // Индексы вкладок
-    enum TabInices
+    enum TabIndiсes
     {
-        eTabLog = 0,    // вкладка с логом событий
+        eTabLog,        // вкладка с логом событий
         eTabReport      // таб с отчетом
     };
-    afx_msg void OnLvnItemchangedListMonitoringChannels(NMHDR *pNMHDR, LRESULT *pResult);
 };

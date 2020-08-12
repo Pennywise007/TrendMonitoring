@@ -14,6 +14,7 @@
 #define IDR_MENU1                       143
 #define IDR_MENU_TRAY                   143
 #define IDD_BOT_SETTINGS_DLG            144
+#define IDB_PNG_SHOW_TRENDS             146
 #define IDC_LIST_MONITORING_CHANNELS    1000
 #define IDC_COMBO1                      1001
 #define IDC_MFCBUTTON_ADD               1003
@@ -21,6 +22,7 @@
 #define IDC_MFCBUTTON_MOVE_UP           1005
 #define IDC_MFCBUTTON_MOVE_DOWN         1006
 #define IDC_MFCBUTTON_REFRESH           1007
+#define IDC_MFCBUTTON_SHOW_TRENDS       1008
 #define IDC_LIST_LOG                    1010
 #define IDC_STATIC_LOG                  1011
 #define IDC_BUTTON_LOG_CLEAR            1012
@@ -47,9 +49,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        146
+#define _APS_NEXT_RESOURCE_VALUE        147
 #define _APS_NEXT_COMMAND_VALUE         32778
-#define _APS_NEXT_CONTROL_VALUE         1030
+#define _APS_NEXT_CONTROL_VALUE         1031
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

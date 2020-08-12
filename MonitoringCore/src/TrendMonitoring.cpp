@@ -3,19 +3,16 @@
 #include <ctime>
 
 #include <myInclude/ChannelDataCorrector/ChannelDataGetter.h>
-#include <ZetDirs.h>
-
+#include <DirsService.h>
 #include "Serialization/SerializatorFabric.h"
 #include "TrendMonitoring.h"
+#include "Utils.h"
 
 // интервал обновления данных
 const std::chrono::minutes kUpdateDataInterval(5);
 
 // время в которое будет отсылаться отчёт каждый день часы + минуты (20:00)
 const std::pair<int, int> kReportDataTime = std::make_pair(20, 00);
-
-// имя конфигурационного файла с настройками
-const wchar_t kConfigFileName[] = L"AppConfig.xml";
 
 ////////////////////////////////////////////////////////////////////////////////
 ITrendMonitoring* get_monitoing_service()
@@ -88,7 +85,7 @@ std::set<CString> TrendMonitoring::getNamesOfAllChannels()
 {
     // получаем все данные по каналам
     std::list<std::pair<CString, CString>> channelsWithConversion;
-    CChannelDataGetter::FillChannelList(get_service<ZetDirsService>().getCompressedDir(), channelsWithConversion);
+    CChannelDataGetter::FillChannelList(get_service<DirsService>().getZetSignalsDir(), channelsWithConversion);
 
     // заполняем сортированный список каналов
     std::set<CString> allChannelsNames;
@@ -815,7 +812,7 @@ void TrendMonitoring::loadConfiguration()
 //----------------------------------------------------------------------------//
 CString TrendMonitoring::getConfigurationXMLFilePath()
 {
-    return get_service<ZetDirsService>().getCurrentDir() + kConfigFileName;
+    return get_service<DirsService>().getExeDir() + kConfigFileName;
 }
 
 //----------------------------------------------------------------------------//

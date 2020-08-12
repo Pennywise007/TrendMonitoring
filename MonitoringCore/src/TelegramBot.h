@@ -48,7 +48,7 @@ private:
     void fillCommandHandlers(std::map<std::string, CommandFunction>& commandsList,
                              CommandFunction& onUnknownCommand,
                              CommandFunction& onNonCommandMessage);
-    // пришло сообщение от пользователя не являющееся зарегистрированной командой
+    // отработка не зарегистрированного сообщения/команды
     void onNonCommandMessage(const MessagePtr commandMessage);
 
     // Перечень команд
@@ -58,8 +58,8 @@ private:
         eInfo,          // Запрос информации бота
         eReport,        // Запрос отчёта за период
         eRestart,       // перезапуск мониторинга
-        eAllertionsOn,  // включить оповещения о событиях канала
-        eAllertionsOff, // выключить оповещения о событиях канала
+        eAllertionsOn,  // оповещения о событиях канала включить
+        eAllertionsOff, // оповещения о событиях канала выключить
         // Последняя команда
         eLastCommand
     };
@@ -73,6 +73,8 @@ private:
     void onCommandReport(const MessagePtr commandMessage);
     // обработка команды /restart
     void onCommandRestart(const MessagePtr commandMessage);
+    // обработка команды /allert, bEnable - true если ключаем, false если выключаем
+    void onCommandAllert(const MessagePtr commandMessage, bool bEnable);
 
 // парсинг колбэков
 private:
@@ -97,6 +99,9 @@ private:
     // отработка колбэка переправки сообщения остальным пользователям
     void executeCallbackResend(const TgBot::CallbackQuery::Ptr query,
                                const CallBackParams& params);
+    // отработка колбэка включения/выключения оповещений
+    void executeCallbackAllertion(const TgBot::CallbackQuery::Ptr query,
+                                  const CallBackParams& params);
 
 private:
     // поток работающего телеграма
@@ -184,7 +189,9 @@ private:
     // Описание команды телеграм бота
     struct CommandDescription
     {
-        CommandDescription() = default;
+        CommandDescription(const CString& text, const CString& descr)
+            : m_text(text) , m_description(descr)
+        {}
 
         // тект который надо отправить для выполнения команды
         CString m_text;
@@ -195,7 +202,7 @@ private:
     };
 
     // перечень команд бота
-    //   название команды  описание
+    //          команда            |  описание команды
     std::map<CTelegramBot::Command, CommandDescription> m_botCommands;
 };
 

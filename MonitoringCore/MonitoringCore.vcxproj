@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -112,6 +112,9 @@
       <Command>echo copy "$(MyDLLDir)TelegramDLL\TelegramDLLD.dll" "$(OutputPath)"
 xcopy /y /d "$(MyDLLDir)TelegramDLL\TelegramDLLD.dll" "$(OutputPath)"
 
+echo copy "$(MyDLLDir)TelegramDLL\TelegramDLLD.pdb" "$(OutputPath)"
+xcopy /y /d "$(MyDLLDir)TelegramDLL\TelegramDLLD.pdb" "$(OutputPath)"
+
 echo copy "$(MyDLLDir)LoadFromInetDll\OpenSSL\libeay32.dll" "$(OutputPath)"
 xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\libeay32.dll" "$(OutputPath)"
 
@@ -172,6 +175,9 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
       <Command>echo copy "$(MyDLLDir)TelegramDLL\TelegramDLL.dll" "$(OutputPath)"
 xcopy /y /d "$(MyDLLDir)TelegramDLL\TelegramDLL.dll" "$(OutputPath)"
 
+echo copy "$(MyDLLDir)TelegramDLL\TelegramDLL.pdb" "$(OutputPath)"
+xcopy /y /d "$(MyDLLDir)TelegramDLL\TelegramDLL.pdb" "$(OutputPath)"
+
 echo copy "$(MyDLLDir)LoadFromInetDll\OpenSSL\libeay32.dll" "$(OutputPath)"
 xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\libeay32.dll" "$(OutputPath)"
 
@@ -215,11 +221,11 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     <ClInclude Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.h" />
     <ClInclude Include="$(CommonHeadersDir)Singleton.h" />
     <ClInclude Include="$(CommonHeadersDir)TickService.h" />
-    <ClInclude Include="$(CommonHeadersDir)ZetDirs.h" />
     <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelDataGetter.h" />
     <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelsHelpHeader.h" />
     <ClInclude Include="$(UtilsDir)pugixml-1.4\src\pugiconfig.hpp" />
     <ClInclude Include="$(UtilsDir)pugixml-1.4\src\pugixml.hpp" />
+    <ClInclude Include="..\..\..\..\..\UtilsProgrammerDir\CommonFiles\DirsService.h" />
     <ClInclude Include="ITrendMonitoring.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="src\ApplicationConfiguration.h" />
@@ -229,6 +235,7 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     <ClInclude Include="src\ITelegramUsersList.h" />
     <ClInclude Include="src\TelegramBot.h" />
     <ClInclude Include="src\TrendMonitoring.h" />
+    <ClInclude Include="src\Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(CommonHeadersDir)Serialization\SerializatorFabric.cpp">

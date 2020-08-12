@@ -1,8 +1,8 @@
+// Проверка COM объектов, их времени жизни и доступности
+
 #include "pch.h"
 
 #include <COM.h>
-
-// проверка COM классов
 
 DECLARE_COM_INTERFACE(ITest, "A740AEFD-B160-447C-8771-43E29D8310DD")
 {

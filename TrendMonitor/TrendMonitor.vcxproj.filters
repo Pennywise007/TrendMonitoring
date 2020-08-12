@@ -158,5 +158,8 @@
     <Image Include="res\refresh.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="res\show_trends.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

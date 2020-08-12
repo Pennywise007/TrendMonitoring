@@ -82,14 +82,14 @@ struct MonitoringChannelData
         //eWaitingForData,           // ждем загрузки данных
         eDataLoaded,                // данные загружены успешно
         eLoadingError,              // ошибка при загрузке данных
-                                    //eErrorOnUpdatingData,       // возникла ошибка при обновлении данных
+        //eErrorOnUpdatingData,       // возникла ошибка при обновлении данных
 
-                                    // оповещения
-                                    eReportedFallenOff,         // произошло оповещение пользователей об отваливании датчика
-                                    eReportedExcessOfValue,     // произошло оповещение пользователей о превышении допустимого значения
-                                    eReportedALotOfEmptyData,   // произошло оповещение пользователей о большом количестве пропусков
+        // оповещения
+        eReportedFallenOff,         // произошло оповещение пользователей об отваливании датчика
+        eReportedExcessOfValue,     // произошло оповещение пользователей о превышении допустимого значения
+        eReportedALotOfEmptyData,   // произошло оповещение пользователей о большом количестве пропусков
 
-                                    eLast
+        eLast
     };
     std::bitset<ChannelState::eLast> channelState;
 };
@@ -133,6 +133,7 @@ interface ITrendMonitoring
 {
     virtual ~ITrendMonitoring() = default;
 
+#pragma region Общие функции над списком каналов
     /// <summary>Получить список имём всех доступным для мониторинга каналов.</summary>
     virtual std::set<CString> getNamesOfAllChannels() = 0;
     /// <summary>Получить список имен каналов по которым происходит мониторинг.</summary>
@@ -147,6 +148,7 @@ interface ITrendMonitoring
     /// <param name="channelIndex">Индекс в списке каналов.</param>
     /// <returns>Данные для канала.</returns>
     virtual const MonitoringChannelData& getMonitoringChannelData(const size_t channelIndex) = 0;
+#pragma endregion Общие функции над списком каналов
 
 #pragma region Управление списком каналов
     /// <summary>Добавить канал для мониторинга.</summary>

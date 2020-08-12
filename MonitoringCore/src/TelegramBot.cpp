@@ -1,11 +1,14 @@
 #include "pch.h"
 
+#include <filesystem>
 #include <regex>
 
 #include <boost/spirit/home/x3.hpp>
 #include <boost/fusion/adapted/std_pair.hpp>
 
-#include "Messages.h"
+#include <Messages.h>
+#include <DirsService.h>
+
 #include "TelegramBot.h"
 
 // Текст который надо отправить боту для авторизации
@@ -30,12 +33,23 @@ namespace restartCallBack
 };
 
 // параметры для колбэка пересылки сообщенияы
-// /resend errorId={'GUID'}
+// kKeyWord kParamid={'GUID'}
 namespace resendCallBack
 {
     const std::string kKeyWord          = R"(/resend)";     // ключевое слово
     // параметры
     const std::string kParamid          = "errorId";        // идентификатор ошибки в списке ошибок(m_monitoringErrors)
+};
+
+// параметры для колбэка пересылки сообщенияы
+// kKeyWord kParamEnable={'true'} kParamChan={'chan1'}
+namespace allertCallBack
+{
+    const std::string kKeyWord          = R"(/allert)";     // ключевое слово
+    // параметры
+    const std::string kParamEnable      = "enable";         // состояние включаемости/выключаемости
+    const std::string kParamChan        = "chan";           // канал по которому нужно настроить нотификацию
+    const std::string kValueAllChannels = "allChannels";    // значение которое соответствует выключению оповещений по всем каналам
 };
 
 // общие функции
@@ -312,18 +326,17 @@ void CTelegramBot::fillCommandHandlers(std::map<std::string, CommandFunction>& c
                                  });
     };
 
-    static_assert(Command::eLastCommand == 6,
-                  "Количество командл изменилось, надо добавить обработчик!");
-    // TODO C++20 сделать общую шаблонную лямбду и передавать в нее функцию
+    static_assert(Command::eLastCommand == (Command)6,
+                  "Количество команд изменилось, надо добавить обработчик!");
 
     // !все команды будем выполнять в основном потоке чтобы везде не добавлять синхронизацию
     addCommand(Command::eInfo,    L"info",    L"Перечень команд бота.", kDefaultAvailability);
     addCommand(Command::eReport,  L"report",  L"Сформировать отчёт.",   kDefaultAvailability);
     addCommand(Command::eRestart, L"restart", L"Перезапустить систему мониторинга.",
                { ITelegramUsersList::eAdmin });
-    addCommand(Command::eAllertionsOn,  L"allertionOn",  L"Перезапустить систему мониторинга.",
+    addCommand(Command::eAllertionsOn,  L"allertionOn",  L"Включить оповещения о событиях.",
                { ITelegramUsersList::eAdmin });
-    addCommand(Command::eAllertionsOff, L"allertionOff", L"Перезапустить систему мониторинга.",
+    addCommand(Command::eAllertionsOff, L"allertionOff", L"Выключить оповещения о событиях.",
                { ITelegramUsersList::eAdmin });
 
     // команда выполняемая при получении любого сообщения
@@ -430,6 +443,10 @@ void CTelegramBot::onCommandMessage(const Command command, const MessagePtr mess
                 case Command::eRestart:
                     onCommandRestart(message);
                     break;
+                case Command::eAllertionsOn:
+                case Command::eAllertionsOff:
+                    onCommandAllert(message, command == Command::eAllertionsOn);
+                    break;
                 }
             }
             else if (!messageToUser.IsEmpty())
@@ -471,7 +488,7 @@ void CTelegramBot::onCommandReport(const MessagePtr commandMessage)
     auto addButton = [&keyboard](const CString& text, const ReportType reportType)
     {
         // колбэк на запрос отчёта должен быть вида
-        // kCallbackReport reporType={'ReportType'}
+        // kKeyWord kParamType={'ReportType'}
         auto button =
             createKeyboardButton(
                 text,
@@ -493,9 +510,84 @@ void CTelegramBot::onCommandReport(const MessagePtr commandMessage)
 //----------------------------------------------------------------------------//
 void CTelegramBot::onCommandRestart(const MessagePtr commandMessage)
 {
-    // перезапуск системы делаем через батник так как надо много всего сделать для рахных систем
+    // перезапуск системы делаем через батник так как надо много всего сделать для разных систем
+    CString batFullPath = get_service<DirsService>().getExeDir() + L"restart.bat";
 
+    // сообщение пользователю
+    CString messageToUser;
+    if (std::filesystem::is_regular_file(batFullPath.GetString()))
+    {
+        m_telegramThread->sendMessage(commandMessage->chat->id, L"Перезапуск системы осуществляется.");
 
+        // запускаем батник
+        STARTUPINFO cif = { sizeof(STARTUPINFO) };
+        PROCESS_INFORMATION m_ProcInfo = { 0 };
+        if (FALSE != CreateProcess(batFullPath.GetBuffer(),     // имя исполняемого модуля
+                                   nullptr,	                    // Командная строка
+                                   NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
+                                   NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
+                                   0,                           // Флаг наследования текущего процесса
+                                   NULL,                        // Флаги способов создания процесса
+                                   NULL,                        // Указатель на блок среды
+                                   NULL,                        // Текущий диск или каталог
+                                   &cif,                        // Указатель на структуру STARTUPINFO
+                                   &m_ProcInfo))                // Указатель на структуру PROCESS_INFORMATION)
+        {	// идентификатор потока не нужен
+            CloseHandle(m_ProcInfo.hThread);
+            CloseHandle(m_ProcInfo.hProcess);
+        }
+    }
+    else
+        m_telegramThread->sendMessage(commandMessage->chat->id, L"Файл для перезапуска не найден.");
+}
+
+void CTelegramBot::onCommandAllert(const MessagePtr commandMessage, bool bEnable)
+{
+    // получаем список каналов
+    std::list<CString> monitoringChannels = get_monitoing_service()->getNamesOfMonitoringChannels();
+    if (monitoringChannels.empty())
+    {
+        m_telegramThread->sendMessage(commandMessage->chat->id, L"Каналы для мониторинга не выбраны");
+        return;
+    }
+
+    // показываем пользователю кнопки в выбором канала по которому нужен отчёт
+    TgBot::InlineKeyboardMarkup::Ptr keyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
+
+    // колбэк который должен быть у каждой кнопки
+    KeyboardCallback defaultCallBack(allertCallBack::kKeyWord);
+    defaultCallBack.addCallbackParam(allertCallBack::kParamEnable, CString(bEnable ? L"true" : L"false"));
+
+    // создание кнопки с колбэком, text передается как юникод чтобы потом преобразовать в UTF-8, иначе телега не умеет
+    auto addButtonWithChannel = [&keyboard, &defaultCallBack](const CString& channelName)
+    {
+        // колбэк на запрос отчёта должен быть вида
+        // kKeyWord kParamEnable={'true'} kParamChan={'chan1'}
+        auto button =
+            createKeyboardButton(
+                channelName,
+                KeyboardCallback(defaultCallBack).
+                addCallbackParam(allertCallBack::kParamChan, channelName));
+
+        keyboard->inlineKeyboard.push_back({ button });
+    };
+
+    // добавляем кнопки для каждого канала
+    for (const auto& channel : monitoringChannels)
+    {
+        addButtonWithChannel(channel);
+    }
+
+    // добавляем кнопку со всеми каналами
+    if (monitoringChannels.size() > 1)
+        keyboard->inlineKeyboard.push_back({
+            createKeyboardButton(L"Все каналы",
+                                 KeyboardCallback(defaultCallBack).
+                                    addCallbackParam(allertCallBack::kParamChan, allertCallBack::kValueAllChannels)) });
+
+    CString text;
+    text.Format(L"Выберите канал для %s оповещений.", bEnable ? L"Включения" : L"Выключения");
+    m_telegramThread->sendMessage(commandMessage->chat->id, text, false, 0, keyboard);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -536,16 +628,19 @@ void CTelegramBot::onCallbackQuery(const TgBot::CallbackQuery::Ptr query)
     try
     {
         // парсим колбэк и проверяем каких параметров не хватает
-        CallBackParams reportParams;
+        CallBackParams callBackParams;
         if (boost::spirit::x3::parse(query->data.begin(), query->data.end(),
-                                     reportCallBack::kKeyWord >> CallbackParser::parser, reportParams))
-            executeCallbackReport(query, reportParams);
+                                     reportCallBack::kKeyWord >> CallbackParser::parser, callBackParams))
+            executeCallbackReport(query, callBackParams);
         else if (boost::spirit::x3::parse(query->data.begin(), query->data.end(),
-                                          restartCallBack::kKeyWord >> CallbackParser::parser, reportParams))
-            executeCallbackRestart(query, reportParams);
+                                          restartCallBack::kKeyWord >> CallbackParser::parser, callBackParams))
+            executeCallbackRestart(query, callBackParams);
         else if (boost::spirit::x3::parse(query->data.begin(), query->data.end(),
-                                          resendCallBack::kKeyWord >> CallbackParser::parser, reportParams))
-            executeCallbackResend(query, reportParams);
+                                          resendCallBack::kKeyWord >> CallbackParser::parser, callBackParams))
+            executeCallbackResend(query, callBackParams);
+        else if (boost::spirit::x3::parse(query->data.begin(), query->data.end(),
+                                          allertCallBack::kKeyWord >> CallbackParser::parser, callBackParams))
+            executeCallbackAllertion(query, callBackParams);
         else
             throw std::runtime_error("Ошибка разбора команды");
     }
@@ -680,7 +775,7 @@ void CTelegramBot::executeCallbackReport(const TgBot::CallbackQuery::Ptr query,
             if (channelIt == reportParams.end())
                 throw std::runtime_error("Не удалось распознать имя канала, попробуйте повторить попытку");
 
-            channelsForTask.push_back(std::move(getUNICODEString(channelIt->second)));
+            channelsForTask.emplace_back(getUNICODEString(channelIt->second));
             break;
         }
 
@@ -717,10 +812,10 @@ void CTelegramBot::executeCallbackRestart(const TgBot::CallbackQuery::Ptr query,
         assert(!"Пользователь запросил перезапуск без разрешения на выполнение такого действия.");
         m_telegramThread->sendMessage(query->message->chat->id,
                                       L"У вас нет разрешения на перезапуск системы, обратитесь к администратору!");
-        return;
     }
-    // имитируем что пользователь выполнил запрос рестарта
-    onCommandRestart(query->message);
+    else
+        // имитируем что пользователь выполнил запрос рестарта
+        onCommandRestart(query->message);
 }
 
 //----------------------------------------------------------------------------//
@@ -764,6 +859,65 @@ void CTelegramBot::executeCallbackResend(const TgBot::CallbackQuery::Ptr query,
     }
 
     errorIt->bResendToOrdinaryUsers = true;
+}
+
+//----------------------------------------------------------------------------//
+void CTelegramBot::executeCallbackAllertion(const TgBot::CallbackQuery::Ptr query,
+                                            const CallBackParams& params)
+{
+    // Формат колбэка kKeyWord kParamEnable={'true'} kParamChan={'chan1'}
+    auto enableIt = params.find(allertCallBack::kParamEnable);
+    auto channelIt = params.find(allertCallBack::kParamChan);
+
+    if (enableIt == params.end() || channelIt == params.end())
+        throw std::runtime_error("Нет необходимого параметра у колбэка управления оповещениями.");
+    // включаемость/выключаемость оповещений
+    bool bEnableAllertion = enableIt->second == "true";
+    // сервис мониторинга
+    auto monitoringService = get_monitoing_service();
+    // сообщение в ответ пользователю
+    CString messageText;
+    if (channelIt->second == allertCallBack::kValueAllChannels)
+    {
+        // настраивают оповещения для всех каналов
+        size_t channelsCount = monitoringService->getNumberOfMonitoringChannels();
+        if (channelsCount == 0)
+            throw std::runtime_error("Нет выбранных для мониторинга каналов, обратитесь к администратору");
+
+        for (size_t channelInd = 0; channelInd < channelsCount; ++channelInd)
+        {
+            monitoringService->changeMonitoingChannelNotify(channelInd, bEnableAllertion);
+        }
+
+        messageText.Format(L"Оповещения для всех каналов %s", bEnableAllertion ? L"включены" : L"выключены");
+    }
+    else
+    {
+        // получаем список каналов
+        std::list<CString> monitoringChannels = monitoringService->getNamesOfMonitoringChannels();
+        if (monitoringChannels.empty())
+            throw std::runtime_error("Нет выбранных для мониторинга каналов, обратитесь к администратору");
+
+        // имя канала из колбэка
+        CString callBackChannel = getUNICODEString(channelIt->second);
+        // считаем что в списке мониторинга каналы по именам не повторяются иначе это глупо
+        auto channelIt = std::find_if(monitoringChannels.begin(), monitoringChannels.end(),
+                                      [&callBackChannel](const auto& channelName)
+                                      {
+                                          return callBackChannel == channelName;
+                                      });
+
+        if (channelIt == monitoringChannels.end())
+            throw std::runtime_error("В данный момент в списке мониторинга нет выбранного вами канала.");
+
+        monitoringService->changeMonitoingChannelNotify(std::distance(monitoringChannels.begin(), channelIt),
+                                                        bEnableAllertion);
+
+        messageText.Format(L"Оповещения для канала %s %s", callBackChannel, bEnableAllertion ? L"включены" : L"выключены");
+    }
+
+    assert(!messageText.IsEmpty() && "Сообщение пользователю пустое.");
+    m_telegramThread->sendMessage(query->message->chat->id, messageText);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -831,14 +985,12 @@ addCommand(const CTelegramBot::Command command,
            const CString& commandText, const CString& descr,
            const std::vector<AvailableStatus>& availabilityStatuses)
 {
-    auto commandDescrIt = m_botCommands.try_emplace(command);
-    assert(commandDescrIt.second);
+    auto commandDescrIt = m_botCommands.try_emplace(command, commandText, descr);
+    assert(commandDescrIt.second && "Команда уже добавлена.");
 
     CommandDescription& commandDescr = commandDescrIt.first->second;
-    commandDescr.m_text = commandText;
-    commandDescr.m_description = descr;
     for (auto& status : availabilityStatuses)
-        commandDescrIt.first->second.m_availabilityForUsers[status] = true;
+        commandDescr.m_availabilityForUsers[status] = true;
 }
 
 //----------------------------------------------------------------------------//

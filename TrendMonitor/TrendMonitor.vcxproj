@@ -250,6 +250,7 @@
     <Image Include="res\move_up.png" />
     <Image Include="res\refresh.png" />
     <Image Include="res\remove.png" />
+    <Image Include="res\show_trends.png" />
     <Image Include="res\TrendMonitor.ico" />
   </ItemGroup>
   <ItemGroup>

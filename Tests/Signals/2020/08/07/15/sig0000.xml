@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<CommonSignalDescriptor version="1.0" date="07.08.2020" time="15:00:00">
+	<Signal name="Прогибометр №1" comment="" format="f2" frequency="1" minlevel="0.001" maxlevel="1000" sense="0" reference="0.001" shift="0" conversion="мм" channel="0" typeADC="-5" numberDSP="-5" id="{00000000-0000-0000-0000-000000017D6D}" type="2" groupname="Программа \zetformula" descriptor_file="D:\ZETLab\Данных\signals\2020\08\07\15\sig0001.xml" data_file="D:\ZETLab\Данных\signals\2020\08\07\15\sig0001.ana" />
+	<Signal name="Прогибометр №2" comment="" format="f2" frequency="100" minlevel="0.001" maxlevel="1000" sense="0" reference="0.001" shift="0" conversion="мВ" channel="1" typeADC="-5" numberDSP="-5" id="{00000000-0000-0000-0000-000001018D6D}" type="2" groupname="Программа \zetformula" descriptor_file="D:\ZETLab\Данных\signals\2020\08\07\15\sig0002.xml" data_file="D:\ZETLab\Данных\signals\2020\08\07\15\sig0002.ana" />
+	<Signal name="Прогибометр №3" comment="" format="f2" frequency="100" minlevel="0.001" maxlevel="1000" sense="0" reference="0.001" shift="0" conversion="мВ" channel="2" typeADC="-5" numberDSP="-5" id="{00000000-0000-0000-0000-000002011D6C}" type="2" groupname="Программа \zetformula" descriptor_file="D:\ZETLab\Данных\signals\2020\08\07\15\sig0003.xml" data_file="D:\ZETLab\Данных\signals\2020\08\07\15\sig0003.ana" />
+</CommonSignalDescriptor>

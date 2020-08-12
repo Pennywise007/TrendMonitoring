@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<SignalDescriptor version="1.0">
+	<Signal name="Прогибометр №2" comment="" format="f2" frequency="100" minlevel="0.001" maxlevel="1000" sense="0" reference="0.001" shift="0" conversion="мВ" channel="1" typeADC="-5" numberDSP="-5" id="{00000000-0000-0000-0000-000001018D6D}" type="2" groupname="Программа \zetformula" />
+</SignalDescriptor>
