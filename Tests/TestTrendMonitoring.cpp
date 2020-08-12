@@ -1,6 +1,7 @@
 ﻿// тестирование мониторнга данных, получение дautoанных и результатов
 
 #include "pch.h"
+#include "resource.h"
 
 #include <filesystem>
 #include <math.h>
@@ -12,6 +13,8 @@
 
 #include <DirsService.h>
 #include <Messages.h>
+
+#include "SamplesHelper.h"
 
 // Список защитых в данных каналов мониторинга
 const size_t kMonitoringChannelsCount = 3;
@@ -240,7 +243,7 @@ TEST(TrendMonitoring, TestMonitoringService)
     MonitoringHandlerTestClass().runTest();
 
     // проверяем результирующий файл конфигурации
-    int asd = 0;
-    asd++;
+    // проверяем что после сериализации созданный файл совпадает с сохраненным образцом
+    compareWithResourceFile(currentConfigPath.c_str(), IDR_TESTAPPCONFIG, L"TestAppConfig");
 }
 

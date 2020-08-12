@@ -41,10 +41,10 @@
     <ClInclude Include="src\ApplicationConfiguration.h">
       <Filter>Configuration</Filter>
     </ClInclude>
-    <ClInclude Include="$(UtilsDir)pugixml-1.4\src\pugiconfig.hpp">
+    <ClInclude Include="$(UtilsDir)pugixml-1.10\src\pugiconfig.hpp">
       <Filter>Configuration\Serialization\pugixml</Filter>
     </ClInclude>
-    <ClInclude Include="$(UtilsDir)pugixml-1.4\src\pugixml.hpp">
+    <ClInclude Include="$(UtilsDir)pugixml-1.10\src\pugixml.hpp">
       <Filter>Configuration\Serialization\pugixml</Filter>
     </ClInclude>
     <ClInclude Include="src\TrendMonitoring.h">
@@ -106,7 +106,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(UtilsDir)pugixml-1.4\src\pugixml.cpp">
+    <ClCompile Include="$(UtilsDir)pugixml-1.10\src\pugixml.cpp">
       <Filter>Configuration\Serialization\pugixml</Filter>
     </ClCompile>
     <ClCompile Include="src\TrendMonitoring.cpp">

@@ -99,7 +99,7 @@ struct MonitoringChannelData
 struct TelegramBotSettings
 {
     // состояние работы бота
-    bool bEnable = true;
+    bool bEnable = false;
     // токен бота
     CString sToken;
 };

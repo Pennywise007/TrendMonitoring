@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<ApplicationConfiguration>
+    <m_chanelParameters>
+        <ChannelParameters>
+            <channelName>Прогибометр №2</channelName>
+            <bNotify>false</bNotify>
+            <monitoringInterval>4</monitoringInterval>
+            <allarmingValue>-1,000000</allarmingValue>
+        </ChannelParameters>
+    </m_chanelParameters>
+    <TelegramParameters>
+        <bEnable>false</bEnable>
+        <sToken></sToken>
+    </TelegramParameters>
+</ApplicationConfiguration>

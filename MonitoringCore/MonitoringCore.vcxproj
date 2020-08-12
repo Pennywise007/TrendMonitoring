@@ -223,8 +223,8 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     <ClInclude Include="$(CommonHeadersDir)TickService.h" />
     <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelDataGetter.h" />
     <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelsHelpHeader.h" />
-    <ClInclude Include="$(UtilsDir)pugixml-1.4\src\pugiconfig.hpp" />
-    <ClInclude Include="$(UtilsDir)pugixml-1.4\src\pugixml.hpp" />
+    <ClInclude Include="$(UtilsDir)pugixml-1.10\src\pugiconfig.hpp" />
+    <ClInclude Include="$(UtilsDir)pugixml-1.10\src\pugixml.hpp" />
     <ClInclude Include="..\..\..\..\..\UtilsProgrammerDir\CommonFiles\DirsService.h" />
     <ClInclude Include="ITrendMonitoring.h" />
     <ClInclude Include="pch.h" />
@@ -268,7 +268,7 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="$(UtilsDir)pugixml-1.4\src\pugixml.cpp">
+    <ClCompile Include="$(UtilsDir)pugixml-1.10\src\pugixml.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>

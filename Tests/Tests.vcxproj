@@ -50,9 +50,11 @@
     <ClInclude Include="$(UtilsDir)CommonFiles\Serialization\SerializatorFabric.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SamplesHelper.h" />
     <ClInclude Include="TestSerialization.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="SamplesHelper.cpp" />
     <ClCompile Include="testInit.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -73,8 +75,13 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="Samples\TestXMLFileValid.xml" />
-    <Xml Include="Samples\TestXMLSerialization.xml" />
+    <Xml Include="Samples\TestAppConfig.xml" />
+    <Xml Include="Samples\TestXMLFileValid.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="Samples\TestXMLSerialization.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Tests.rc" />

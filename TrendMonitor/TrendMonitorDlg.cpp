@@ -377,7 +377,7 @@ namespace
     // функция конвертации данных мониторинга в строку
     CString monitoring_data_to_string(const CTime& value)
     {
-        return value.Format(L"%d.%m.%Y %H:%M:%S");
+        return value.Format(L"%d.%m.%Y %H:%M");
     }
 
     //------------------------------------------------------------------------//
@@ -450,7 +450,13 @@ void CTrendMonitorDlg::reloadChannelsList()
             // заполняем данные трендов если они были загружены
             const auto& trendData = channelData.trendData;
 
-            m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eLastDataExistTime, monitoring_data_to_string(trendData.lastDataExistTime));
+            // будем писать форматом 12.02.20 15:00 (5 ч)
+            CString lastExistData = monitoring_data_to_string(trendData.lastDataExistTime);
+            if (CTimeSpan noDataTime(CTime::GetCurrentTime() - trendData.lastDataExistTime);
+                noDataTime.GetTotalMinutes() > 10)
+                lastExistData.AppendFormat(L" (%s)", time_span_to_string(noDataTime).GetString());
+
+            m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eLastDataExistTime, std::move(lastExistData));
             m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eNoDataTime,      time_span_to_string(trendData.emptyDataTime));
             m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eStartValue,      monitoring_data_to_string(trendData.startValue));
 

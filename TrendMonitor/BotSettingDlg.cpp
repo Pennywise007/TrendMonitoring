@@ -60,14 +60,24 @@ void CBotSettingDlg::OnOK()
 
     if (!m_botSettings.sToken.IsEmpty() && bTokenChanged)
     {
-        if (MessageBox(L"Вы действительно хотите поменять токен бота?", L"Внимание", MB_OK | MB_ICONWARNING) != IDOK)
+        if (MessageBox(L"Вы действительно хотите поменять токен бота?", L"Внимание", MB_OKCANCEL | MB_ICONWARNING) != IDOK)
             return;
+    }
+
+    // если указали токен, но не включили бота спрашиваем мб включить
+    if (bTokenChanged && m_botSettings.sToken.IsEmpty() && (!bEnableChanged && !bEnableState))
+    {
+        if (MessageBox(L"Вы задали токен, но не включили бота. Включить?", L"Внимание", MB_OKCANCEL | MB_ICONQUESTION) == IDOK)
+        {
+            bEnableState = true;
+            bEnableChanged = true;
+        }
     }
 
     if (bTokenChanged)
         m_botSettings.sToken = std::move(token);
     if (bEnableChanged)
-        m_botSettings.bEnable = std::move(bEnableState);
+        m_botSettings.bEnable = bEnableState;
 
     // оповещаем только об изменениях
     if (bTokenChanged || bEnableChanged)
