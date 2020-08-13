@@ -9,11 +9,17 @@
       <Filter>TestSources</Filter>
     </ClCompile>
     <ClCompile Include="testInit.cpp" />
-    <ClCompile Include="TestTrendMonitoring.cpp">
-      <Filter>TestSources</Filter>
-    </ClCompile>
     <ClCompile Include="SamplesHelper.cpp">
       <Filter>Samples</Filter>
+    </ClCompile>
+    <ClCompile Include="TrendMonitoringHandler.cpp">
+      <Filter>TrendMonitoringHandler</Filter>
+    </ClCompile>
+    <ClCompile Include="TestTrendMonitoring.cpp">
+      <Filter>TestSources\TestTrendMonitoring</Filter>
+    </ClCompile>
+    <ClCompile Include="TestMonitoringTasks.cpp">
+      <Filter>TestSources\TestMonitoringTasks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -34,6 +40,15 @@
     <ClInclude Include="SamplesHelper.h">
       <Filter>Samples</Filter>
     </ClInclude>
+    <ClInclude Include="TrendMonitoringHandler.h">
+      <Filter>TrendMonitoringHandler</Filter>
+    </ClInclude>
+    <ClInclude Include="TestTrendMonitoring.h">
+      <Filter>TestSources\TestTrendMonitoring</Filter>
+    </ClInclude>
+    <ClInclude Include="TestMonitoringTasks.h">
+      <Filter>TestSources\TestMonitoringTasks</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="TestSources">
@@ -47,6 +62,18 @@
     </Filter>
     <Filter Include="Samples\Files">
       <UniqueIdentifier>{cfdac590-0676-4ec4-a9be-afd6ee5d5afc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TestHeaders">
+      <UniqueIdentifier>{649c2a58-ffae-4e32-a53c-d419ff10d2a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TrendMonitoringHandler">
+      <UniqueIdentifier>{4ae69fe3-f34c-4972-ad61-51f26b0d38ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TestSources\TestTrendMonitoring">
+      <UniqueIdentifier>{974968ef-e0f1-4b6a-a583-dc45f337cb60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TestSources\TestMonitoringTasks">
+      <UniqueIdentifier>{d8b086be-38f4-4fdf-a25e-b5175bc44574}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

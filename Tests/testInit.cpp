@@ -2,6 +2,8 @@
 
 #include <DirsService.h>
 
+#include "TrendMonitoringHandler.h"
+
 TEST(TestInit, InitializeTestInfo)
 {
     // включает выдачу в аутпут русского текста
@@ -12,4 +14,7 @@ TEST(TestInit, InitializeTestInfo)
     // задаем директорию с сигналами как тестовую директорию
     auto& zetDirsService = get_service<DirsService>();
     zetDirsService.setZetSignalsDir(zetDirsService.getExeDir() + LR"(Signals\)");
+
+    // «апускаем сервис мониторинга чтобы он делал свои гр€зные дела перед другими тестами
+    get_service<TrendMonitoringHandler>();
 }

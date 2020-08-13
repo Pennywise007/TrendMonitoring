@@ -51,7 +51,10 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SamplesHelper.h" />
+    <ClInclude Include="TestMonitoringTasks.h" />
     <ClInclude Include="TestSerialization.h" />
+    <ClInclude Include="TestTrendMonitoring.h" />
+    <ClInclude Include="TrendMonitoringHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SamplesHelper.cpp" />
@@ -63,8 +66,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TestCOM.cpp" />
+    <ClCompile Include="TestMonitoringTasks.cpp" />
     <ClCompile Include="TestTrendMonitoring.cpp" />
     <ClCompile Include="TestSerialization.cpp" />
+    <ClCompile Include="TrendMonitoringHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonitoringCore\MonitoringCore.vcxproj">
