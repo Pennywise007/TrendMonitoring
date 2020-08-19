@@ -21,6 +21,9 @@
     <ClCompile Include="TestMonitoringTasks.cpp">
       <Filter>TestSources\TestMonitoringTasks</Filter>
     </ClCompile>
+    <ClCompile Include="TestTelegramBot.cpp">
+      <Filter>TestSources\TestTelegramBot</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -49,6 +52,9 @@
     <ClInclude Include="TestMonitoringTasks.h">
       <Filter>TestSources\TestMonitoringTasks</Filter>
     </ClInclude>
+    <ClInclude Include="TestTelegramBot.h">
+      <Filter>TestSources\TestTelegramBot</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="TestSources">
@@ -74,6 +80,9 @@
     </Filter>
     <Filter Include="TestSources\TestMonitoringTasks">
       <UniqueIdentifier>{d8b086be-38f4-4fdf-a25e-b5175bc44574}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TestSources\TestTelegramBot">
+      <UniqueIdentifier>{114695d6-27e5-4bc0-a5c4-df740f8d6c1c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

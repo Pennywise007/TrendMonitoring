@@ -84,8 +84,9 @@ TrendMonitoring::TrendMonitoring()
 std::set<CString> TrendMonitoring::getNamesOfAllChannels()
 {
     // получаем все данные по каналам
-    std::list<std::pair<CString, CString>> channelsWithConversion;
-    CChannelDataGetter::FillChannelList(get_service<DirsService>().getZetSignalsDir(), channelsWithConversion);
+    std::map<CString, CString> channelsWithConversion;
+    // ищем именно в директории с сжатыми сигналами ибо там меньше вложенность и поиск идёт быстрее
+    CChannelDataGetter::FillChannelList(get_service<DirsService>().getZetCompressedDir(), channelsWithConversion);
 
     // заполняем сортированный список каналов
     std::set<CString> allChannelsNames;
@@ -655,8 +656,11 @@ void TrendMonitoring::onEvent(const EventId& code, float eventValue,
                     send_message_to_log(LogMessageData::MessageType::eError, reportText);
 
                     // оповещаем о возникшей ошибке
-                    auto errorMessage = std::make_shared<MessageTextData>();
-                    errorMessage->messageText = std::move(reportText);
+                    auto errorMessage = std::make_shared<MonitoringErrorEventData>();
+                    errorMessage->errorText = std::move(reportText);
+                    // генерим идентификатор ошибки
+                    if (!SUCCEEDED(CoCreateGuid(&errorMessage->errorGUID)))
+                        assert(!"Не удалось создать гуид!");
                     get_service<CMassages>().postMessage(onMonitoringErrorEvent, 0,
                                                          std::static_pointer_cast<IEventData>(errorMessage));
                 }

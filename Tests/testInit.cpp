@@ -14,6 +14,8 @@ TEST(TestInit, InitializeTestInfo)
     // задаем директорию с сигналами как тестовую директорию
     auto& zetDirsService = get_service<DirsService>();
     zetDirsService.setZetSignalsDir(zetDirsService.getExeDir() + LR"(Signals\)");
+    // только потому что список каналов грузится из директории со сжатыми сигналами подменяем
+    zetDirsService.setZetCompressedDir(zetDirsService.getExeDir() + LR"(Signals\)");
 
     // Запускаем сервис мониторинга чтобы он делал свои грязные дела перед другими тестами
     get_service<TrendMonitoringHandler>();

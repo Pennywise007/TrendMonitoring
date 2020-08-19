@@ -10,6 +10,7 @@
 #include <DirsService.h>
 
 #include "TelegramBot.h"
+#include "Utils.h"
 
 // Текст который надо отправить боту для авторизации
 const CString gBotPassword_User   = L"MonitoringAuth";      // авторизация пользователем
@@ -41,7 +42,7 @@ namespace resendCallBack
     const std::string kParamid          = "errorId";        // идентификатор ошибки в списке ошибок(m_monitoringErrors)
 };
 
-// параметры для колбэка пересылки сообщенияы
+// параметры для колбэка оповещения
 // kKeyWord kParamEnable={'true'} kParamChan={'chan1'}
 namespace allertCallBack
 {
@@ -116,9 +117,13 @@ void CTelegramBot::setBotSettings(const TelegramBotSettings& botSettings)
 
     // запускаем поток мониторинга
     {
-        ITelegramThreadPtr pTelegramThread(
-            CreateTelegramThread(std::string(CStringA(m_botSettings.sToken)),
-                                 static_cast<ITelegramAllerter*>(this)));
+        ITelegramThreadPtr pTelegramThread;
+        if (m_defaultTelegramThread)
+            pTelegramThread.swap(m_defaultTelegramThread);
+        else
+            pTelegramThread = CreateTelegramThread(std::string(CStringA(m_botSettings.sToken)),
+                                                   static_cast<ITelegramAllerter*>(this));
+
         m_telegramThread.swap(pTelegramThread);
     }
 
@@ -130,6 +135,12 @@ void CTelegramBot::setBotSettings(const TelegramBotSettings& botSettings)
     fillCommandHandlers(commandsList, onUnknownCommand, onNonCommandMessage);
 
     m_telegramThread->startTelegramThread(commandsList, onUnknownCommand, onNonCommandMessage);
+}
+
+//----------------------------------------------------------------------------//
+void CTelegramBot::setDefaultTelegramThread(ITelegramThreadPtr& pTelegramThread)
+{
+    m_defaultTelegramThread.swap(pTelegramThread);
 }
 
 //----------------------------------------------------------------------------//
@@ -258,12 +269,13 @@ void CTelegramBot::onEvent(const EventId& code, float eventValue,
     }
     else if (code == onMonitoringErrorEvent)
     {
-        std::shared_ptr<MessageTextData> errorData = std::static_pointer_cast<MessageTextData>(eventData);
-        assert(!errorData->messageText.IsEmpty());
+        std::shared_ptr<MonitoringErrorEventData> errorData =
+            std::static_pointer_cast<MonitoringErrorEventData>(eventData);
+        assert(!errorData->errorText.IsEmpty());
 
         // получаем список админских чатов
         auto adminsChats = m_telegramUsers->getAllChatIdsByStatus(ITelegramUsersList::UserStatus::eAdmin);
-        if (adminsChats.empty() || errorData->messageText.IsEmpty())
+        if (adminsChats.empty() || errorData->errorText.IsEmpty())
             return;
 
         // Добавляем кнопки действий для этой ошибки
@@ -275,7 +287,7 @@ void CTelegramBot::onEvent(const EventId& code, float eventValue,
                                                   KeyboardCallback(restartCallBack::kKeyWord));
 
         // добавляем новую ошибку в список и запоминаем её идентификатор
-        GUID errorGUID = m_monitoringErrors.emplace_back(errorData->messageText).errorGUID;
+        m_monitoringErrors.emplace_back(errorData.get());
 
         if (m_monitoringErrors.size() > kMaxErrorInfoCount)
             m_monitoringErrors.pop_front();
@@ -283,16 +295,13 @@ void CTelegramBot::onEvent(const EventId& code, float eventValue,
         // колбэк на передачу этого сообщения обычным пользователям
         // kKeyWord kParamid={'GUID'}
         auto buttonResendToOrdinary = createKeyboardButton(L"Оповестить обычных пользователей",
-                                                           KeyboardCallback(resendCallBack::kKeyWord).
-                                                           addCallbackParam(resendCallBack::kParamid, CString(CComBSTR(errorGUID))));
+            KeyboardCallback(resendCallBack::kKeyWord).
+                addCallbackParam(resendCallBack::kParamid, CString(CComBSTR(errorData->errorGUID))));
 
         keyboard->inlineKeyboard.push_back({ buttonRestart, buttonResendToOrdinary });
 
         // пересылаем всем админам текст ошибки и клавиатуру для решения проблем
-        for (const int64_t chatId : adminsChats)
-        {
-            m_telegramThread->sendMessage(chatId, errorData->messageText, false, 0, keyboard);
-        }
+        m_telegramThread->sendMessage(adminsChats, errorData->errorText, false, 0, keyboard);
     }
     else
         assert(!"Неизвестное событие");
@@ -327,7 +336,7 @@ void CTelegramBot::fillCommandHandlers(std::map<std::string, CommandFunction>& c
     };
 
     static_assert(Command::eLastCommand == (Command)6,
-                  "Количество команд изменилось, надо добавить обработчик!");
+                  "Количество команд изменилось, надо добавить обработчик и тест!");
 
     // !все команды будем выполнять в основном потоке чтобы везде не добавлять синхронизацию
     addCommand(Command::eInfo,    L"info",    L"Перечень команд бота.", kDefaultAvailability);
@@ -511,7 +520,7 @@ void CTelegramBot::onCommandReport(const MessagePtr commandMessage)
 void CTelegramBot::onCommandRestart(const MessagePtr commandMessage)
 {
     // перезапуск системы делаем через батник так как надо много всего сделать для разных систем
-    CString batFullPath = get_service<DirsService>().getExeDir() + L"restart.bat";
+    CString batFullPath = get_service<DirsService>().getExeDir() + kRestartSystemFileName;
 
     // сообщение пользователю
     CString messageToUser;
@@ -541,6 +550,7 @@ void CTelegramBot::onCommandRestart(const MessagePtr commandMessage)
         m_telegramThread->sendMessage(commandMessage->chat->id, L"Файл для перезапуска не найден.");
 }
 
+//----------------------------------------------------------------------------//
 void CTelegramBot::onCommandAllert(const MessagePtr commandMessage, bool bEnable)
 {
     // получаем список каналов
@@ -586,7 +596,7 @@ void CTelegramBot::onCommandAllert(const MessagePtr commandMessage, bool bEnable
                                     addCallbackParam(allertCallBack::kParamChan, allertCallBack::kValueAllChannels)) });
 
     CString text;
-    text.Format(L"Выберите канал для %s оповещений.", bEnable ? L"Включения" : L"Выключения");
+    text.Format(L"Выберите канал для %s оповещений.", bEnable ? L"включения" : L"выключения");
     m_telegramThread->sendMessage(commandMessage->chat->id, text, false, 0, keyboard);
 }
 
@@ -838,7 +848,7 @@ void CTelegramBot::executeCallbackResend(const TgBot::CallbackQuery::Ptr query,
     if (errorIt == m_monitoringErrors.end())
     {
         CString text;
-        text.Format(L"Пересылаемой ошибки нет в списке, возможно ошибка является устаревшей (хранятся последние %ud ошибок) или программа была перещапущена.",
+        text.Format(L"Пересылаемой ошибки нет в списке, возможно ошибка является устаревшей (хранятся последние %u ошибок) или программа была перещапущена.",
                     kMaxErrorInfoCount);
         m_telegramThread->sendMessage(query->message->chat->id, text);
         return;
@@ -853,12 +863,12 @@ void CTelegramBot::executeCallbackResend(const TgBot::CallbackQuery::Ptr query,
 
     // пересылаем ошибку обычным пользователям
     auto ordinaryUsersChatList = m_telegramUsers->getAllChatIdsByStatus(ITelegramUsersList::UserStatus::eOrdinaryUser);
-    for (const auto channelId : ordinaryUsersChatList)
-    {
-        m_telegramThread->sendMessage(channelId, errorIt->errorText);
-    }
+    m_telegramThread->sendMessage(ordinaryUsersChatList, errorIt->errorText);
 
     errorIt->bResendToOrdinaryUsers = true;
+
+    m_telegramThread->sendMessage(query->message->chat->id,
+                                  L"Ошибка была успешно переслана обычным пользователям.");
 }
 
 //----------------------------------------------------------------------------//
@@ -972,8 +982,8 @@ std::string KeyboardCallback::buildReport() const
                                               rep).c_str();
 
     // максимальное ограничение не размер запроса телеграма 65 символов
-    constexpr int maxReportSize = 65;
-    assert(resultReport.GetLength() <= maxReportSize);
+    //constexpr int maxReportSize = 65;
+    //assert(resultReport.GetLength() <= maxReportSize);
 
     return getUtf8Str(resultReport);
 }
@@ -997,15 +1007,16 @@ addCommand(const CTelegramBot::Command command,
 CString CTelegramBot::CommandsHelper::
 getAvailableCommandsWithDescr(const AvailableStatus userStatus) const
 {
-    CString message = L"Поддерживаемые команды бота:\n\n\n";
-
+    CString message;
     for (auto& command : m_botCommands)
     {
         if (command.second.m_availabilityForUsers[userStatus])
             message += L"/" + command.second.m_text + L" - " + command.second.m_description + L"\n";
     }
 
-    return message + L"\n\nДля того чтобы их использовать необходимо написать их этому боту(обязательно использовать слэш перед текстом команды(/)!). Или нажать в этом окне, они должны подсвечиваться.";
+    if (!message.IsEmpty())
+        message = L"Поддерживаемые команды бота:\n\n\n" + message + L"\n\nДля того чтобы их использовать необходимо написать их этому боту(обязательно использовать слэш перед текстом команды(/)!). Или нажать в этом окне, они должны подсвечиваться.";
+    return message;
 }
 
 //----------------------------------------------------------------------------//

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <optional>
+#include <mutex>
 
 #include <gtest/gtest.h>
 
@@ -15,9 +15,8 @@ class MonitoringTasksTestClass
     , public EventRecipientImpl
 {
 protected:
+    // настройка класса (инициализация)
     void SetUp() override;
-
-protected:
 
 // IEventRecipient
 public:

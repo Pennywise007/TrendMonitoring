@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <memory>
 
+#include "Logger.h"
 #include "MonitoringTasksServiceImpl.h"
 
 // включение подробного логирования
@@ -176,7 +177,9 @@ void MonitoringTasksServiceImpl::tasksExecutorThread()
 //----------------------------------------------------------------------------//
 void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
 {
+#ifdef DETAILED_LOGGING
     OUTPUT_LOG_FUNC_ENTER;
+#endif // DETAILED_LOGGING
 
     assert(pMonitoringTask);
     if (!pMonitoringTask)
@@ -189,11 +192,13 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
     const CTime& startTime  = pMonitoringTask->m_pTaskParams->startTime;
     const CTime& endTime    = pMonitoringTask->m_pTaskParams->endTime;
 
+#ifdef DETAILED_LOGGING
     OUTPUT_LOG_CALCTIME_ENABLE(true);
     OUTPUT_LOG_TEXT(L"Загрузка данных по каналу %s, интервал %s - %s.",
                     channelName.GetString(),
                     startTime.Format(L"%d.%m.%Y  %H:%M:%S").GetString(),
                     endTime.Format(L"%d.%m.%Y  %H:%M:%S").GetString());
+#endif // DETAILED_LOGGING
 
     // сообщение об ошибке
     CString exceptionMessage;
@@ -287,7 +292,7 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
                                               {
                                                   return abs(val) <= FLT_MIN;
                                               }));
-#endif
+#endif // DETAILED_LOGGING
 
                 // если были не пустые данные
                 if (lastNotEmptyValueIndex != -1)
@@ -312,7 +317,7 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
                 OUTPUT_LOG_TEXT(L"Возникла ошибка при получении данных. Текущее количество пропусков %lld. Ошибка: %s",
                                 taskResult.emptyDataTime,
                                 logMessage.GetString());
-#endif
+#endif // DETAILED_LOGGING
             }
 
             // обновляем последнее загруженное время
@@ -351,7 +356,7 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
         taskResult.emptyDataTime = endTime - startTime;
     }
 
-#ifdef OUTPUT_LOGGING
+#ifdef DETAILED_LOGGING
     CString loadingResult;
     switch (taskResult.resultType)
     {
@@ -374,7 +379,7 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
 
     OUTPUT_LOG_ADD_COMMENT(L"Загрузка данных по каналу %s завершена. Результат : %s",
                            channelName.GetString(), loadingResult.GetString());
-#endif
+#endif // DETAILED_LOGGING
 
     // заносим результат задания в список результатов
     {

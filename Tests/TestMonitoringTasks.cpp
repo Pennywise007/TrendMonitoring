@@ -8,6 +8,8 @@
 
 #include "TestMonitoringTasks.h"
 
+#define DONT_TEST_MONITORING_TASKS
+
 #define GTEST_COUT(Text) std::cerr << "[          ] [ INFO ] " << Text << std::endl;
 
 // имя выдуманного канала по которому нет данных
@@ -16,6 +18,8 @@ const CString kRandomChannelName = L"Краказябра";
 // на самом деле данные только за 07.08.2020, но запросим большой инетрвал
 const CTime kExistDataStartTime(2020, 6, 7, 0, 0, 0);
 const CTime kExistDataStopTime(2020, 10, 7, 0, 0, 0);
+
+#ifdef DONT_TEST_MONITORING_TASKS
 
 ////////////////////////////////////////////////////////////////////////////////
 // тестирование сервиса с получением и анализом данных для мониторинга
@@ -95,6 +99,8 @@ TEST_F(MonitoringTasksTestClass, RemoveTask)
         "Были полученны результаты задания которое было отменено";
 }
 
+#endif DONT_TEST_MONITORING_TASKS
+
 ////////////////////////////////////////////////////////////////////////////////
 void MonitoringTasksTestClass::SetUp()
 {
@@ -159,7 +165,7 @@ void MonitoringTasksTestClass::onEvent(const EventId& code, float eventValue,
             if (channelResult.pTaskParameters->channelName == L"Прогибометр №1")
             {
                 EXPECT_NEAR(channelResult.startValue, -79.19, 0.01) << curChannelName;
-                EXPECT_NEAR(channelResult.currentValue, -130,95, 0.01) << curChannelName;
+                EXPECT_NEAR(channelResult.currentValue, -130.95, 0.01) << curChannelName;
                 EXPECT_NEAR(channelResult.maxValue, 241.9, 0.01) << curChannelName;
                 EXPECT_NEAR(channelResult.minValue, -317.45, 0.01) << curChannelName;
 

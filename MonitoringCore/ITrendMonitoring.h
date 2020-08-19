@@ -18,7 +18,7 @@ constexpr EventId onMonitoringListChanged =
 constexpr EventId onNewLogMessageEvent =
 { 0x5b436604, 0xd55e, 0x4112, { 0xac, 0x8c, 0xb0, 0x52, 0x13, 0x14, 0xba, 0x25 } };
 
-// оповещение в случае возникшей ошибки в мониторинге, см MessageTextData
+// оповещение в случае возникшей ошибки в мониторинге, см MonitoringErrorEventData
 // {FB0BF8DC-0AA5-41AC-B018-4CFE11CF14BE}
 constexpr EventId onMonitoringErrorEvent =
 { 0xfb0bf8dc, 0xaa5, 0x41ac, { 0xb0, 0x18, 0x4c, 0xfe, 0x11, 0xcf, 0x14, 0xbe } };
@@ -120,10 +120,20 @@ struct LogMessageData : public IEventData
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+// Структура передаваемая в случае возникновения ошибки мониторинга(onMonitoringErrorEvent)
+struct MonitoringErrorEventData : public IEventData
+{
+    // текст ошибки
+    CString errorText;
+    // идентификатор ошибки
+    GUID errorGUID;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 // Структура с текстом передаваемая в событиях
 struct MessageTextData : public IEventData
 {
-    // текст отчёта
+    // текст сообщения
     CString messageText;
 };
 

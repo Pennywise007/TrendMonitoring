@@ -25,6 +25,8 @@ public:
 public:
     // инициализация бота
     void initBot(ITelegramUsersListPtr telegramUsers);
+    // установка исполняемого потока телеграма по умолчанию
+    void setDefaultTelegramThread(ITelegramThreadPtr& pTelegramThread);
     // установка настроек бота
     void setBotSettings(const TelegramBotSettings& botSettings);
 
@@ -36,6 +38,7 @@ public:
 // ITelegramAllerter
 public:
     void onAllertFromTelegram(const CString& allertMessage) override;
+
 // IEventRecipient
 public:
     // оповещение о произошедшем событии
@@ -66,7 +69,6 @@ private:
 
     // изначальный обработчик всех команд
     void onCommandMessage(const Command command, const MessagePtr message);
-
     // обработка команды /info
     void onCommandInfo(const MessagePtr commandMessage);
     // обработка команды /report
@@ -106,6 +108,8 @@ private:
 private:
     // поток работающего телеграма
     ITelegramThreadPtr m_telegramThread;
+    // использующийся по умолчанию поток телеграмма
+    ITelegramThreadPtr m_defaultTelegramThread;
     // текущие настройки бота
     TelegramBotSettings m_botSettings;
     // вспомогательный класс для работы с командами бота
@@ -133,13 +137,11 @@ private:
     struct ErrorInfo
     {
     public:
-        ErrorInfo(const CString& text)
-            : errorText(text)
-        {
-            // генерим идентификатор ошибки
-            if (!SUCCEEDED(CoCreateGuid(&errorGUID)))
-                assert(!"Не удалось создать гуид!");
-        }
+        ErrorInfo(const MonitoringErrorEventData* errorData)
+            : errorText(errorData->errorText)
+            , errorGUID(errorData->errorGUID)
+        {}
+
     public:
         // текст ошибки
         CString errorText;
