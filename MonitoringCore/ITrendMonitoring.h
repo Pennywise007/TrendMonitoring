@@ -126,7 +126,7 @@ struct MonitoringErrorEventData : public IEventData
     // текст ошибки
     CString errorText;
     // идентификатор ошибки
-    GUID errorGUID;
+    GUID errorGUID = {};
 };
 
 ////////////////////////////////////////////////////////////////////////////////

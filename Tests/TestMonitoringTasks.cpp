@@ -42,16 +42,13 @@ TEST_F(MonitoringTasksTestClass, AddTaskList)
     // получение сервиса заданий монитринга
     IMonitoringTasksService* pMonitoringService = get_monitoing_tasks_service();
 
-    // запцускаем задание мониторинга
+    // запускаем задание мониторинга
     std::unique_lock<std::mutex> lock(m_resultMutex);
     m_currentTask = pMonitoringService->addTaskList(channelNames, kExistDataStartTime, kExistDataStopTime,
                                                     IMonitoringTasksService::eHigh);
 
-    GTEST_COUT("Ожидание результата задания мониторинга (1 минута).");
-
     // ждём пока придёт результат
-    ASSERT_TRUE(m_resultTaskCV.wait_for(lock, std::chrono::minutes(1)) != std::cv_status::timeout) <<
-        "Не удалось получить данные мониторинга за 1 минуту";
+    ASSERT_TRUE(waitForTaskResult(lock, true)) << "Были полученны результаты задания которое было отменено";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,11 +66,8 @@ TEST_F(MonitoringTasksTestClass, AddTaskParams)
     std::unique_lock<std::mutex> lock(m_resultMutex);
     m_currentTask = pMonitoringService->addTaskList(m_taskParams, IMonitoringTasksService::eHigh);
 
-    GTEST_COUT("Ожидание результата задания мониторинга (1 минута).");
-
     // ждём пока придёт результат
-    ASSERT_TRUE(m_resultTaskCV.wait_for(lock, std::chrono::minutes(1)) != std::cv_status::timeout) <<
-        "Не удалось получить данные мониторинга за 1 минуту";
+    ASSERT_TRUE(waitForTaskResult(lock, true)) << "Не удалось получить данные мониторинга за 1 минуту";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -92,11 +86,8 @@ TEST_F(MonitoringTasksTestClass, RemoveTask)
     m_currentTask = pMonitoringService->addTaskList(m_taskParams, IMonitoringTasksService::eHigh);
     pMonitoringService->removeTask(m_currentTask);
 
-    GTEST_COUT("Ожидание результата задания мониторинга (1 минута).");
-
     // ждём пока придёт результат
-    ASSERT_TRUE(m_resultTaskCV.wait_for(lock, std::chrono::minutes(1)) == std::cv_status::timeout) <<
-        "Были полученны результаты задания которое было отменено";
+    ASSERT_FALSE(waitForTaskResult(lock, false)) << "Не удалось получить данные мониторинга за 1 минуту";
 }
 
 #endif DONT_TEST_MONITORING_TASKS
@@ -211,4 +202,15 @@ void MonitoringTasksTestClass::fillTaskParams()
     m_taskParams.emplace_back(new TaskParameters(kRandomChannelName,
                                                  kExistDataStartTime,
                                                  kExistDataStopTime));
+}
+
+//----------------------------------------------------------------------------//
+bool MonitoringTasksTestClass::waitForTaskResult(std::unique_lock<std::mutex>& lock,
+                                                 bool bNoTimeOut)
+{
+    GTEST_COUT("Ожидание результата задания мониторинга (1 минута).");
+
+    // ждём пока придёт результат, не делаем через std::cv_status т.к. боремся с ложными unblocked spuriously
+    return m_resultTaskCV.wait_for(lock, std::chrono::minutes(1),
+                                   [bNoTimeOut]{ return bNoTimeOut; });
 }

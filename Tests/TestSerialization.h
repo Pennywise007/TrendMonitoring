@@ -32,7 +32,7 @@ public:
 
 //----------------------------------------------------------------------------//
 // Проверка свойств одного класса на соответсвие свойствам другого класса
-void checkProperties(const TestSerializing& first, const TestSerializing& second)
+inline void checkProperties(const TestSerializing& first, const TestSerializing& second)
 {
     EXPECT_EQ(first.m_bValue, second.m_bValue) << "Ошибка при сравнении TestSerializing";
     EXPECT_EQ(first.m_iValue, second.m_iValue) << "Ошибка при сравнении TestSerializing";
@@ -69,11 +69,11 @@ public:
     END_SERIALIZABLE_PROPERTIES()
 
     CString m_text;
-    int m_value;
+    int m_value = 0;
 };
 
 //----------------------------------------------------------------------------//
-bool CompareSubClasses(const TestSerializingSubClass& first, const TestSerializingSubClass& second)
+inline bool CompareSubClasses(const TestSerializingSubClass& first, const TestSerializingSubClass& second)
 {
     EXPECT_EQ(first.m_text, second.m_text) << "Ошибка при сравнении TestSerializingSubClass";
     EXPECT_EQ(first.m_value, second.m_value) << "Ошибка при сравнении TestSerializingSubClass";

@@ -16,12 +16,12 @@
 const CString gBotPassword_User   = L"MonitoringAuth";      // авторизация пользователем
 const CString gBotPassword_Admin  = L"MonitoringAuthAdmin"; // авторизация админом
 
-// параметры для колбэка отчёта
-// kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(ОПЦИОНАЛЬНО) kParamInterval={'1000000'}
+                                                            // параметры для колбэка отчёта
+                                                            // kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(ОПЦИОНАЛЬНО) kParamInterval={'1000000'}
 namespace reportCallBack
 {
     const std::string kKeyWord          = R"(/report)";     // ключевое слово
-    // параметры
+                                                            // параметры
     const std::string kParamType        = "reportType";     // тип отчёта
     const std::string kParamChan        = "chan";           // канал по которому нужен отчёт
     const std::string kParamInterval    = "interval";       // интервал
@@ -38,7 +38,7 @@ namespace restartCallBack
 namespace resendCallBack
 {
     const std::string kKeyWord          = R"(/resend)";     // ключевое слово
-    // параметры
+                                                            // параметры
     const std::string kParamid          = "errorId";        // идентификатор ошибки в списке ошибок(m_monitoringErrors)
 };
 
@@ -47,7 +47,7 @@ namespace resendCallBack
 namespace allertCallBack
 {
     const std::string kKeyWord          = R"(/allert)";     // ключевое слово
-    // параметры
+                                                            // параметры
     const std::string kParamEnable      = "enable";         // состояние включаемости/выключаемости
     const std::string kParamChan        = "chan";           // канал по которому нужно настроить нотификацию
     const std::string kValueAllChannels = "allChannels";    // значение которое соответствует выключению оповещений по всем каналам
@@ -201,7 +201,7 @@ void CTelegramBot::onEvent(const EventId& code, float eventValue,
             CTimeSpan permissibleEmptyDataTime =
                 (channelResData.pTaskParameters->endTime - channelResData.pTaskParameters->startTime).GetTotalSeconds() / 30;
 
-            reportText.AppendFormat(L"Канал \"%s\":", channelResData.pTaskParameters->channelName);
+            reportText.AppendFormat(L"Канал \"%s\":", channelResData.pTaskParameters->channelName.GetString());
 
             switch (channelResData.resultType)
             {
@@ -295,8 +295,8 @@ void CTelegramBot::onEvent(const EventId& code, float eventValue,
         // колбэк на передачу этого сообщения обычным пользователям
         // kKeyWord kParamid={'GUID'}
         auto buttonResendToOrdinary = createKeyboardButton(L"Оповестить обычных пользователей",
-            KeyboardCallback(resendCallBack::kKeyWord).
-                addCallbackParam(resendCallBack::kParamid, CString(CComBSTR(errorData->errorGUID))));
+                                                           KeyboardCallback(resendCallBack::kKeyWord).
+                                                           addCallbackParam(resendCallBack::kParamid, CString(CComBSTR(errorData->errorGUID))));
 
         keyboard->inlineKeyboard.push_back({ buttonRestart, buttonResendToOrdinary });
 
@@ -323,8 +323,8 @@ void CTelegramBot::fillCommandHandlers(std::map<std::string, CommandFunction>& c
 
     // добавлеение команды в список
     auto addCommand = [&]
-        (const Command command, const CString& commandText, const CString& descr,
-         const std::vector<ITelegramUsersList::UserStatus>& availabilityStatuses)
+    (const Command command, const CString& commandText, const CString& descr,
+     const std::vector<ITelegramUsersList::UserStatus>& availabilityStatuses)
     {
         m_commandHelper ->addCommand(command, commandText,
                                      descr, availabilityStatuses);
@@ -351,9 +351,9 @@ void CTelegramBot::fillCommandHandlers(std::map<std::string, CommandFunction>& c
     // команда выполняемая при получении любого сообщения
     onUnknownCommand = onNonCommandMessage =
         [this](const auto message)
-        {
-            get_service<CMassages>().call([this, &message]() { this->onNonCommandMessage(message); });
-        };
+    {
+        get_service<CMassages>().call([this, &message]() { this->onNonCommandMessage(message); });
+    };
     // отработка колбэков на нажатие клавиатуры
     m_telegramThread->getBotEvents().onCallbackQuery(
         [this](const auto param)
@@ -502,7 +502,7 @@ void CTelegramBot::onCommandReport(const MessagePtr commandMessage)
             createKeyboardButton(
                 text,
                 KeyboardCallback(reportCallBack::kKeyWord).
-                    addCallbackParam(reportCallBack::kParamType, std::to_wstring((unsigned long)reportType)));
+                addCallbackParam(reportCallBack::kParamType, std::to_wstring((unsigned long)reportType)));
 
         keyboard->inlineKeyboard.push_back({ button });
     };
@@ -591,9 +591,9 @@ void CTelegramBot::onCommandAllert(const MessagePtr commandMessage, bool bEnable
     // добавляем кнопку со всеми каналами
     if (monitoringChannels.size() > 1)
         keyboard->inlineKeyboard.push_back({
-            createKeyboardButton(L"Все каналы",
-                                 KeyboardCallback(defaultCallBack).
-                                    addCallbackParam(allertCallBack::kParamChan, allertCallBack::kValueAllChannels)) });
+        createKeyboardButton(L"Все каналы",
+        KeyboardCallback(defaultCallBack).
+        addCallbackParam(allertCallBack::kParamChan, allertCallBack::kValueAllChannels)) });
 
     CString text;
     text.Format(L"Выберите канал для %s оповещений.", bEnable ? L"включения" : L"выключения");
@@ -838,7 +838,8 @@ void CTelegramBot::executeCallbackResend(const TgBot::CallbackQuery::Ptr query,
 
     // вытаскиваем гуид из строки
     GUID errorGUID;
-    CLSIDFromString(CComBSTR(errorIdIt->second.c_str()), &errorGUID);
+    if (FAILED(CLSIDFromString(CComBSTR(errorIdIt->second.c_str()), &errorGUID)))
+        assert(!"Не удалось получить гуид!");
 
     auto errorIt = std::find_if(m_monitoringErrors.begin(), m_monitoringErrors.end(),
                                 [&errorGUID](const ErrorInfo& errorInfo)
@@ -848,7 +849,7 @@ void CTelegramBot::executeCallbackResend(const TgBot::CallbackQuery::Ptr query,
     if (errorIt == m_monitoringErrors.end())
     {
         CString text;
-        text.Format(L"Пересылаемой ошибки нет в списке, возможно ошибка является устаревшей (хранятся последние %u ошибок) или программа была перещапущена.",
+        text.Format(L"Пересылаемой ошибки нет в списке, возможно ошибка является устаревшей (хранятся последние %u ошибок) или программа была перезапущена.",
                     kMaxErrorInfoCount);
         m_telegramThread->sendMessage(query->message->chat->id, text);
         return;
@@ -911,19 +912,19 @@ void CTelegramBot::executeCallbackAllertion(const TgBot::CallbackQuery::Ptr quer
         // имя канала из колбэка
         CString callBackChannel = getUNICODEString(channelIt->second);
         // считаем что в списке мониторинга каналы по именам не повторяются иначе это глупо
-        auto channelIt = std::find_if(monitoringChannels.begin(), monitoringChannels.end(),
+        auto channelIt = std::find_if(monitoringChannels.cbegin(), monitoringChannels.cend(),
                                       [&callBackChannel](const auto& channelName)
                                       {
                                           return callBackChannel == channelName;
                                       });
 
-        if (channelIt == monitoringChannels.end())
+        if (channelIt == monitoringChannels.cend())
             throw std::runtime_error("В данный момент в списке мониторинга нет выбранного вами канала.");
 
-        monitoringService->changeMonitoingChannelNotify(std::distance(monitoringChannels.begin(), channelIt),
+        monitoringService->changeMonitoingChannelNotify(std::distance(monitoringChannels.cbegin(), channelIt),
                                                         bEnableAllertion);
 
-        messageText.Format(L"Оповещения для канала %s %s", callBackChannel, bEnableAllertion ? L"включены" : L"выключены");
+        messageText.Format(L"Оповещения для канала %s %s", callBackChannel.GetString(), bEnableAllertion ? L"включены" : L"выключены");
     }
 
     assert(!messageText.IsEmpty() && "Сообщение пользователю пустое.");

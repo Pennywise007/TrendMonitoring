@@ -7,7 +7,7 @@
 
 #include "SamplesHelper.h"
 #include "TestTrendMonitoring.h"
-#include "TrendMonitoringHandler.h"
+#include "TestHelper.h"
 
 // Список защитых в данных каналов мониторинга
 const size_t kMonitoringChannelsCount = 3;
@@ -34,7 +34,7 @@ TEST_F(MonitoringTestClass, CheckTrendMonitoring)
     testChannelListManagement();
 
     // проверяем результирующий файл конфигурации
-    compareWithResourceFile(get_service<TrendMonitoringHandler>().getConfigFilePath().c_str(),
+    compareWithResourceFile(get_service<TestHelper>().getConfigFilePath().c_str(),
                             IDR_TESTAPPCONFIG, L"TestAppConfig");
 
     // Проверка удаления каналов из списка
@@ -45,7 +45,7 @@ TEST_F(MonitoringTestClass, CheckTrendMonitoring)
 void MonitoringTestClass::SetUp()
 {
     // сбрасывааем все настройки у сервиса которые уже могли появиться при более раннем использовании другими тестами
-    get_service<TrendMonitoringHandler>().resetMonitoringService();
+    get_service<TestHelper>().resetMonitoringService();
 }
 
 //----------------------------------------------------------------------------//
@@ -54,7 +54,7 @@ void MonitoringTestClass::checkModelAndRealChannelsData(const std::string& testD
     auto reportText = [&testDescr](const size_t index, const std::string& extraText)
     {
         CStringA resText;
-        resText.Format("%s: Различаются данные по каналу №%ul, различаются %s.", testDescr, index, extraText);
+        resText.Format("%s: Различаются данные по каналу №%u, различаются %s.", testDescr.c_str(), index, extraText.c_str());
         return resText;
     };
 

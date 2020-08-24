@@ -11,21 +11,26 @@
 // Сервис работы с мониторингов данных, используется для того чтобы у сервиса был получатель сообщений
 // и он не кидался ассертами что никто не обрабатывает результаты,
 // а так же для сохранения реального конфигурационного файла
-class TrendMonitoringHandler
+class TestHelper
 {
-    friend class CSingleton<TrendMonitoringHandler>;
+    friend class CSingleton<TestHelper>;
 
 public:
-    TrendMonitoringHandler();
-    ~TrendMonitoringHandler();
+    TestHelper() = default;
 
 public:
     // Сброс настроек сервиса мониторинга
     void resetMonitoringService();
-    // получение пути к текущему использующемуся файлу конфигурации
-    std::filesystem::path getConfigFilePath();
 
-private:
+// Пути к файлам
+public:
+    // получение пути к текущему использующемуся файлу конфигурации
+    std::filesystem::path getConfigFilePath() const;
     // получение пути к сохаренной копии реального файла конфигурации
-    std::filesystem::path getCopyConfigFilePath();
+    std::filesystem::path getCopyConfigFilePath() const;
+
+    // получить путь к реальному батнику с перезапуском системы
+    std::filesystem::path getRestartFilePath() const;
+    // получить путь к копии батника с перезапуском системы
+    std::filesystem::path getCopyRestartFilePath() const;
 };

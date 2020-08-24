@@ -12,9 +12,8 @@
 #include <DirsService.h>
 #include <ITrendMonitoring.h>
 #include <Messages.h>
-#include <src/Utils.h>
 
-#include "TrendMonitoringHandler.h"
+#include "TestHelper.h"
 #include "TestTelegramBot.h"
 
 // идентификатор фиктивного пользователя телеграма
@@ -286,7 +285,7 @@ TEST_F(TestTelegramBot, CheckRestartCommandCallbacks)
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
     // создаем пустой файл батника для эмуляции рестарта
-    std::ofstream ofs(getRestartFilePath());
+    std::ofstream ofs(get_service<TestHelper>().getRestartFilePath());
     ofs.close();
 
     expectedMessage = L"Перезапуск системы осуществляется.";
@@ -383,7 +382,7 @@ TEST_F(TestTelegramBot, CheckAllertCommandCallbacks)
                 trendMonitoring->changeMonitoingChannelNotify(ind, !allertOn);
 
                 expectedMessage.Format(L"Оповещения для канала %s %s",
-                                       *std::next(allChannels.begin(), ind),
+                                       std::next(allChannels.begin(), ind)->GetString(),
                                        allertOn ? L"включены" : L"выключены");
                 emulateBroadcastCallbackQuery(callBackData);
 
@@ -479,7 +478,7 @@ TEST_F(TestTelegramBot, TestProcessingMonitoringError)
     // проверяем рестарт
 
     // создаем пустой файл батника для эмуляции рестарта
-    std::ofstream ofs(getRestartFilePath());
+    std::ofstream ofs(get_service<TestHelper>().getRestartFilePath());
     ofs.close();
 
     expectedReply = std::make_shared<TgBot::GenericReply>();
@@ -490,8 +489,9 @@ TEST_F(TestTelegramBot, TestProcessingMonitoringError)
     expectedReciepientsChats = &userChats;
 
     // пересылаем ошибку рандомную
-    expectedMessage = L"Пересылаемой ошибки нет в списке, возможно ошибка является устаревшей (хранятся последние 200 ошибок) или программа была перещапущена.";
-    emulateBroadcastCallbackQuery(L"/resend errorId={'123'}");
+    expectedMessage = L"Пересылаемой ошибки нет в списке, возможно ошибка является устаревшей (хранятся последние 200 ошибок) или программа была перезапущена.";
+    GUID testGuid = { 123 };
+    emulateBroadcastCallbackQuery(L"/resend errorId={'" + CString(CComBSTR(testGuid)) + L"'}");
 
     // пересылаем реальную
     expectedMessage = L"Ошибка была успешно переслана обычным пользователям.";
@@ -535,28 +535,7 @@ void TestTelegramBot::SetUp()
     static_assert(ITelegramUsersList::eLastStatus == 3,
                   "Список пользовтеля изменился, возможно стоит пересмотреть доступность команд");
 
-    // прячем батник с перезапуском на время тестов
-    const std::filesystem::path currentRestartFilePath(getRestartFilePath());
-    if (std::filesystem::is_regular_file(currentRestartFilePath))
-        std::filesystem::rename(currentRestartFilePath, getCopyRestartFilePath());
-
-    get_service<TrendMonitoringHandler>().resetMonitoringService();
-}
-
-//----------------------------------------------------------------------------//
-void TestTelegramBot::TearDown()
-{
-    // восстанавливаем сохраненный батник перезапуска или удаляем созданный тестом
-    const std::filesystem::path currentRestartFilePath(getRestartFilePath());
-    const std::filesystem::path copyRestartFilePath(getCopyRestartFilePath());
-
-    if (std::filesystem::is_regular_file(copyRestartFilePath))
-        // если был реальный файл перезапуска сохранён копией - возвращаем его на место
-        std::filesystem::rename(copyRestartFilePath, currentRestartFilePath);
-    else if (std::filesystem::is_regular_file(currentRestartFilePath))
-        EXPECT_TRUE(std::filesystem::remove(currentRestartFilePath)) << "Не удалось удалить файл рестарта";
-
-    get_service<TrendMonitoringHandler>().resetMonitoringService();
+    get_service<TestHelper>().resetMonitoringService();
 }
 
 //----------------------------------------------------------------------------//
@@ -604,18 +583,6 @@ TgBot::Message::Ptr TestTelegramBot::generateMessage(const CString& text) const
     pMessage->text = getUtf8Str(text);
 
     return pMessage;
-}
-
-//----------------------------------------------------------------------------//
-std::filesystem::path TestTelegramBot::getRestartFilePath() const
-{
-    return (get_service<DirsService>().getExeDir() + kRestartSystemFileName).GetString();
-}
-
-//----------------------------------------------------------------------------//
-std::filesystem::path TestTelegramBot::getCopyRestartFilePath() const
-{
-    return (get_service<DirsService>().getExeDir() + kRestartSystemFileName + L"_TestCopy").GetString();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

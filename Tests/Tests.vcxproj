@@ -55,11 +55,11 @@
     <ClInclude Include="TestSerialization.h" />
     <ClInclude Include="TestTelegramBot.h" />
     <ClInclude Include="TestTrendMonitoring.h" />
-    <ClInclude Include="TrendMonitoringHandler.h" />
+    <ClInclude Include="TestHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SamplesHelper.cpp" />
-    <ClCompile Include="testInit.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -71,7 +71,7 @@
     <ClCompile Include="TestTelegramBot.cpp" />
     <ClCompile Include="TestTrendMonitoring.cpp" />
     <ClCompile Include="TestSerialization.cpp" />
-    <ClCompile Include="TrendMonitoringHandler.cpp" />
+    <ClCompile Include="TestHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonitoringCore\MonitoringCore.vcxproj">

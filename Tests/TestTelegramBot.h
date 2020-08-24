@@ -73,9 +73,6 @@ protected:
     // Sets up the test fixture.
     void SetUp() override;
 
-    // Tears down the test fixture.
-    void TearDown() override;
-
 // эмул€тор команд от телеграма
 protected:
     // эмул€ци€ отправки сообщени€
@@ -88,12 +85,6 @@ private:
     TgBot::Message::Ptr generateMessage(const CString& text) const;
 
 protected:
-    // получить путь к реальному батнику с перезапуском системы
-    std::filesystem::path getRestartFilePath() const;
-    // получить путь к копии батника с перезапуском системы
-    std::filesystem::path getCopyRestartFilePath() const;
-
-protected:
     // тестовый телеграм бот
     CTelegramBot m_testTelegramBot;
 
@@ -101,7 +92,7 @@ protected:
     TestTelegramUsersList::Ptr m_pUserList;
 
     // тестовый объект с фейковым потоком телеграма
-    class TestTelegramThread* m_pTelegramThread;
+    class TestTelegramThread* m_pTelegramThread = nullptr;
 
     // список команд и доступности дл€ различных пользователей
     std::map<CString, std::set<ITelegramUsersList::UserStatus>> m_commandsToUserStatus;

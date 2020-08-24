@@ -97,7 +97,7 @@ public:
 
 public:
     // идентификатор чата с пользователем
-    int64_t m_chatId;
+    int64_t m_chatId = 0;
     // статус пользователя
     ITelegramUsersList::UserStatus m_userStatus = ITelegramUsersList::UserStatus::eNotAuthorized;
     // заметка о пользователе, пока не используется
