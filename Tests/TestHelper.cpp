@@ -10,14 +10,14 @@
 void TestHelper::resetMonitoringService()
 {
     // сервис мониторинга
-    ITrendMonitoring* monitoingService = get_monitoing_service();
+    ITrendMonitoring* monitoringService = get_monitoring_service();
 
     // сбрасываем все каналы
-    for (size_t i = monitoingService->getNumberOfMonitoringChannels(); i > 0; --i)
+    for (size_t i = monitoringService->getNumberOfMonitoringChannels(); i > 0; --i)
     {
-        monitoingService->removeMonitoringChannelByIndex(0);
+        monitoringService->removeMonitoringChannelByIndex(0);
     }
-    monitoingService->setBotSettings(TelegramBotSettings());
+    monitoringService->setBotSettings(TelegramBotSettings());
 
     // удаляем конфигурационный файл
     const std::filesystem::path currentConfigPath(getConfigFilePath());

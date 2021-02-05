@@ -37,7 +37,7 @@ BOOL CBotSettingDlg::OnInitDialog()
 {
     CDialogEx::OnInitDialog();
 
-    m_botSettings = get_monitoing_service()->getBotSettings();
+    m_botSettings = get_monitoring_service()->getBotSettings();
 
     ((CWnd*)GetDlgItem(IDC_EDIT_TOKEN))->SetWindowText(m_botSettings.sToken);
 
@@ -81,7 +81,7 @@ void CBotSettingDlg::OnOK()
 
     // оповещаем только об изменениях
     if (bTokenChanged || bEnableChanged)
-        get_monitoing_service()->setBotSettings(m_botSettings);
+        get_monitoring_service()->setBotSettings(m_botSettings);
 
     CDialogEx::OnOK();
 }

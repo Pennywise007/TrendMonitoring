@@ -42,7 +42,7 @@ public:
 
     /// <summary>Добавить канал для мониторинга.</summary>
     /// <returns>Индекс добавленного канала в списке.</returns>
-    size_t addMonitoingChannel() override;
+    size_t addMonitoringChannel() override;
     /// <summary>Удалить наблюдаемый канал из списка по индексу.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <returns>Индекс выделения после удаления.</returns>
@@ -51,32 +51,32 @@ public:
     /// <summary>Изменить флаг оповещения у канала по номеру.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newNotifyState">Новое состояние оповещения.</param>
-    void changeMonitoingChannelNotify(const size_t channelIndex,
-                                      const bool newNotifyState) override;
+    void changeMonitoringChannelNotify(const size_t channelIndex,
+                                       const bool newNotifyState) override;
     /// <summary>Изменить имя наблюдаемого канала.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newChannelName">Новое имя канала.</param>
-    void changeMonitoingChannelName(const size_t channelIndex,
-                                    const CString& newChannelName) override;
+    void changeMonitoringChannelName(const size_t channelIndex,
+                                     const CString& newChannelName) override;
     /// <summary>Изменить интервал мониторинга данных для наблюдаемого канала.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newInterval">Новый интервал мониторинга.</param>
-    void changeMonitoingChannelInterval(const size_t channelIndex,
-                                        const MonitoringInterval newInterval) override;
+    void changeMonitoringChannelInterval(const size_t channelIndex,
+                                         const MonitoringInterval newInterval) override;
     /// <summary>Изменить значение по достижению которого будет произведено оповещение.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newValue">Новое значение с оповещением.</param>
-    void changeMonitoingChannelAllarmingValue(const size_t channelIndex,
-                                              const float newValue) override;
+    void changeMonitoringChannelAllarmingValue(const size_t channelIndex,
+                                               const float newValue) override;
 
     /// <summary>Передвинуть вверх по списку канал по индексу.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <returns>Новый индекс канала.</returns>
-    size_t moveUpMonitoingChannelByIndex(const size_t channelIndex) override;
+    size_t moveUpMonitoringChannelByIndex(const size_t channelIndex) override;
     /// <summary>Передвинуть вниз по списку канал по индексу.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <returns>Новый индекс канала.</returns>
-    size_t moveDownMonitoingChannelByIndex(const size_t channelIndex) override;
+    size_t moveDownMonitoringChannelByIndex(const size_t channelIndex) override;
 
     // Получить настройки бота телеграма
     const TelegramBotSettings& getBotSettings() override;

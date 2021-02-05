@@ -190,7 +190,7 @@ void CTrendMonitorDlg::initControls()
                                          CRect(), parentWindow, 0);
 
                         // добавляем все каналы из списка в комбобокс
-                        auto allChennelsNames = get_monitoing_service()->getNamesOfAllChannels();
+                        auto allChennelsNames = get_monitoring_service()->getNamesOfAllChannels();
                         for (const auto& channelName : allChennelsNames)
                             comboBox->AddString(channelName);
 
@@ -216,7 +216,7 @@ void CTrendMonitorDlg::initControls()
 
                         pList->SetItemText(pParams->iItem, pParams->iSubItem, text);
 
-                        get_monitoing_service()->changeMonitoingChannelName(pParams->iItem, text);
+                        get_monitoring_service()->changeMonitoringChannelName(pParams->iItem, text);
                     });
             }
             break;
@@ -270,7 +270,7 @@ void CTrendMonitorDlg::initControls()
                                                return intervalPair.second == text;
                                            });
                     if (it != kMonitoringIntervalStrings.end())
-                        get_monitoing_service()->changeMonitoingChannelInterval(pParams->iItem, it->first);
+                        get_monitoring_service()->changeMonitoringChannelInterval(pParams->iItem, it->first);
                     else
                         assert(false);
                 });
@@ -290,9 +290,9 @@ void CTrendMonitorDlg::initControls()
                     pList->SetItemText(pParams->iItem, pParams->iSubItem, text);
 
                     if (text == L"-")
-                        get_monitoing_service()->changeMonitoingChannelAllarmingValue(pParams->iItem, NAN);
+                        get_monitoring_service()->changeMonitoringChannelAllarmingValue(pParams->iItem, NAN);
                     else
-                        get_monitoing_service()->changeMonitoingChannelAllarmingValue(pParams->iItem, (float)_wtof(text));
+                        get_monitoring_service()->changeMonitoringChannelAllarmingValue(pParams->iItem, (float)_wtof(text));
                 });
             break;
         case TableColumns::eNotify:
@@ -417,10 +417,10 @@ void CTrendMonitorDlg::reloadChannelsList()
     } BOOST_SCOPE_EXIT_END;
 
     // получаем сервис с данными
-    ITrendMonitoring* monitoingService = get_monitoing_service();
+    ITrendMonitoring* monitoringService = get_monitoring_service();
 
     // получаем текущее и новое количество каналов
-    int newChannelsCount = (int)monitoingService->getNumberOfMonitoringChannels();
+    int newChannelsCount = (int)monitoringService->getNumberOfMonitoringChannels();
     int curChannelsCount = m_monitorChannelsList.GetItemCount();
 
     // ресайзим таблицу до нашего количества каналов
@@ -433,10 +433,10 @@ void CTrendMonitorDlg::reloadChannelsList()
     }
 
     // проходим по всем каналам и заносим в таблицу информацию о канале
-    for (int channelIndex = 0, channelsCount = (int)monitoingService->getNumberOfMonitoringChannels();
+    for (int channelIndex = 0, channelsCount = (int)monitoringService->getNumberOfMonitoringChannels();
          channelIndex < channelsCount; ++channelIndex)
     {
-        const MonitoringChannelData& channelData = monitoingService->getMonitoringChannelData(channelIndex);
+        const MonitoringChannelData& channelData = monitoringService->getMonitoringChannelData(channelIndex);
         // отрабатываем оповещения
         m_monitorChannelsList.SetCheck(channelIndex, channelData.bNotify);
         m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eChannelName,     channelData.channelName);
@@ -600,7 +600,7 @@ void CTrendMonitorDlg::OnNMCustomdrawListMonitoringChannels(NMHDR *pNMHDR, LRESU
                 DWORD_PTR iItem = pNMCD->nmcd.dwItemSpec;
 
                 const MonitoringChannelData& monitoringData =
-                    get_monitoing_service()->getMonitoringChannelData(iItem);
+                    get_monitoring_service()->getMonitoringChannelData(iItem);
                 if (monitoringData.channelState[MonitoringChannelData::ChannelState::eDataLoaded] &&
                     _finite(monitoringData.allarmingValue) != 0)
                 {
@@ -651,10 +651,10 @@ void CTrendMonitorDlg::OnLvnItemchangedListMonitoringChannels(NMHDR* pNMHDR,
         switch (pNMLV->uNewState & LVIS_STATEIMAGEMASK)
         {
         case INDEXTOSTATEIMAGEMASK(2):
-            get_monitoing_service()->changeMonitoingChannelNotify(pNMLV->iItem, true);
+            get_monitoring_service()->changeMonitoringChannelNotify(pNMLV->iItem, true);
             break;
         case INDEXTOSTATEIMAGEMASK(1):
-            get_monitoing_service()->changeMonitoingChannelNotify(pNMLV->iItem, false);
+            get_monitoring_service()->changeMonitoringChannelNotify(pNMLV->iItem, false);
             break;
         }
     }
@@ -745,7 +745,7 @@ void CTrendMonitorDlg::OnClose()
 //----------------------------------------------------------------------------//
 void CTrendMonitorDlg::OnBnClickedMfcbuttonAdd()
 {
-    selectChannelsListItem(get_monitoing_service()->addMonitoingChannel());
+    selectChannelsListItem(get_monitoring_service()->addMonitoringChannel());
 }
 
 //----------------------------------------------------------------------------//
@@ -756,7 +756,7 @@ void CTrendMonitorDlg::OnBnClickedMfcbuttonRemove()
     {
         int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
 
-        selectChannelsListItem(get_monitoing_service()->removeMonitoringChannelByIndex(nItem));
+        selectChannelsListItem(get_monitoring_service()->removeMonitoringChannelByIndex(nItem));
     }
 }
 
@@ -768,7 +768,7 @@ void CTrendMonitorDlg::OnBnClickedMfcbuttonMoveUp()
     {
         int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
 
-        selectChannelsListItem(get_monitoing_service()->moveUpMonitoingChannelByIndex((size_t)nItem));
+        selectChannelsListItem(get_monitoring_service()->moveUpMonitoringChannelByIndex((size_t)nItem));
     }
 }
 
@@ -779,20 +779,20 @@ void CTrendMonitorDlg::OnBnClickedMfcbuttonMoveDown()
     if (pos != NULL)
     {
         int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
-        selectChannelsListItem(get_monitoing_service()->moveDownMonitoingChannelByIndex((size_t)nItem));
+        selectChannelsListItem(get_monitoring_service()->moveDownMonitoringChannelByIndex((size_t)nItem));
     }
 }
 
 //----------------------------------------------------------------------------//
 void CTrendMonitorDlg::OnBnClickedMfcbuttonRefresh()
 {
-    get_monitoing_service()->updateDataForAllChannels();
+    get_monitoring_service()->updateDataForAllChannels();
 }
 
 //----------------------------------------------------------------------------//
 void CTrendMonitorDlg::OnBnClickedMfcbuttonShowTrends()
 {
-    auto monitoringService = get_monitoing_service();
+    auto monitoringService = get_monitoring_service();
 
     size_t countChannels = monitoringService->getNumberOfMonitoringChannels();
     if (countChannels == 0)

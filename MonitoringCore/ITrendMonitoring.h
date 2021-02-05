@@ -163,7 +163,7 @@ interface ITrendMonitoring
 #pragma region Управление списком каналов
     /// <summary>Добавить канал для мониторинга.</summary>
     /// <returns>Индекс добавленного канала в списке.</returns>
-    virtual size_t addMonitoingChannel() = 0;
+    virtual size_t addMonitoringChannel() = 0;
     /// <summary>Удалить наблюдаемый канал из списка по индексу.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <returns>Индекс выделения после удаления.</returns>
@@ -172,33 +172,33 @@ interface ITrendMonitoring
     /// <summary>Изменить флаг оповещения у канала по номеру.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newNotifyState">Новое состояние оповещения.</param>
-    virtual void changeMonitoingChannelNotify(const size_t channelIndex,
+    virtual void changeMonitoringChannelNotify(const size_t channelIndex,
                                               const bool newNotifyState) = 0;
     /// <summary>Изменить имя наблюдаемого канала.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newChannelName">Новое имя канала.</param>
-    virtual void changeMonitoingChannelName(const size_t channelIndex,
+    virtual void changeMonitoringChannelName(const size_t channelIndex,
                                             const CString& newChannelName) = 0;
     /// <summary>Изменить интервал мониторинга данных для наблюдаемого канала.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newInterval">Новый интервал мониторинга.</param>
-    virtual void changeMonitoingChannelInterval(const size_t channelIndex,
+    virtual void changeMonitoringChannelInterval(const size_t channelIndex,
                                                 const MonitoringInterval newInterval) = 0;
     /// <summary>Изменить значение по достижению которого будет произведено оповещение.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newValue">Новое значение с оповещением.</param>
-    virtual void changeMonitoingChannelAllarmingValue(const size_t channelIndex,
+    virtual void changeMonitoringChannelAllarmingValue(const size_t channelIndex,
                                                       const float newValue) = 0;
 
 
     /// <summary>Передвинуть вверх по списку канал по индексу.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <returns>Новый индекс канала.</returns>
-    virtual size_t moveUpMonitoingChannelByIndex(const size_t channelIndex) = 0;
+    virtual size_t moveUpMonitoringChannelByIndex(const size_t channelIndex) = 0;
     /// <summary>Передвинуть вниз по списку канал по индексу.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <returns>Новый индекс канала.</returns>
-    virtual size_t moveDownMonitoingChannelByIndex(const size_t channelIndex) = 0;
+    virtual size_t moveDownMonitoringChannelByIndex(const size_t channelIndex) = 0;
 #pragma endregion Управление списком каналов
 
 #pragma region Управление ботом
@@ -210,7 +210,7 @@ interface ITrendMonitoring
 };
 
 // получение сервиса для мониторинга
-ITrendMonitoring* get_monitoing_service();
+ITrendMonitoring* get_monitoring_service();
 
 ////////////////////////////////////////////////////////////////////////////////
 // конвертация интервала мониторинга в текст

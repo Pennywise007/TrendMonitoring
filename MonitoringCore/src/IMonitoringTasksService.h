@@ -77,7 +77,7 @@ interface IMonitoringTasksService
 };
 
 // получение сервиса заданий монитринга
-IMonitoringTasksService* get_monitoing_tasks_service();
+IMonitoringTasksService* get_monitoring_tasks_service();
 
 ////////////////////////////////////////////////////////////////////////////////
 // результат задания мониторинга

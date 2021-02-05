@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include <assert.h>
+#include <cassert>
 #include <memory>
 
 #include "Logger.h"
@@ -10,7 +10,7 @@
 #define DETAILED_LOGGING
 
 ////////////////////////////////////////////////////////////////////////////////
-IMonitoringTasksService* get_monitoing_tasks_service()
+IMonitoringTasksService* get_monitoring_tasks_service()
 {
     return &get_service<MonitoringTasksServiceImpl>();
 }

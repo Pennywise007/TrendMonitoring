@@ -2,6 +2,8 @@
 
 #include "pch.h"
 
+#include "Logger.h"
+
 #include <boost/scope_exit.hpp>
 
 #include <ITrendMonitoring.h>
@@ -40,7 +42,7 @@ TEST_F(MonitoringTasksTestClass, AddTaskList)
     }
 
     // получение сервиса заданий монитринга
-    IMonitoringTasksService* pMonitoringService = get_monitoing_tasks_service();
+    IMonitoringTasksService* pMonitoringService = get_monitoring_tasks_service();
 
     // запускаем задание мониторинга
     std::unique_lock<std::mutex> lock(m_resultMutex);
@@ -60,7 +62,7 @@ TEST_F(MonitoringTasksTestClass, AddTaskParams)
     fillTaskParams();
 
     // получение сервиса заданий монитринга
-    IMonitoringTasksService* pMonitoringService = get_monitoing_tasks_service();
+    IMonitoringTasksService* pMonitoringService = get_monitoring_tasks_service();
 
     // запцускаем задание мониторинга
     std::unique_lock<std::mutex> lock(m_resultMutex);
@@ -79,7 +81,7 @@ TEST_F(MonitoringTasksTestClass, RemoveTask)
     fillTaskParams();
 
     // получение сервиса заданий монитринга
-    IMonitoringTasksService* pMonitoringService = get_monitoing_tasks_service();
+    IMonitoringTasksService* pMonitoringService = get_monitoring_tasks_service();
 
     // запцускаем задание мониторинга
     std::unique_lock<std::mutex> lock(m_resultMutex);
@@ -192,7 +194,7 @@ void MonitoringTasksTestClass::fillTaskParams()
 {
     ASSERT_TRUE(m_taskParams.empty()) << "Список параметров не пуст";
 
-    for (auto& channel : get_monitoing_service()->getNamesOfAllChannels())
+    for (auto& channel : get_monitoring_service()->getNamesOfAllChannels())
     {
         m_taskParams.emplace_back(new TaskParameters(channel,
                                                      kExistDataStartTime - CTimeSpan(0, 1 * std::rand() % 10, 0, 0),

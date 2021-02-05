@@ -15,7 +15,7 @@ const std::chrono::minutes kUpdateDataInterval(5);
 const std::pair<int, int> kReportDataTime = std::make_pair(20, 00);
 
 ////////////////////////////////////////////////////////////////////////////////
-ITrendMonitoring* get_monitoing_service()
+ITrendMonitoring* get_monitoring_service()
 {
     return &get_service<TrendMonitoring>();
 }
@@ -83,6 +83,8 @@ TrendMonitoring::TrendMonitoring()
 // ITrendMonitoring
 std::set<CString> TrendMonitoring::getNamesOfAllChannels()
 {
+    OUTPUT_LOG_FUNC_ENTER;
+
     // получаем все данные по каналам
     std::map<CString, CString> channelsWithConversion;
     // ищем именно в директории с сжатыми сигналами ибо там меньше вложенность и поиск идёт быстрее
@@ -93,7 +95,7 @@ std::set<CString> TrendMonitoring::getNamesOfAllChannels()
     for (const auto& channelInfo : channelsWithConversion)
         allChannelsNames.emplace(channelInfo.first);
 
-    return allChannelsNames;
+    return std::move(allChannelsNames);
 }
 
 //----------------------------------------------------------------------------//
@@ -144,8 +146,10 @@ const MonitoringChannelData& TrendMonitoring::getMonitoringChannelData(const siz
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-size_t TrendMonitoring::addMonitoingChannel()
+size_t TrendMonitoring::addMonitoringChannel()
 {
+    OUTPUT_LOG_FUNC_ENTER;
+
     const auto& channelsList = getNamesOfAllChannels();
 
     if (channelsList.empty())
@@ -199,7 +203,7 @@ size_t TrendMonitoring::removeMonitoringChannelByIndex(const size_t channelIndex
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-void TrendMonitoring::changeMonitoingChannelNotify(const size_t channelIndex,
+void TrendMonitoring::changeMonitoringChannelNotify(const size_t channelIndex,
                                                    const bool newNotifyState)
 {
     if (channelIndex >= m_appConfig->m_chanelParameters.size())
@@ -220,7 +224,7 @@ void TrendMonitoring::changeMonitoingChannelNotify(const size_t channelIndex,
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-void TrendMonitoring::changeMonitoingChannelName(const size_t channelIndex,
+void TrendMonitoring::changeMonitoringChannelName(const size_t channelIndex,
                                                  const CString& newChannelName)
 {
     if (channelIndex >= m_appConfig->m_chanelParameters.size())
@@ -245,7 +249,7 @@ void TrendMonitoring::changeMonitoingChannelName(const size_t channelIndex,
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-void TrendMonitoring::changeMonitoingChannelInterval(const size_t channelIndex,
+void TrendMonitoring::changeMonitoringChannelInterval(const size_t channelIndex,
                                                      const MonitoringInterval newInterval)
 {
     if (channelIndex >= m_appConfig->m_chanelParameters.size())
@@ -269,7 +273,7 @@ void TrendMonitoring::changeMonitoingChannelInterval(const size_t channelIndex,
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-void TrendMonitoring::changeMonitoingChannelAllarmingValue(const size_t channelIndex,
+void TrendMonitoring::changeMonitoringChannelAllarmingValue(const size_t channelIndex,
                                                            const float newValue)
 {
     if (channelIndex >= m_appConfig->m_chanelParameters.size())
@@ -288,7 +292,7 @@ void TrendMonitoring::changeMonitoingChannelAllarmingValue(const size_t channelI
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-size_t TrendMonitoring::moveUpMonitoingChannelByIndex(const size_t channelIndex)
+size_t TrendMonitoring::moveUpMonitoringChannelByIndex(const size_t channelIndex)
 {
     auto& channelsList = m_appConfig->m_chanelParameters;
 
@@ -321,7 +325,7 @@ size_t TrendMonitoring::moveUpMonitoingChannelByIndex(const size_t channelIndex)
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-size_t TrendMonitoring::moveDownMonitoingChannelByIndex(const size_t channelIndex)
+size_t TrendMonitoring::moveDownMonitoringChannelByIndex(const size_t channelIndex)
 {
     auto& channelsList = m_appConfig->m_chanelParameters;
 
@@ -822,6 +826,8 @@ CString TrendMonitoring::getConfigurationXMLFilePath()
 //----------------------------------------------------------------------------//
 void TrendMonitoring::onMonitoringChannelsListChanged(bool bAsynchNotify /*= true*/)
 {
+    OUTPUT_LOG_FUNC_ENTER;
+
     // сохраняем новый список мониторинга
     saveConfiguration();
 
@@ -837,6 +843,10 @@ void TrendMonitoring::addMonitoringTaskForChannel(ChannelParameters::Ptr& channe
                                                   const TaskInfo::TaskType taskType,
                                                   CTimeSpan monitoringInterval /* = -1*/)
 {
+    OUTPUT_LOG_FUNC;
+    OUTPUT_LOG_ADD_COMMENT("channel name = %s", channelParams->channelName.GetString());
+    OUTPUT_LOG_DO;
+
     if (monitoringInterval == -1)
         monitoringInterval =
             monitoring_interval_to_timespan(channelParams->monitoringInterval);
@@ -899,7 +909,7 @@ void TrendMonitoring::addMonitoringTaskForChannels(const ChannelParametersList& 
 
     // запускаем задание обновления данных
     m_monitoringTasksInfo.try_emplace(
-        get_monitoing_tasks_service()->addTaskList(taskParams, IMonitoringTasksService::eNormal),
+        get_monitoring_tasks_service()->addTaskList(taskParams, IMonitoringTasksService::eNormal),
         taskInfo);
 }
 
@@ -934,7 +944,7 @@ void TrendMonitoring::delMonitoringTaskForChannel(const ChannelParameters::Ptr& 
                     {
                         // не пустых каналов не осталось - будем удалять задание
 
-                        get_monitoing_tasks_service()->removeTask(monitoringTaskIt->first);
+                        get_monitoring_tasks_service()->removeTask(monitoringTaskIt->first);
                         monitoringTaskIt = m_monitoringTasksInfo.erase(monitoringTaskIt);
 
                         break;

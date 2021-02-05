@@ -11,6 +11,6 @@
 
 // включаем логирование
 #define OUTPUT_LOGGING
-#include "src\Logger.h"
+#include <CommonFiles/Logger.h>
 
 #endif //PCH_H

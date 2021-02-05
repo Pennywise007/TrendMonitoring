@@ -56,9 +56,6 @@
     <ClInclude Include="src\TelegramBot.h">
       <Filter>TelegramBot</Filter>
     </ClInclude>
-    <ClInclude Include="src\Logger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\ITelegramUsersList.h">
       <Filter>TelegramBot</Filter>
     </ClInclude>
@@ -98,10 +95,13 @@
     <ClInclude Include="$(CommonHeadersDir)Serialization\ISerializable.h">
       <Filter>Configuration\Serialization</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\UtilsProgrammerDir\CommonFiles\DirsService.h">
+    <ClInclude Include="$(CommonHeadersDir)DirsService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(CommonHeadersDir)Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

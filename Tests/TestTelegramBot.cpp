@@ -175,12 +175,12 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
     // задаем перечень каналов мониторинга чтобы с ними работать
-    ITrendMonitoring* trendMonitoring = get_monitoing_service();
+    ITrendMonitoring* trendMonitoring = get_monitoring_service();
     std::set<CString> allChannels = trendMonitoring->getNamesOfAllChannels();
     for (auto& chan : allChannels)
     {
-        size_t chanInd = trendMonitoring->addMonitoingChannel();
-        trendMonitoring->changeMonitoingChannelName(chanInd, chan);
+        size_t chanInd = trendMonitoring->addMonitoringChannel();
+        trendMonitoring->changeMonitoringChannelName(chanInd, chan);
     }
 
     // тестируем формирование отчётов
@@ -309,12 +309,12 @@ TEST_F(TestTelegramBot, CheckAllertCommandCallbacks)
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
     // задаем перечень каналов мониторинга чтобы им отключать оповещения
-    ITrendMonitoring* trendMonitoring = get_monitoing_service();
+    ITrendMonitoring* trendMonitoring = get_monitoring_service();
     std::set<CString> allChannels = trendMonitoring->getNamesOfAllChannels();
     for (auto& chan : allChannels)
     {
-        size_t chanInd = trendMonitoring->addMonitoingChannel();
-        trendMonitoring->changeMonitoingChannelName(chanInd, chan);
+        size_t chanInd = trendMonitoring->addMonitoringChannel();
+        trendMonitoring->changeMonitoringChannelName(chanInd, chan);
     }
 
     TgBot::InlineKeyboardMarkup::Ptr expectedKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
@@ -362,7 +362,7 @@ TEST_F(TestTelegramBot, CheckAllertCommandCallbacks)
                 // делаем обратное состояние у оповещений
                 for (size_t i = 0, count = allChannels.size(); i < count; ++i)
                 {
-                    trendMonitoring->changeMonitoingChannelNotify(i, !allertOn);
+                    trendMonitoring->changeMonitoringChannelNotify(i, !allertOn);
                 }
 
                 expectedMessage.Format(L"Оповещения для всех каналов %s",
@@ -379,7 +379,7 @@ TEST_F(TestTelegramBot, CheckAllertCommandCallbacks)
             else
             {
                 // делаем обратное устанавливаемому состояние оповещений у канала
-                trendMonitoring->changeMonitoingChannelNotify(ind, !allertOn);
+                trendMonitoring->changeMonitoringChannelNotify(ind, !allertOn);
 
                 expectedMessage.Format(L"Оповещения для канала %s %s",
                                        std::next(allChannels.begin(), ind)->GetString(),

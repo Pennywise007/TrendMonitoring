@@ -213,7 +213,7 @@ void CTelegramBot::onEvent(const EventId& code, float eventValue,
                         float allarmingValue = NAN;
 
                         // если отчёт подробный - ищем какое оповещательное значение у канала
-                        auto pMonitoringService = get_monitoing_service();
+                        auto pMonitoringService = get_monitoring_service();
                         for (size_t i = 0, count = pMonitoringService->getNumberOfMonitoringChannels();
                              i < count; ++i)
                         {
@@ -483,7 +483,7 @@ void CTelegramBot::onCommandInfo(const MessagePtr commandMessage)
 void CTelegramBot::onCommandReport(const MessagePtr commandMessage)
 {
     // получаем список каналов
-    std::list<CString> monitoringChannels = get_monitoing_service()->getNamesOfMonitoringChannels();
+    std::list<CString> monitoringChannels = get_monitoring_service()->getNamesOfMonitoringChannels();
     if (monitoringChannels.empty())
     {
         m_telegramThread->sendMessage(commandMessage->chat->id, L"Каналы для мониторинга не выбраны");
@@ -554,7 +554,7 @@ void CTelegramBot::onCommandRestart(const MessagePtr commandMessage)
 void CTelegramBot::onCommandAllert(const MessagePtr commandMessage, bool bEnable)
 {
     // получаем список каналов
-    std::list<CString> monitoringChannels = get_monitoing_service()->getNamesOfMonitoringChannels();
+    std::list<CString> monitoringChannels = get_monitoring_service()->getNamesOfMonitoringChannels();
     if (monitoringChannels.empty())
     {
         m_telegramThread->sendMessage(commandMessage->chat->id, L"Каналы для мониторинга не выбраны");
@@ -684,7 +684,7 @@ void CTelegramBot::executeCallbackReport(const TgBot::CallbackQuery::Ptr query,
         throw std::runtime_error("Не известный колбэк.");
 
     // получаем список каналов
-    std::list<CString> monitoringChannels = get_monitoing_service()->getNamesOfMonitoringChannels();
+    std::list<CString> monitoringChannels = get_monitoring_service()->getNamesOfMonitoringChannels();
     if (monitoringChannels.empty())
         throw std::runtime_error("Не удалось получить список каналов, попробуйте повторить попытку");
 
@@ -803,7 +803,7 @@ void CTelegramBot::executeCallbackReport(const TgBot::CallbackQuery::Ptr query,
                                       L"Выполняется расчёт данных, это может занять некоторое время.");
 
         m_monitoringTasksInfo.try_emplace(
-            get_monitoing_tasks_service()->addTaskList(channelsForTask, startTime, stopTime,
+            get_monitoring_tasks_service()->addTaskList(channelsForTask, startTime, stopTime,
                                                        IMonitoringTasksService::eHigh),
             std::move(taskInfo));
     }
@@ -885,7 +885,7 @@ void CTelegramBot::executeCallbackAllertion(const TgBot::CallbackQuery::Ptr quer
     // включаемость/выключаемость оповещений
     bool bEnableAllertion = enableIt->second == "true";
     // сервис мониторинга
-    auto monitoringService = get_monitoing_service();
+    auto monitoringService = get_monitoring_service();
     // сообщение в ответ пользователю
     CString messageText;
     if (channelIt->second == allertCallBack::kValueAllChannels)
@@ -897,7 +897,7 @@ void CTelegramBot::executeCallbackAllertion(const TgBot::CallbackQuery::Ptr quer
 
         for (size_t channelInd = 0; channelInd < channelsCount; ++channelInd)
         {
-            monitoringService->changeMonitoingChannelNotify(channelInd, bEnableAllertion);
+            monitoringService->changeMonitoringChannelNotify(channelInd, bEnableAllertion);
         }
 
         messageText.Format(L"Оповещения для всех каналов %s", bEnableAllertion ? L"включены" : L"выключены");
@@ -921,8 +921,8 @@ void CTelegramBot::executeCallbackAllertion(const TgBot::CallbackQuery::Ptr quer
         if (channelIt == monitoringChannels.cend())
             throw std::runtime_error("В данный момент в списке мониторинга нет выбранного вами канала.");
 
-        monitoringService->changeMonitoingChannelNotify(std::distance(monitoringChannels.cbegin(), channelIt),
-                                                        bEnableAllertion);
+        monitoringService->changeMonitoringChannelNotify(std::distance(monitoringChannels.cbegin(), channelIt),
+                                                         bEnableAllertion);
 
         messageText.Format(L"Оповещения для канала %s %s", callBackChannel.GetString(), bEnableAllertion ? L"включены" : L"выключены");
     }

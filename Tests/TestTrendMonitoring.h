@@ -32,5 +32,5 @@ protected:
     // список данных текущих каналов, частично должен совпадать с тем что в сервисе
     std::list<MonitoringChannelData> m_channelsData;
     // сервис мониторинга
-    ITrendMonitoring* m_monitoingService = get_monitoing_service();
+    ITrendMonitoring* m_monitoringService = get_monitoring_service();
 };

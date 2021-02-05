@@ -225,12 +225,12 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelsHelpHeader.h" />
     <ClInclude Include="$(UtilsDir)pugixml-1.10\src\pugiconfig.hpp" />
     <ClInclude Include="$(UtilsDir)pugixml-1.10\src\pugixml.hpp" />
-    <ClInclude Include="..\..\..\..\..\UtilsProgrammerDir\CommonFiles\DirsService.h" />
+    <ClInclude Include="$(CommonHeadersDir)DirsService.h" />
+    <ClInclude Include="$(CommonHeadersDir)Logger.h" />
     <ClInclude Include="ITrendMonitoring.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="src\ApplicationConfiguration.h" />
     <ClInclude Include="src\IMonitoringTasksService.h" />
-    <ClInclude Include="src\Logger.h" />
     <ClInclude Include="src\MonitoringTasksServiceImpl.h" />
     <ClInclude Include="src\ITelegramUsersList.h" />
     <ClInclude Include="src\TelegramBot.h" />
