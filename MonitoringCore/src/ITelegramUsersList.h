@@ -29,11 +29,14 @@ DECLARE_COM_INTERFACE(ITelegramUsersList, "EFB00D0B-3B37-4AEC-B63A-9ECEA34C0802"
     // убедиться что пользователь существует
     virtual void ensureExist(const TgBot::User::Ptr& pUser, const int64_t chatId) = 0;
 
-    // получение статуса пользователя
+    // установка/получение статуса пользователя
+    virtual void setUserStatus(const TgBot::User::Ptr& pUser, const UserStatus newStatus) = 0;
     virtual UserStatus getUserStatus(const TgBot::User::Ptr& pUser) = 0;
-    // установка статуса пользователя
-    virtual void setUserStatus(const TgBot::User::Ptr& pUser,
-                               const UserStatus newStatus) = 0;
+
+    // установка/получение последней заданной пользователем команды боту
+    virtual void setUserLastCommand(const TgBot::User::Ptr& pUser, const std::string& command) = 0;
+    virtual std::string getUserLastCommand(const TgBot::User::Ptr& pUser) = 0;
+
     // получить все идентификаторы чатов пользователей с определенным статусом
     virtual std::list<int64_t> getAllChatIdsByStatus(const UserStatus usertatus) = 0;
 };

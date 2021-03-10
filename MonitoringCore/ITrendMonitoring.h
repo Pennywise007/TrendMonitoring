@@ -71,7 +71,7 @@ struct MonitoringChannelData
     // наблюдаемый интервал
     MonitoringInterval monitoringInterval = MonitoringInterval::eOneMonth;
     // значение, достугнув которое необходимо оповестить. Ќе оповещать - NAN
-    float allarmingValue = NAN;
+    float alarmingValue = NAN;
     // данные по наблюдаемому каналу, пока не eDataLoaded - не валидные/пустые
     TrendChannelData trendData;
 
@@ -173,7 +173,7 @@ interface ITrendMonitoring
     /// <param name="channelIndex">»ндекс канала в списке каналов.</param>
     /// <param name="newNotifyState">Ќовое состо€ние оповещени€.</param>
     virtual void changeMonitoringChannelNotify(const size_t channelIndex,
-                                              const bool newNotifyState) = 0;
+                                               const bool newNotifyState) = 0;
     /// <summary>»зменить им€ наблюдаемого канала.</summary>
     /// <param name="channelIndex">»ндекс канала в списке каналов.</param>
     /// <param name="newChannelName">Ќовое им€ канала.</param>
@@ -187,7 +187,7 @@ interface ITrendMonitoring
     /// <summary>»зменить значение по достижению которого будет произведено оповещение.</summary>
     /// <param name="channelIndex">»ндекс канала в списке каналов.</param>
     /// <param name="newValue">Ќовое значение с оповещением.</param>
-    virtual void changeMonitoringChannelAllarmingValue(const size_t channelIndex,
+    virtual void changeMonitoringChannelAlarmingValue(const size_t channelIndex,
                                                       const float newValue) = 0;
 
 

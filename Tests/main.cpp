@@ -1,5 +1,7 @@
 #include "pch.h"
 
+#include <afxwin.h>
+
 #include <DirsService.h>
 
 #include "TestHelper.h"

@@ -9,6 +9,9 @@
 
 #define _AFXDLL
 
+// fix class declaration for afxrendertarget.h
+class CRenderTarget;
+
 // включаем логирование
 #define OUTPUT_LOGGING
 #include <CommonFiles/Logger.h>

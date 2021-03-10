@@ -70,12 +70,12 @@ bool ChannelParameters::changeInterval(const MonitoringInterval newInterval)
 }
 
 //----------------------------------------------------------------------------//
-bool ChannelParameters::changeAllarmingValue(const float newvalue)
+bool ChannelParameters::changeAlarmingValue(const float newvalue)
 {
-    if (allarmingValue == newvalue)
+    if (alarmingValue == newvalue)
         return false;
 
-    allarmingValue = newvalue;
+    alarmingValue = newvalue;
     return true;
 }
 
@@ -165,7 +165,7 @@ void TelegramUsersList::ensureExist(const TgBot::User::Ptr& pUser, const int64_t
         // вставляем пользователя с новым идентификатором
         userIt = m_telegramUsers.insert(m_telegramUsers.end(), TelegramUser::make(*pUser));
         userIt->get()->m_chatId   = chatId;
-        userIt->get()->m_userNote = getUNICODEString(pUser->firstName);
+        userIt->get()->m_userNote = getUNICODEString(pUser->firstName).c_str();
 
         bListChanged = true;
     }
@@ -183,14 +183,6 @@ void TelegramUsersList::ensureExist(const TgBot::User::Ptr& pUser, const int64_t
 }
 
 //----------------------------------------------------------------------------//
-ITelegramUsersList::UserStatus TelegramUsersList::getUserStatus(const TgBot::User::Ptr& pUser)
-{
-    std::lock_guard lock(m_usersMutex);
-
-    return (*getOrCreateUsertIterator(pUser))->m_userStatus;
-}
-
-//----------------------------------------------------------------------------//
 void TelegramUsersList::setUserStatus(const TgBot::User::Ptr& _pUser, const UserStatus newStatus)
 {
     std::lock_guard lock(m_usersMutex);
@@ -201,6 +193,35 @@ void TelegramUsersList::setUserStatus(const TgBot::User::Ptr& _pUser, const User
         pUser->m_userStatus = newStatus;
         onUsersListChanged();
     }
+}
+
+//----------------------------------------------------------------------------//
+ITelegramUsersList::UserStatus TelegramUsersList::getUserStatus(const TgBot::User::Ptr& pUser)
+{
+    std::lock_guard lock(m_usersMutex);
+
+    return (*getOrCreateUsertIterator(pUser))->m_userStatus;
+}
+
+//----------------------------------------------------------------------------//
+void TelegramUsersList::setUserLastCommand(const TgBot::User::Ptr& _pUser, const std::string& command)
+{
+    std::lock_guard lock(m_usersMutex);
+
+    auto pUser = *getOrCreateUsertIterator(_pUser);
+    if (pUser->m_userLastCommand != command)
+    {
+        pUser->m_userLastCommand = command;
+        onUsersListChanged();
+    }
+}
+
+//----------------------------------------------------------------------------//
+std::string TelegramUsersList::getUserLastCommand(const TgBot::User::Ptr& pUser)
+{
+    std::lock_guard lock(m_usersMutex);
+
+    return (*getOrCreateUsertIterator(pUser))->m_userLastCommand;
 }
 
 //----------------------------------------------------------------------------//
@@ -225,13 +246,11 @@ std::list<TelegramUser::Ptr>::iterator
     // проверяем что мьютекс на данные уже заблокирован
     assert(!m_usersMutex.try_lock());
 
-    auto it = std::find_if(m_telegramUsers.begin(), m_telegramUsers.end(),
-                           [&userId = pUser->id](const TelegramUser::Ptr& telegramUser)
+    return std::find_if(m_telegramUsers.begin(), m_telegramUsers.end(),
+                        [&userId = pUser->id](const TelegramUser::Ptr& telegramUser)
     {
         return telegramUser->id == userId;
     });
-
-    return it;
 }
 
 //----------------------------------------------------------------------------//
@@ -254,7 +273,7 @@ TelegramUsersList::getOrCreateUsertIterator(const TgBot::User::Ptr& pUser)
 }
 
 //----------------------------------------------------------------------------//
-void TelegramUsersList::onUsersListChanged()
+void TelegramUsersList::onUsersListChanged() const
 {
     get_service<CMassages>().postMessage(onUsersListChangedEvent);
 }
@@ -275,13 +294,13 @@ TelegramParameters& TelegramParameters::operator=(const TelegramBotSettings& bot
 
 ////////////////////////////////////////////////////////////////////////////////
 // Реализация функций класса с настрйками приложения
-ITelegramUsersListPtr ApplicationConfiguration::getTelegramUsers()
+ITelegramUsersListPtr ApplicationConfiguration::getTelegramUsers() const
 {
     return m_telegramParameters->m_telegramUsers;
 }
 
 //----------------------------------------------------------------------------//
-const TelegramBotSettings& ApplicationConfiguration::getTelegramSettings()
+const TelegramBotSettings& ApplicationConfiguration::getTelegramSettings() const
 {
     return *m_telegramParameters;
 }

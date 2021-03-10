@@ -25,7 +25,7 @@ public:
         ADD_PROPERTY(channelName)
         ADD_PROPERTY(bNotify)
         ADD_PROPERTY(monitoringInterval)
-        ADD_PROPERTY(allarmingValue)
+        ADD_PROPERTY(alarmingValue)
     END_SERIALIZABLE_PROPERTIES();
 
 public:
@@ -48,7 +48,7 @@ public:
     /// <summary>Изменить оповащаемое значение по каналу.</summary>
     /// <param name="newvalue">Новое значение.</param>
     /// <returns>Истину в случае изменения значения.</returns>
-    bool changeAllarmingValue(const float newvalue);
+    bool changeAlarmingValue(const float newvalue);
     /// <summary>Сбросить запомненные данные по каналу.</summary>
     void resetChannelData();
 
@@ -80,6 +80,7 @@ public:
     BEGIN_SERIALIZABLE_PROPERTIES(TelegramUser)
         ADD_PROPERTY(m_chatId)
         ADD_PROPERTY(m_userStatus)
+        ADD_PROPERTY(m_userLastCommand)
         ADD_PROPERTY(m_userNote)
         // Параметры из TgBot::User
         ADD_PROPERTY(id)                // идентификатор пользователя
@@ -100,6 +101,8 @@ public:
     int64_t m_chatId = 0;
     // статус пользователя
     ITelegramUsersList::UserStatus m_userStatus = ITelegramUsersList::UserStatus::eNotAuthorized;
+    // последняя отправленная пользователем боту команда
+    std::string m_userLastCommand;
     // заметка о пользователе, пока не используется
     // в конфигурационном файле имеет место быть для заметок
     CString m_userNote;
@@ -140,10 +143,12 @@ public:
 public:
     // убедиться что пользователь существует
     void ensureExist(const TgBot::User::Ptr& pUser, const int64_t chatId) override;
-    // получение статуса пользователя
-    UserStatus getUserStatus(const TgBot::User::Ptr& pUser) override;
-    // установка статуса пользователя
+    // установка/получение статуса пользователя
     void setUserStatus(const TgBot::User::Ptr& pUser, const UserStatus newStatus) override;
+    UserStatus getUserStatus(const TgBot::User::Ptr& pUser) override;
+    // установка/получение последней заданной пользователем команды боту
+    void setUserLastCommand(const TgBot::User::Ptr& pUser, const std::string& command) override;
+    std::string getUserLastCommand(const TgBot::User::Ptr& pUser) override;
     // получить все идентификаторы чатов пользователей с определенным статусом
     std::list<int64_t> getAllChatIdsByStatus(const UserStatus userStatus) override;
 
@@ -153,7 +158,7 @@ private:
     // получает итератор на пользователя или создает, если его нет
     std::list<TelegramUser::Ptr>::iterator getOrCreateUsertIterator(const TgBot::User::Ptr& pUser);
     // вызывается при изменении данных в списке пользователей
-    void onUsersListChanged();
+    void onUsersListChanged() const;
 
 private:
     DECLARE_COLLECTION(TelegramUsersList);
@@ -208,9 +213,9 @@ public:
     ApplicationConfiguration() = default;
 
     // Получение списка пользователей телеграма
-    ITelegramUsersListPtr getTelegramUsers();
+    ITelegramUsersListPtr getTelegramUsers() const;
     // Получение настроек телеграм бота
-    const TelegramBotSettings& getTelegramSettings();
+    const TelegramBotSettings& getTelegramSettings() const;
     // Получение настроек телеграм бота
     void setTelegramSettings(const TelegramBotSettings& newSettings);
 

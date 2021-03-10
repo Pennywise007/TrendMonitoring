@@ -1,10 +1,9 @@
 #pragma once
 
 #include <afx.h>
-#include <bitset>
 #include <map>
 #include <memory>
-#include <time.h>
+#include <string>
 
 #include <TelegramDLL/TelegramThread.h>
 
@@ -15,8 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // класс управления телеграм ботом
 class CTelegramBot
-    : public ITelegramAllerter
-    , public EventRecipientImpl
+    : private EventRecipientImpl
 {
 public:
     CTelegramBot();
@@ -31,16 +29,12 @@ public:
     void setBotSettings(const TelegramBotSettings& botSettings);
 
     // функция отправки сообщения администраторам системы
-    void sendMessageToAdmins(const CString& message);
+    void sendMessageToAdmins(const CString& message) const;
     // функция отправки сообщения пользователям системы
-    void sendMessageToUsers(const CString& message);
-
-// ITelegramAllerter
-public:
-    void onAllertFromTelegram(const CString& allertMessage) override;
+    void sendMessageToUsers(const CString& message) const;
 
 // IEventRecipient
-public:
+private:
     // оповещение о произошедшем событии
     void onEvent(const EventId& code, float eventValue,
                  std::shared_ptr<IEventData> eventData) override;
@@ -48,40 +42,40 @@ public:
 // Отработка команд бота
 private:
     // добавить реакции на команды
-    void fillCommandHandlers(std::map<std::string, CommandFunction>& commandsList,
+    void fillCommandHandlers(std::unordered_map<std::string, CommandFunction>& commandsList,
                              CommandFunction& onUnknownCommand,
                              CommandFunction& onNonCommandMessage);
     // отработка не зарегистрированного сообщения/команды
-    void onNonCommandMessage(const MessagePtr commandMessage);
+    void onNonCommandMessage(const MessagePtr& commandMessage);
 
     // Перечень команд
     enum class Command
     {
-        eUnknown,       // Неизвестная комнада бота
-        eInfo,          // Запрос информации бота
-        eReport,        // Запрос отчёта за период
-        eRestart,       // перезапуск мониторинга
-        eAllertionsOn,  // оповещения о событиях канала включить
-        eAllertionsOff, // оповещения о событиях канала выключить
+        eUnknown,           // Неизвестная комнада бота
+        eInfo,              // Запрос информации бота
+        eReport,            // Запрос отчёта за период
+        eRestart,           // перезапуск мониторинга
+        eAlertingOn,        // оповещения о событиях канала включить
+        eAlertingOff,       // оповещения о событиях канала выключить
+        eAlarmingValue,     // изменение допустимого уровня значений для канала
         // Последняя команда
         eLastCommand
     };
 
-    // изначальный обработчик всех команд
-    void onCommandMessage(const Command command, const MessagePtr message);
-    // обработка команды /info
-    void onCommandInfo(const MessagePtr commandMessage);
-    // обработка команды /report
-    void onCommandReport(const MessagePtr commandMessage);
-    // обработка команды /restart
-    void onCommandRestart(const MessagePtr commandMessage);
-    // обработка команды /allert, bEnable - true если ключаем, false если выключаем
-    void onCommandAllert(const MessagePtr commandMessage, bool bEnable);
+    // Обработка команд которые приходят боту отдельным сообщением
+    void onCommandMessage       (const Command command, const MessagePtr& message);
+    void onCommandInfo          (const MessagePtr& commandMessage) const;
+    void onCommandReport        (const MessagePtr& commandMessage) const;
+    void onCommandRestart       (const MessagePtr& commandMessage) const;
+    void onCommandAlert         (const MessagePtr& commandMessage, bool bEnable) const;
+    void onCommandAlarmingValue (const MessagePtr& commandMessage) const;
 
 // парсинг колбэков
 private:
     // отработка колбека
-    void onCallbackQuery(const TgBot::CallbackQuery::Ptr query);
+    void onCallbackQuery(const TgBot::CallbackQuery::Ptr& query);
+    // получили сообщение как ответ на предыдущую команду боту
+    bool gotResponseToPreviousCallback(const MessagePtr& commandMessage);
 
     // тип формируемого отчёта
     enum class ReportType : unsigned long
@@ -92,18 +86,16 @@ private:
 
     // Параметры формирования отчёта
     using CallBackParams = std::map<std::string, std::string>;
-    // отработка колбэка отчёта
-    void executeCallbackReport(const TgBot::CallbackQuery::Ptr query,
-                               const CallBackParams& params);
-    // отработка колбэка перестартовывания системы
-    void executeCallbackRestart(const TgBot::CallbackQuery::Ptr query,
-                                const CallBackParams& params);
-    // отработка колбэка переправки сообщения остальным пользователям
-    void executeCallbackResend(const TgBot::CallbackQuery::Ptr query,
-                               const CallBackParams& params);
-    // отработка колбэка включения/выключения оповещений
-    void executeCallbackAllertion(const TgBot::CallbackQuery::Ptr query,
-                                  const CallBackParams& params);
+
+    // Отрабатывание программируемых кнопок самого телеграма
+    void executeCallbackReport      (const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void executeCallbackRestart     (const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void executeCallbackResend      (const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void executeCallbackAlert       (const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void executeCallbackAlarmValue  (const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    // Мапа с ключевыми словами колбэков и их выполняемыми функциями
+    typedef void (CTelegramBot::*CommandCallback)(const TgBot::Message::Ptr&, const CallBackParams&, bool);
+    std::map<std::string, CommandCallback> m_commandCallbacks;
 
 private:
     // поток работающего телеграма
@@ -114,7 +106,7 @@ private:
     TelegramBotSettings m_botSettings;
     // вспомогательный класс для работы с командами бота
     class CommandsHelper;
-    std::shared_ptr<CommandsHelper> m_commandHelper = std::make_shared<CommandsHelper>();
+    std::shared_ptr<CommandsHelper> m_commandHelper;
     // данные о пользователях телеграмма
     ITelegramUsersListPtr m_telegramUsers;
 
@@ -159,67 +151,16 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// вспомогательный клас для работы с командами телеграма
-class CTelegramBot::CommandsHelper
-{
-public:
-    // статус пользователей которым доступно использование команды
-    typedef ITelegramUsersList::UserStatus AvailableStatus;
-    CommandsHelper() = default;
-
-public:
-    // Добавление описания команды
-    // @param command - идентификатор исполняемой команды
-    // @param commandtext - текст команды
-    // @param descr - описание команды
-    // @param availabilityStatuses - перечень статусов пользователей которым доступна команда
-    void addCommand(const CTelegramBot::Command command,
-                    const CString& commandText, const CString& descr,
-                    const std::vector<AvailableStatus>& availabilityStatuses);
-
-    // Получить список команд с описанием для определенного пользователя
-    CString getAvailableCommandsWithDescr(const AvailableStatus userStatus) const;
-
-    // Проверка что надо ответить на команду пользователю
-    // если false - в messageToUser будет ответ пользователю
-    bool ensureNeedAnswerOnCommand(ITelegramUsersList* usersList,
-                                   const CTelegramBot::Command command,
-                                   const MessagePtr commandMessage,
-                                   CString& messageToUser) const;
-
-private:
-    // Описание команды телеграм бота
-    struct CommandDescription
-    {
-        CommandDescription(const CString& text, const CString& descr)
-            : m_text(text) , m_description(descr)
-        {}
-
-        // тект который надо отправить для выполнения команды
-        CString m_text;
-        // описание команды
-        CString m_description;
-        // доступность команды для различных типов пользователей
-        std::bitset<AvailableStatus::eLastStatus> m_availabilityForUsers;
-    };
-
-    // перечень команд бота
-    //          команда            |  описание команды
-    std::map<CTelegramBot::Command, CommandDescription> m_botCommands;
-};
-
-////////////////////////////////////////////////////////////////////////////////
 // Класс для формирования колбэка для кнопок телеграма, на выходе UTF-8
 class KeyboardCallback
 {
 public:
     // стандартный конструктор
-    KeyboardCallback(const std::string& keyWord);
-    KeyboardCallback(const KeyboardCallback& reportCallback);
+    explicit KeyboardCallback(const std::string& keyWord);
+    explicit KeyboardCallback(const KeyboardCallback& reportCallback);
 
     // добавить строку для колбэка с парой параметр - значение, Unicode
     KeyboardCallback& addCallbackParam(const std::string& param, const CString& value);
-    // добавить строку для колбэка с парой параметр - значение, Unicode
     KeyboardCallback& addCallbackParam(const std::string& param, const std::wstring& value);
     // доабвить строку для колбэка с парой параметр - значение, UTF-8
     KeyboardCallback& addCallbackParam(const std::string& param, const std::string& value);

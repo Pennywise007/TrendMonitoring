@@ -104,6 +104,12 @@
     <ClInclude Include="$(CommonHeadersDir)Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\TelegramCommands.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="TelegramCallbacks.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(UtilsDir)pugixml-1.10\src\pugixml.cpp">
@@ -132,6 +138,12 @@
     </ClCompile>
     <ClCompile Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.cpp">
       <Filter>Configuration\Serialization\SerializatorFabric</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TelegramCommands.cpp">
+      <Filter>TelegramBot</Filter>
+    </ClCompile>
+    <ClCompile Include="TelegramCallbacks.cpp">
+      <Filter>TelegramBot</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

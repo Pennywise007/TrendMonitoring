@@ -234,8 +234,10 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     <ClInclude Include="src\MonitoringTasksServiceImpl.h" />
     <ClInclude Include="src\ITelegramUsersList.h" />
     <ClInclude Include="src\TelegramBot.h" />
+    <ClInclude Include="src\TelegramCommands.h" />
     <ClInclude Include="src\TrendMonitoring.h" />
     <ClInclude Include="src\Utils.h" />
+    <ClInclude Include="TelegramCallbacks.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(CommonHeadersDir)Serialization\SerializatorFabric.cpp">
@@ -297,12 +299,14 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\TelegramBot.cpp" />
+    <ClCompile Include="src\TelegramCommands.cpp" />
     <ClCompile Include="src\TrendMonitoring.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="TelegramCallbacks.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

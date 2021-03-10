@@ -66,8 +66,8 @@ public:
     /// <summary>Изменить значение по достижению которого будет произведено оповещение.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newValue">Новое значение с оповещением.</param>
-    void changeMonitoringChannelAllarmingValue(const size_t channelIndex,
-                                               const float newValue) override;
+    void changeMonitoringChannelAlarmingValue(const size_t channelIndex,
+                                              const float newValue) override;
 
     /// <summary>Передвинуть вверх по списку канал по индексу.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
@@ -157,17 +157,17 @@ private:
     // Обработка результатов мониторинга для канала
     // @param monitoringResult - результат мониторинга
     // @param channelParameters - параметры канала
-    // @param allertText - текст о котором нужно сообщить
+    // @param alertText - текст о котором нужно сообщить
     // @return true - в случае необходимости обновить данные по каналам
     bool handleIntervalInfoResult(const MonitoringResult::ResultData& monitoringResult,
                                   ChannelParameters* channelParameters,
-                                  CString& allertText);   // запрос данных за интервал
+                                  CString& alertText);   // запрос данных за интервал
     bool handleUpdatingResult(const MonitoringResult::ResultData& monitoringResult,
                               ChannelParameters* channelParameters,
-                              CString& allertText);       // обновление данных
+                              CString& alertText);       // обновление данных
     bool handleEveryDayReportResult(const MonitoringResult::ResultData& monitoringResult,
                                     ChannelParameters* channelParameters,
-                                    CString& allertText); // ежедневный отчёт
+                                    CString& alertText); // ежедневный отчёт
 
 private:
     // мапа с соответствием идентификатора задания и параметрами задания

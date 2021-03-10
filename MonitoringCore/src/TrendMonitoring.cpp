@@ -273,7 +273,7 @@ void TrendMonitoring::changeMonitoringChannelInterval(const size_t channelIndex,
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-void TrendMonitoring::changeMonitoringChannelAllarmingValue(const size_t channelIndex,
+void TrendMonitoring::changeMonitoringChannelAlarmingValue(const size_t channelIndex,
                                                            const float newValue)
 {
     if (channelIndex >= m_appConfig->m_chanelParameters.size())
@@ -283,7 +283,7 @@ void TrendMonitoring::changeMonitoringChannelAllarmingValue(const size_t channel
     }
 
     ChannelParameters::Ptr channelParams = *std::next(m_appConfig->m_chanelParameters.begin(), channelIndex);
-    if (!channelParams->changeAllarmingValue(newValue))
+    if (!channelParams->changeAlarmingValue(newValue))
         return;
 
     // сообщаем об изменении в списке каналов
@@ -378,7 +378,7 @@ void TrendMonitoring::setBotSettings(const TelegramBotSettings& newSettings)
 //----------------------------------------------------------------------------//
 bool TrendMonitoring::handleIntervalInfoResult(const MonitoringResult::ResultData& monitoringResult,
                                                ChannelParameters* channelParameters,
-                                               CString& allertText)
+                                               CString& alertText)
 {
     switch (monitoringResult.resultType)
     {
@@ -396,9 +396,9 @@ bool TrendMonitoring::handleIntervalInfoResult(const MonitoringResult::ResultDat
             // оповещаем о возникшей ошибке
             if (monitoringResult.resultType == MonitoringResult::Result::eErrorText &&
                 !monitoringResult.errorText.IsEmpty())
-                allertText = monitoringResult.errorText;
+                alertText = monitoringResult.errorText;
             else
-                allertText = L"Ќет данных в запрошенном интервале.";
+                alertText = L"Ќет данных в запрошенном интервале.";
 
             // обновл€ем врем€ без данных
             channelParameters->trendData.emptyDataTime = monitoringResult.emptyDataTime;
@@ -418,7 +418,7 @@ bool TrendMonitoring::handleIntervalInfoResult(const MonitoringResult::ResultDat
 //----------------------------------------------------------------------------//
 bool TrendMonitoring::handleUpdatingResult(const MonitoringResult::ResultData& monitoringResult,
                                            ChannelParameters* channelParameters,
-                                           CString& allertText)
+                                           CString& alertText)
 {
     bool bDataChanged = false;
     switch (monitoringResult.resultType)
@@ -448,16 +448,16 @@ bool TrendMonitoring::handleUpdatingResult(const MonitoringResult::ResultData& m
             // анализируем новые данные
             {
                 // если установлено оповещение и за интервал не было значени€ меньше
-                if (_finite(channelParameters->allarmingValue) != 0)
+                if (_finite(channelParameters->alarmingValue) != 0)
                 {
                     // если за интервал все значени€ вышли за допустимое
-                    if ((channelParameters->allarmingValue >= 0 &&
-                         monitoringResult.minValue >= channelParameters->allarmingValue) ||
-                         (channelParameters->allarmingValue < 0 &&
-                          monitoringResult.maxValue <= channelParameters->allarmingValue))
+                    if ((channelParameters->alarmingValue >= 0 &&
+                         monitoringResult.minValue >= channelParameters->alarmingValue) ||
+                         (channelParameters->alarmingValue < 0 &&
+                          monitoringResult.maxValue <= channelParameters->alarmingValue))
                     {
-                        allertText.AppendFormat(L"ѕревышение допустимых значений. ƒопустимое значение %.02f, значени€ [%.02f..%.02f].",
-                                                channelParameters->allarmingValue,
+                        alertText.AppendFormat(L"ѕревышение допустимых значений. ƒопустимое значение %.02f, значени€ [%.02f..%.02f].",
+                                                channelParameters->alarmingValue,
                                                 monitoringResult.minValue, monitoringResult.maxValue);
                         channelParameters->channelState[MonitoringChannelData::eReportedExcessOfValue] = true;
                     }
@@ -467,7 +467,7 @@ bool TrendMonitoring::handleUpdatingResult(const MonitoringResult::ResultData& m
                 if (auto emptySeconds = monitoringResult.emptyDataTime.GetTotalMinutes();
                     emptySeconds > kUpdateDataInterval.count() / 2)
                 {
-                    allertText.Append(CString(allertText.IsEmpty() ? L"" : L" ") + L"ћного пропусков данных.");
+                    alertText.Append(CString(alertText.IsEmpty() ? L"" : L" ") + L"ћного пропусков данных.");
 
                     channelParameters->channelState[MonitoringChannelData::eReportedALotOfEmptyData] = true;
                 }
@@ -479,7 +479,7 @@ bool TrendMonitoring::handleUpdatingResult(const MonitoringResult::ResultData& m
                 if (channelParameters->channelState[MonitoringChannelData::eReportedFallenOff])
                 {
                     // если пользователю сказали что данных нет и их получили - сообщаем радостную новость.
-                    allertText.Append(CString(allertText.IsEmpty() ? L"" : L" ") + L"ƒанные получены.");
+                    alertText.Append(CString(alertText.IsEmpty() ? L"" : L" ") + L"ƒанные получены.");
                     channelParameters->channelState[MonitoringChannelData::eReportedFallenOff] = false;
                 }
                 else
@@ -526,7 +526,7 @@ bool TrendMonitoring::handleUpdatingResult(const MonitoringResult::ResultData& m
                 if ((CTime::GetCurrentTime() - channelParameters->trendData.lastDataExistTime).GetTotalMinutes() >=
                     3 * kUpdateDataInterval.count())
                 {
-                    allertText = L"ѕропали данные по каналу.";
+                    alertText = L"ѕропали данные по каналу.";
                     channelParameters->channelState[MonitoringChannelData::eReportedFallenOff] = true;
                 }
             }
@@ -543,7 +543,7 @@ bool TrendMonitoring::handleUpdatingResult(const MonitoringResult::ResultData& m
 //----------------------------------------------------------------------------//
 bool TrendMonitoring::handleEveryDayReportResult(const MonitoringResult::ResultData& monitoringResult,
                                                  ChannelParameters* channelParameters,
-                                                 CString& allertText)
+                                                 CString& alertText)
 {
     // данные мониторинга
     const MonitoringChannelData& monitoringData = channelParameters->getMonitoringData();
@@ -553,30 +553,30 @@ bool TrendMonitoring::handleEveryDayReportResult(const MonitoringResult::ResultD
     case MonitoringResult::Result::eSucceeded:  // данные успешно получены
         {
             // если установлено оповещение при превышении значени€
-            if (_finite(monitoringData.allarmingValue) != 0)
+            if (_finite(monitoringData.alarmingValue) != 0)
             {
                 // если за интервал одно из значений вышло за допустимые
-                if ((monitoringData.allarmingValue >= 0 &&
-                     monitoringResult.maxValue >= monitoringData.allarmingValue) ||
-                     (monitoringData.allarmingValue < 0 &&
-                      monitoringResult.minValue <= monitoringData.allarmingValue))
+                if ((monitoringData.alarmingValue >= 0 &&
+                     monitoringResult.maxValue >= monitoringData.alarmingValue) ||
+                     (monitoringData.alarmingValue < 0 &&
+                      monitoringResult.minValue <= monitoringData.alarmingValue))
                 {
-                    allertText.AppendFormat(L"ƒопустимый уровень был превышен. ƒопустимое значение %.02f, значени€ за день [%.02f..%.02f].",
-                                            monitoringData.allarmingValue,
+                    alertText.AppendFormat(L"ƒопустимый уровень был превышен. ƒопустимое значение %.02f, значени€ за день [%.02f..%.02f].",
+                                            monitoringData.alarmingValue,
                                             monitoringResult.minValue, monitoringResult.maxValue);
                 }
             }
 
             // если много пропусков данных
             if (monitoringResult.emptyDataTime.GetTotalHours() > 2)
-                allertText.AppendFormat(L"много пропусков данных (%lld ч).",
+                alertText.AppendFormat(L"много пропусков данных (%lld ч).",
                                         monitoringResult.emptyDataTime.GetTotalHours());
         }
         break;
     case MonitoringResult::Result::eNoData:     // в переданном интервале нет данных
     case MonitoringResult::Result::eErrorText:  // возникла ошибка
         // сообщаем что данных нет
-        allertText = L"Ќет данных.";
+        alertText = L"Ќет данных.";
         break;
     default:
         assert(!"Ќе известный тип результата");
@@ -657,7 +657,7 @@ void TrendMonitoring::onEvent(const EventId& code, float eventValue,
             case TaskInfo::TaskType::eUpdatingInfo:
                 {
                     // сообщаем в лог что возникли проблемы
-                    send_message_to_log(LogMessageData::MessageType::eError, reportText);
+                    send_message_to_log(LogMessageData::MessageType::eError, reportText.GetString());
 
                     // оповещаем о возникшей ошибке
                     auto errorMessage = std::make_shared<MonitoringErrorEventData>();
@@ -778,7 +778,7 @@ bool TrendMonitoring::onTick(TickParam tickParam)
                 for (const auto& currentChannel : m_appConfig->m_chanelParameters)
                 {
                     channelsCopy.push_back(ChannelParameters::make(currentChannel->channelName));
-                    channelsCopy.back()->allarmingValue = currentChannel->allarmingValue;
+                    channelsCopy.back()->alarmingValue = currentChannel->alarmingValue;
                 }
 
                 // запускаем задание формировани€ отчЄта за последний день

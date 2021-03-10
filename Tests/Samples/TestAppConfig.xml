@@ -5,19 +5,19 @@
             <channelName>Прогибометр №3</channelName>
             <bNotify>true</bNotify>
             <monitoringInterval>0</monitoringInterval>
-            <allarmingValue>100,000000</allarmingValue>
+            <alarmingValue>100,000000</alarmingValue>
         </ChannelParameters>
         <ChannelParameters>
             <channelName>Прогибометр №1</channelName>
             <bNotify>true</bNotify>
             <monitoringInterval>3</monitoringInterval>
-            <allarmingValue>-nan(ind)</allarmingValue>
+            <alarmingValue>-nan(ind)</alarmingValue>
         </ChannelParameters>
         <ChannelParameters>
             <channelName>Прогибометр №2</channelName>
             <bNotify>false</bNotify>
             <monitoringInterval>4</monitoringInterval>
-            <allarmingValue>-1,000000</allarmingValue>
+            <alarmingValue>-1,000000</alarmingValue>
         </ChannelParameters>
     </m_chanelParameters>
     <TelegramParameters>

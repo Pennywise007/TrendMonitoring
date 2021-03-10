@@ -160,7 +160,7 @@ void CTrendMonitorDlg::initControls()
                                        {
                                            return str1.CompareNoCase(str2);
                                        });
-    m_monitorChannelsList.InsertColumn(TableColumns::eAllarmingValue,   L"Оповестить при достижении", LVCFMT_CENTER, 90);
+    m_monitorChannelsList.InsertColumn(TableColumns::eAlarmingValue,    L"Оповестить при достижении", LVCFMT_CENTER, 90);
     m_monitorChannelsList.InsertColumn(TableColumns::eLastDataExistTime,L"Последние существующие данные",   LVCFMT_CENTER, 140);
     m_monitorChannelsList.InsertColumn(TableColumns::eNoDataTime,       L"Нет данных",              LVCFMT_CENTER, 120);
 
@@ -275,9 +275,9 @@ void CTrendMonitorDlg::initControls()
                         assert(false);
                 });
             break;
-        case TableColumns::eAllarmingValue:
+        case TableColumns::eAlarmingValue:
             m_monitorChannelsList.setSubItemEditorController(
-                TableColumns::eAllarmingValue,
+                TableColumns::eAlarmingValue,
                 nullptr,
                 [](CListCtrl* pList,
                    CWnd* editorControl,
@@ -290,9 +290,9 @@ void CTrendMonitorDlg::initControls()
                     pList->SetItemText(pParams->iItem, pParams->iSubItem, text);
 
                     if (text == L"-")
-                        get_monitoring_service()->changeMonitoringChannelAllarmingValue(pParams->iItem, NAN);
+                        get_monitoring_service()->changeMonitoringChannelAlarmingValue(pParams->iItem, NAN);
                     else
-                        get_monitoring_service()->changeMonitoringChannelAllarmingValue(pParams->iItem, (float)_wtof(text));
+                        get_monitoring_service()->changeMonitoringChannelAlarmingValue(pParams->iItem, (float)_wtof(text));
                 });
             break;
         case TableColumns::eNotify:
@@ -442,8 +442,8 @@ void CTrendMonitorDlg::reloadChannelsList()
         m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eChannelName,     channelData.channelName);
         m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eInterval,        monitoring_interval_to_string(channelData.monitoringInterval));
 
-        CString allarmingValStr = _finite(channelData.allarmingValue) != 0 ? monitoring_data_to_string(channelData.allarmingValue) : L"-";
-        m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eAllarmingValue,  allarmingValStr);
+        CString alarmingValStr = _finite(channelData.alarmingValue) != 0 ? monitoring_data_to_string(channelData.alarmingValue) : L"-";
+        m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eAlarmingValue,  alarmingValStr);
 
         if (channelData.channelState[MonitoringChannelData::ChannelState::eDataLoaded])
         {
@@ -602,23 +602,23 @@ void CTrendMonitorDlg::OnNMCustomdrawListMonitoringChannels(NMHDR *pNMHDR, LRESU
                 const MonitoringChannelData& monitoringData =
                     get_monitoring_service()->getMonitoringChannelData(iItem);
                 if (monitoringData.channelState[MonitoringChannelData::ChannelState::eDataLoaded] &&
-                    _finite(monitoringData.allarmingValue) != 0)
+                    _finite(monitoringData.alarmingValue) != 0)
                 {
                     // на сколько текущее значение близко в критическому
                     float percent = monitoringData.trendData.currentValue /
-                        monitoringData.allarmingValue;
+                        monitoringData.alarmingValue;
 
                     // допустимое значение
                     const float allowablePercent = 0.8f;
 
                     if (percent > allowablePercent)
                     {
-                        float allowableValue = monitoringData.allarmingValue * allowablePercent;
+                        float allowableValue = monitoringData.alarmingValue * allowablePercent;
 
                         // если процент больше 80 будем показывать градиентным цветом
                         // рассчитываем цветность в оставшихся 80%
                         float newPercent = (monitoringData.trendData.currentValue - allowableValue) /
-                            (monitoringData.allarmingValue - allowableValue);
+                            (monitoringData.alarmingValue - allowableValue);
 
                         pNMCD->clrTextBk = calc_graditent_color(RGB(255, 255, 128), RGB(255, 128, 128), newPercent);
                     }

@@ -21,11 +21,14 @@ const CString kRandomChannelName = L"Краказябра";
 const CTime kExistDataStartTime(2020, 6, 7, 0, 0, 0);
 const CTime kExistDataStopTime(2020, 10, 7, 0, 0, 0);
 
-#ifdef DONT_TEST_MONITORING_TASKS
 
 ////////////////////////////////////////////////////////////////////////////////
 // тестирование сервиса с получением и анализом данных для мониторинга
+#ifdef DONT_TEST_MONITORING_TASKS
+TEST_F(MonitoringTasksTestClass, DISABLED_AddTaskList)
+#else
 TEST_F(MonitoringTasksTestClass, AddTaskList)
+#endif
 {
     m_testType = TestType::eTestAddTaskList;
 
@@ -54,7 +57,11 @@ TEST_F(MonitoringTasksTestClass, AddTaskList)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+#ifdef DONT_TEST_MONITORING_TASKS
+TEST_F(MonitoringTasksTestClass, DISABLED_AddTaskParams)
+#else
 TEST_F(MonitoringTasksTestClass, AddTaskParams)
+#endif
 {
     m_testType = TestType::eTestAddTaskParams;
 
@@ -73,7 +80,11 @@ TEST_F(MonitoringTasksTestClass, AddTaskParams)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+#ifdef DONT_TEST_MONITORING_TASKS
+TEST_F(MonitoringTasksTestClass, DISABLED_RemoveTask)
+#else
 TEST_F(MonitoringTasksTestClass, RemoveTask)
+#endif
 {
     m_testType = TestType::eTestRemoveTask;
 
@@ -91,8 +102,6 @@ TEST_F(MonitoringTasksTestClass, RemoveTask)
     // ждём пока придёт результат
     ASSERT_FALSE(waitForTaskResult(lock, false)) << "Не удалось получить данные мониторинга за 1 минуту";
 }
-
-#endif DONT_TEST_MONITORING_TASKS
 
 ////////////////////////////////////////////////////////////////////////////////
 void MonitoringTasksTestClass::SetUp()

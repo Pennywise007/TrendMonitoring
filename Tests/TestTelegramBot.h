@@ -51,6 +51,17 @@ public:
         m_curStatus = newStatus;
     }
 
+    // установка последней заданной пользователем команды боту
+    void setUserLastCommand(const TgBot::User::Ptr& pUser, const std::string& lastCommand) override
+    {
+        m_lastCommand = lastCommand;
+    }
+    // получение последней заданной пользователем команды боту
+    std::string getUserLastCommand(const TgBot::User::Ptr& pUser) override
+    {
+        return m_lastCommand;
+    }
+
     // получить все идентификаторы чатов пользователей с определенным статусом
     std::list<int64_t> getAllChatIdsByStatus(const UserStatus userStatus) override
     {
@@ -60,6 +71,8 @@ public:
 private:
     // текущий статус (общий дл€ всех)
     UserStatus m_curStatus = UserStatus::eNotAuthorized;
+    // последн€€ отправленна€ боту команда
+    std::string m_lastCommand;
     // мапа соответствий идентификаторов чатов и статусов пользователей
     std::map<UserStatus, std::list<int64_t>> m_chatIdsToUserStatusMap;
 };
@@ -76,13 +89,13 @@ protected:
 // эмул€тор команд от телеграма
 protected:
     // эмул€ци€ отправки сообщени€
-    void emulateBroadcastMessage(const CString& text) const;
+    void emulateBroadcastMessage(const std::wstring& text) const;
     // эмул€ци€ запросов от телеграма (нажатие на кнопки)
-    void emulateBroadcastCallbackQuery(const CString& text) const;
+    void emulateBroadcastCallbackQuery(const std::wstring& text) const;
 
 private:
     // создаем сообщение телеграма
-    TgBot::Message::Ptr generateMessage(const CString& text) const;
+    TgBot::Message::Ptr generateMessage(const std::wstring& text) const;
 
 protected:
     // тестовый телеграм бот
@@ -95,7 +108,9 @@ protected:
     class TestTelegramThread* m_pTelegramThread = nullptr;
 
     // список команд и доступности дл€ различных пользователей
-    std::map<CString, std::set<ITelegramUsersList::UserStatus>> m_commandsToUserStatus;
+    std::map<std::wstring, std::set<ITelegramUsersList::UserStatus>> m_commandsToUserStatus;
+
+    CString m_adminCommands;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -112,7 +127,7 @@ public:
         TestClient() = default;
 
         // Inherited via HttpClient
-        virtual std::string makeRequest(const TgBot::Url& url, const std::vector<TgBot::HttpReqArg>& args) const override
+        std::string makeRequest(const TgBot::Url& url, const std::vector<TgBot::HttpReqArg>& args) const override
         { return std::string(); }
     };
 
@@ -121,10 +136,10 @@ public:
     {}
 
 public:
-    typedef std::function<void(int64_t, const CString&, bool,
+    typedef std::function<void(int64_t, const std::wstring&, bool,
                                int32_t, TgBot::GenericReply::Ptr,
                                const std::string&, bool)> onSendMessageCallback;
-    typedef std::function<void(const std::list<int64_t>&, const CString&, bool,
+    typedef std::function<void(const std::list<int64_t>&, const std::wstring&, bool,
                                int32_t, TgBot::GenericReply::Ptr,
                                const std::string&, bool)> onSendMessageToChatsCallback;
 
@@ -142,17 +157,12 @@ public:
 // ITelegramThread
 public:
     // запуск потока
-    void startTelegramThread(const std::map<std::string, CommandFunction>& commandsList,
+    void startTelegramThread(const std::unordered_map<std::string, CommandFunction>& commandsList,
                              const CommandFunction& onUnknownCommand = nullptr,
                              const CommandFunction& onNonCommandMessage = nullptr) override
     {
         TgBot::EventBroadcaster& eventBroadCaster = getBotEvents();
-
-        for (auto& command : commandsList)
-        {
-            eventBroadCaster.onCommand(command.first, command.second);
-        }
-
+        eventBroadCaster.getCommandListeners() = commandsList;
         eventBroadCaster.onUnknownCommand(onUnknownCommand);
         eventBroadCaster.onNonCommandMessage(onNonCommandMessage);
     }
@@ -162,24 +172,24 @@ public:
     {}
 
     // функци€ отправки сообщений в чаты
-    void sendMessage(const std::list<int64_t>& chatIds, const CString& msg,
+    void sendMessage(const std::list<int64_t>& chatIds, const std::wstring& msg,
                      bool disableWebPagePreview = false, int32_t replyToMessageId = 0,
                      TgBot::GenericReply::Ptr replyMarkup = std::make_shared<TgBot::GenericReply>(),
                      const std::string& parseMode = "", bool disableNotification = false) override
     {
-        ASSERT_TRUE(m_sendMessageToChatsCallback) << "ќтправилось сообщение без колбэка " + CStringA(msg);
+        ASSERT_TRUE(m_sendMessageToChatsCallback) << "ќтправилось сообщение без колбэка " + CStringA(msg.c_str());
 
         m_sendMessageToChatsCallback(chatIds, msg, disableWebPagePreview, replyToMessageId,
                                      replyMarkup, parseMode, disableNotification);
     }
 
     // функци€ отправки сообщени€ в чат
-    void sendMessage(int64_t chatId, const CString& msg, bool disableWebPagePreview = false,
+    void sendMessage(int64_t chatId, const std::wstring& msg, bool disableWebPagePreview = false,
                      int32_t replyToMessageId = 0,
                      TgBot::GenericReply::Ptr replyMarkup = std::make_shared<TgBot::GenericReply>(),
                      const std::string& parseMode = "", bool disableNotification = false) override
     {
-        ASSERT_TRUE(m_sendMessageCallback) << "ќтправилось сообщение без колбэка " + CStringA(msg);
+        ASSERT_TRUE(m_sendMessageCallback) << "ќтправилось сообщение без колбэка " + CStringA(msg.c_str());
 
         m_sendMessageCallback(chatId, msg, disableWebPagePreview, replyToMessageId,
                               replyMarkup, parseMode, disableNotification);
@@ -217,11 +227,11 @@ public:
     // pTelegramThread - подложный поток телеграма который эмулирует отправку сообщений
     // pExpectedUserMessage - сообщение которое должно быть отправлено пользователю через onSendMessage
     // pExpectedReply - ответ который должен получить пользователь(как правило тут клавиатура с кнопками ответа)
-    // pExpectedReciepientsChats - список чатов которым предназначаетс€ сообщение
-    // pExpectedMessageToReciepients - сообщение которое должно быть отправлено на указанный список чатов
+    // pExpectedRecipientsChats - список чатов которым предназначаетс€ сообщение
+    // pExpectedMessageToRecipients - сообщение которое должно быть отправлено на указанный список чатов
     TelegramUserMessagesChecker(TestTelegramThread* pTelegramThread,
                                 CString* pExpectedUserMessage,
                                 TgBot::GenericReply::Ptr* pExpectedReply = nullptr,
-                                std::list<int64_t>** pExpectedReciepientsChats = nullptr,
-                                CString* pExpectedMessageToReciepients = nullptr);
+                                std::list<int64_t>** pExpectedRecipientsChats = nullptr,
+                                CString* pExpectedMessageToRecipients = nullptr);
 };

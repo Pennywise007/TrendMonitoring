@@ -69,12 +69,12 @@ void MonitoringTestClass::checkModelAndRealChannelsData(const std::string& testD
         EXPECT_EQ(serviceChannelData.channelName, serviceChannelData.channelName) << reportText(index, "названия каналов");
         EXPECT_EQ(serviceChannelData.monitoringInterval, serviceChannelData.monitoringInterval) << reportText(index, "интервалы мониторинга");
 
-        if (isfinite(serviceChannelData.allarmingValue) && isfinite(serviceChannelData.allarmingValue))
+        if (isfinite(serviceChannelData.alarmingValue) && isfinite(serviceChannelData.alarmingValue))
             // если они не наны - сравниваем числа
-            EXPECT_FLOAT_EQ(serviceChannelData.allarmingValue, serviceChannelData.allarmingValue) << reportText(index, "оповещательное значение");
+            EXPECT_FLOAT_EQ(serviceChannelData.alarmingValue, serviceChannelData.alarmingValue) << reportText(index, "оповещательное значение");
         else
             // если кто-то нан то второй тоже должен быть наном
-            EXPECT_EQ(isfinite(serviceChannelData.allarmingValue), isfinite(serviceChannelData.allarmingValue)) << reportText(index, "оповещательное значение");
+            EXPECT_EQ(isfinite(serviceChannelData.alarmingValue), isfinite(serviceChannelData.alarmingValue)) << reportText(index, "оповещательное значение");
 
         ++index;
     }
@@ -105,7 +105,7 @@ void MonitoringTestClass::testSetParamsToChannels()
         m_monitoringService->changeMonitoringChannelNotify  (channelIndex, modelChannelData.bNotify);
         m_monitoringService->changeMonitoringChannelName    (channelIndex, modelChannelData.channelName);
         m_monitoringService->changeMonitoringChannelInterval(channelIndex, modelChannelData.monitoringInterval);
-        m_monitoringService->changeMonitoringChannelAllarmingValue(channelIndex, modelChannelData.allarmingValue);
+        m_monitoringService->changeMonitoringChannelAlarmingValue(channelIndex, modelChannelData.alarmingValue);
     };
 
     size_t index = 1;
@@ -114,7 +114,7 @@ void MonitoringTestClass::testSetParamsToChannels()
     modelChannelData->bNotify = false;
     modelChannelData->channelName = L"Прогибометр №2";
     modelChannelData->monitoringInterval = MonitoringInterval::eThreeMonths;
-    modelChannelData->allarmingValue = -1;
+    modelChannelData->alarmingValue = -1;
     applyModelSettingsToChannel(index, *modelChannelData);
 
     index = kMonitoringChannelsCount - 1;
@@ -123,7 +123,7 @@ void MonitoringTestClass::testSetParamsToChannels()
     modelChannelData->bNotify = true;
     modelChannelData->channelName = L"Прогибометр №3";
     modelChannelData->monitoringInterval = MonitoringInterval::eOneDay;
-    modelChannelData->allarmingValue = 100;
+    modelChannelData->alarmingValue = 100;
     applyModelSettingsToChannel(index, *modelChannelData);
 
     // проверяем что у локального списка каналов данные совпадают
