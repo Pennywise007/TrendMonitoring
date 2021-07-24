@@ -5,7 +5,7 @@
 
 #include "Messages.h"
 
-#include "ITrendMonitoring.h"
+#include <include/ITrendMonitoring.h>
 
 // идентификатор события окончания загрузки данных для канала с мониторингом
 // {C6C55763-BC3F-41B0-95D0-D1BC52A149AE}

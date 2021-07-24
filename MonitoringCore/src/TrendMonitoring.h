@@ -1,14 +1,15 @@
 #pragma once
 
-#include "Messages.h"
-#include "Singleton.h"
-#include "TickService.h"
+#include <Messages.h>
+#include <Singleton.h>
+#include <TickService.h>
+
+#include <include/IMonitoringTasksService.h>
+#include <include/ITrendMonitoring.h>
 
 #include "ApplicationConfiguration.h"
-#include "IMonitoringTasksService.h"
-#include "ITrendMonitoring.h"
 
-#include "TelegramBot.h"
+#include "Telegram/TelegramBot.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // –еализаци€ сервиса дл€ мониторинга каналов
@@ -175,7 +176,7 @@ private:
 
 private:
     // бот дл€ работы с телеграмом
-    CTelegramBot m_telegramBot;
+    std::unique_ptr<CTelegramBot> m_telegramBot;
 
 private:
     // данные приложени€

@@ -14,7 +14,7 @@
 
 #include <Controls/ComboBox/CComboBoxWithSearch/ComboWithSearch.h>
 
-#include <ITrendMonitoring.h>
+#include <include/ITrendMonitoring.h>
 #include <DirsService.h>
 
 #include "BotSettingDlg.h"
@@ -211,6 +211,9 @@ void CTrendMonitorDlg::initControls()
                        const LVSubItemParams* pParams,
                        bool bAcceptResult)
                     {
+                        if (!bAcceptResult)
+                            return;
+
                         CString text;
                         editorControl->GetWindowText(text);
 
@@ -257,6 +260,9 @@ void CTrendMonitorDlg::initControls()
                    const LVSubItemParams* pParams,
                    bool bAcceptResult)
                 {
+                    if (!bAcceptResult)
+                        return;
+
                     CString text;
                     editorControl->GetWindowText(text);
 
@@ -284,6 +290,9 @@ void CTrendMonitorDlg::initControls()
                    const LVSubItemParams* pParams,
                    bool bAcceptResult)
                 {
+                    if (!bAcceptResult)
+                        return;
+
                     CString text;
                     editorControl->GetWindowText(text);
 

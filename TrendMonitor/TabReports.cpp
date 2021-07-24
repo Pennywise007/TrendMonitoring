@@ -7,7 +7,7 @@
 #include "TabReports.h"
 #include "afxdialogex.h"
 
-#include "ITrendMonitoring.h"
+#include <include/ITrendMonitoring.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 IMPLEMENT_DYNAMIC(CTabReports, CDialogEx)
@@ -65,7 +65,7 @@ void CTabReports::OnDestroy()
     __super::OnDestroy();
 
     // отписываемся от событий
-    EventRecipientImpl::subscribe(onReportPreparedEvent);
+    EventRecipientImpl::unsubscribe(onReportPreparedEvent);
 }
 
 //----------------------------------------------------------------------------//

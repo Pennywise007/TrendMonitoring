@@ -4,10 +4,10 @@
 #include <memory>
 
 #include <COM.h>
-#include "Serialization/ISerializable.h"
+#include <Serialization/ISerializable.h>
 
-#include "ITrendMonitoring.h"
-#include "ITelegramUsersList.h"
+#include <include/ITrendMonitoring.h>
+#include <include/ITelegramUsersList.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Класс с настройками канала для мониторинга

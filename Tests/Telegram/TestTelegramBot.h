@@ -1,6 +1,5 @@
 #pragma once
 
-#include <filesystem>
 #include <functional>
 #include <map>
 #include <memory>
@@ -10,8 +9,8 @@
 #include <COM.h>
 #include <TelegramDLL/TelegramThread.h>
 
-#include "src/ITelegramUsersList.h"
-#include "src/TelegramBot.h"
+#include <include/ITelegramUsersList.h>
+#include <src/Telegram/TelegramBot.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Класс хранящий список пользователей телеграма
@@ -91,7 +90,7 @@ protected:
     // эмуляция отправки сообщения
     void emulateBroadcastMessage(const std::wstring& text) const;
     // эмуляция запросов от телеграма (нажатие на кнопки)
-    void emulateBroadcastCallbackQuery(const std::wstring& text) const;
+    void emulateBroadcastCallbackQuery(LPCWSTR queryFormat, ...) const;
 
 private:
     // создаем сообщение телеграма
@@ -99,7 +98,7 @@ private:
 
 protected:
     // тестовый телеграм бот
-    CTelegramBot m_testTelegramBot;
+    std::unique_ptr<CTelegramBot> m_testTelegramBot;
 
     // список пользователей
     TestTelegramUsersList::Ptr m_pUserList;
@@ -110,7 +109,8 @@ protected:
     // список команд и доступности для различных пользователей
     std::map<std::wstring, std::set<ITelegramUsersList::UserStatus>> m_commandsToUserStatus;
 
-    CString m_adminCommands;
+    // текст со списком команд для админа
+    CString m_adminCommandsInfo;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

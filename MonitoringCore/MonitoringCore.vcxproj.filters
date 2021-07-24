@@ -50,21 +50,6 @@
     <ClInclude Include="src\TrendMonitoring.h">
       <Filter>TrendMonitoring</Filter>
     </ClInclude>
-    <ClInclude Include="ITrendMonitoring.h">
-      <Filter>TrendMonitoring</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TelegramBot.h">
-      <Filter>TelegramBot</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ITelegramUsersList.h">
-      <Filter>TelegramBot</Filter>
-    </ClInclude>
-    <ClInclude Include="src\IMonitoringTasksService.h">
-      <Filter>MonitoringTasksService</Filter>
-    </ClInclude>
-    <ClInclude Include="src\MonitoringTasksServiceImpl.h">
-      <Filter>MonitoringTasksService</Filter>
-    </ClInclude>
     <ClInclude Include="$(CommonHeadersDir)COM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -104,11 +89,29 @@
     <ClInclude Include="$(CommonHeadersDir)Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TelegramCommands.h">
+    <ClInclude Include="src\Telegram\CommandsInfoService.h">
       <Filter>TelegramBot</Filter>
     </ClInclude>
-    <ClInclude Include="TelegramCallbacks.h">
+    <ClInclude Include="src\Telegram\KeyboardCallback.h">
       <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Telegram\TelegramBot.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Telegram\TelegramCallbacks.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MonitoringTaskService\MonitoringTasksServiceImpl.h">
+      <Filter>MonitoringTasksService</Filter>
+    </ClInclude>
+    <ClInclude Include="include\IMonitoringTasksService.h">
+      <Filter>MonitoringTasksService</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ITelegramUsersList.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ITrendMonitoring.h">
+      <Filter>TrendMonitoring</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -124,12 +127,6 @@
     <ClCompile Include="src\ApplicationConfiguration.cpp">
       <Filter>Configuration</Filter>
     </ClCompile>
-    <ClCompile Include="src\TelegramBot.cpp">
-      <Filter>TelegramBot</Filter>
-    </ClCompile>
-    <ClCompile Include="src\MonitoringTasksServiceImpl.cpp">
-      <Filter>MonitoringTasksService</Filter>
-    </ClCompile>
     <ClCompile Include="$(MyIncludeDir)ChannelDataCorrector\ChannelDataGetter.cpp">
       <Filter>MonitoringTasksService\ChannelDataGetter</Filter>
     </ClCompile>
@@ -139,11 +136,20 @@
     <ClCompile Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.cpp">
       <Filter>Configuration\Serialization\SerializatorFabric</Filter>
     </ClCompile>
-    <ClCompile Include="src\TelegramCommands.cpp">
+    <ClCompile Include="src\Telegram\CommandsInfoService.cpp">
       <Filter>TelegramBot</Filter>
     </ClCompile>
-    <ClCompile Include="TelegramCallbacks.cpp">
+    <ClCompile Include="src\Telegram\KeyboardCallback.cpp">
       <Filter>TelegramBot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Telegram\TelegramBot.cpp">
+      <Filter>TelegramBot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Telegram\TelegramCallbacks.cpp">
+      <Filter>TelegramBot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MonitoringTaskService\MonitoringTasksServiceImpl.cpp">
+      <Filter>MonitoringTasksService</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

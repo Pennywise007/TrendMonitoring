@@ -6,7 +6,7 @@
 
 #include <Messages.h>
 
-#include <src/IMonitoringTasksService.h>
+#include <include/IMonitoringTasksService.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // ѕроверка сервиса с получением данных через таски MonitoringTasksService
@@ -50,4 +50,3 @@ protected:
         eTestRemoveTask
     } m_testType = TestType::eTestAddTaskList;
 };
-

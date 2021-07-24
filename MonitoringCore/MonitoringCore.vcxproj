@@ -227,17 +227,18 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     <ClInclude Include="$(UtilsDir)pugixml-1.10\src\pugixml.hpp" />
     <ClInclude Include="$(CommonHeadersDir)DirsService.h" />
     <ClInclude Include="$(CommonHeadersDir)Logger.h" />
-    <ClInclude Include="ITrendMonitoring.h" />
+    <ClInclude Include="include\ITrendMonitoring.h" />
+    <ClInclude Include="src\Telegram\CommandsInfoService.h" />
+    <ClInclude Include="src\Telegram\KeyboardCallback.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="src\ApplicationConfiguration.h" />
-    <ClInclude Include="src\IMonitoringTasksService.h" />
-    <ClInclude Include="src\MonitoringTasksServiceImpl.h" />
-    <ClInclude Include="src\ITelegramUsersList.h" />
-    <ClInclude Include="src\TelegramBot.h" />
-    <ClInclude Include="src\TelegramCommands.h" />
+    <ClInclude Include="include\IMonitoringTasksService.h" />
+    <ClInclude Include="src\MonitoringTaskService\MonitoringTasksServiceImpl.h" />
+    <ClInclude Include="include\ITelegramUsersList.h" />
+    <ClInclude Include="src\Telegram\TelegramBot.h" />
     <ClInclude Include="src\TrendMonitoring.h" />
     <ClInclude Include="src\Utils.h" />
-    <ClInclude Include="TelegramCallbacks.h" />
+    <ClInclude Include="src\Telegram\TelegramCallbacks.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(CommonHeadersDir)Serialization\SerializatorFabric.cpp">
@@ -276,6 +277,8 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Telegram\CommandsInfoService.cpp" />
+    <ClCompile Include="src\Telegram\KeyboardCallback.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -292,21 +295,20 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="src\MonitoringTasksServiceImpl.cpp">
+    <ClCompile Include="src\MonitoringTaskService\MonitoringTasksServiceImpl.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="src\TelegramBot.cpp" />
-    <ClCompile Include="src\TelegramCommands.cpp" />
+    <ClCompile Include="src\Telegram\TelegramBot.cpp" />
     <ClCompile Include="src\TrendMonitoring.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="TelegramCallbacks.cpp" />
+    <ClCompile Include="src\Telegram\TelegramCallbacks.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

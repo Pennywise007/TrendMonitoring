@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include <DirsService.h>
-#include <ITrendMonitoring.h>
+#include <include/ITrendMonitoring.h>
 
 #include <src/Utils.h>
 

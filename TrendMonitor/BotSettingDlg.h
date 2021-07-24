@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "ITrendMonitoring.h"
+#include <include/ITrendMonitoring.h>
 
 // диалог настройки бота Telegram
 class CBotSettingDlg : public CDialogEx

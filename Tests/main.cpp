@@ -21,28 +21,32 @@ int main(int argc, char** argv)
     // только потому что список каналов грузится из директории со сжатыми сигналами подменяем
     zetDirsService.setZetCompressedDir(zetDirsService.getExeDir() + LR"(Signals\)");
 
-    TestHelper& handler = get_service<TestHelper>();
+    const TestHelper& helper = get_service<TestHelper>();
     // пока мы будем делать тесты могут попортиться реальные конфиги, если они есть сохраняем их и потом вернём
-    const std::filesystem::path currentConfigPath(handler.getConfigFilePath());
-    const std::filesystem::path copyConfigFilePath(handler.getCopyConfigFilePath());
+    const std::filesystem::path currentConfigPath(helper.getConfigFilePath());
+    std::optional<std::filesystem::path> copyConfigFilePath(helper.getCopyConfigFilePath());
     if (std::filesystem::is_regular_file(currentConfigPath))
-        std::filesystem::rename(currentConfigPath, copyConfigFilePath);
+        std::filesystem::rename(currentConfigPath, copyConfigFilePath.value());
+    else
+        copyConfigFilePath.reset();
 
     // делаем то же самое с файлом рестарта системы
-    const std::filesystem::path restartFilePath(handler.getRestartFilePath());
-    const std::filesystem::path copyRestartFilePath(handler.getCopyConfigFilePath());
+    const std::filesystem::path restartFilePath(helper.getRestartFilePath());
+    std::optional<std::filesystem::path> copyRestartFilePath(helper.getCopyRestartFilePath());
     if (std::filesystem::is_regular_file(restartFilePath))
-        std::filesystem::rename(restartFilePath, copyRestartFilePath);
+        std::filesystem::rename(restartFilePath, copyRestartFilePath.value());
+    else
+        copyRestartFilePath.reset();
 
     ////////////////////////////////////////////////////////////////////////////
     // запускаем тесты
-    int res = RUN_ALL_TESTS();
+    const int res = RUN_ALL_TESTS();
     ////////////////////////////////////////////////////////////////////////////
 
     // восстанавливаем сохраненный конфиг или удаляем созданный тестом
-    if (std::filesystem::is_regular_file(copyConfigFilePath))
+    if (copyConfigFilePath.has_value() && std::filesystem::is_regular_file(copyConfigFilePath.value()))
         // если был реальный файл конфига сохранён копией - возвращаем его на место
-        std::filesystem::rename(copyConfigFilePath, currentConfigPath);
+        std::filesystem::rename(copyConfigFilePath.value(), currentConfigPath);
     else
     {
         // подчищаем созданный файл с настройками
@@ -51,14 +55,13 @@ int main(int argc, char** argv)
     }
 
     // восстанавливаем файл рестарта
-    if (std::filesystem::is_regular_file(copyRestartFilePath))
+    if (copyRestartFilePath.has_value() && std::filesystem::is_regular_file(copyRestartFilePath.value()))
         // если был реальный файл конфига сохранён копией - возвращаем его на место
-        std::filesystem::rename(copyRestartFilePath, restartFilePath);
+        std::filesystem::rename(copyRestartFilePath.value(), restartFilePath);
     else
     {
-        // подчищаем созданный файл рестарта
-        EXPECT_TRUE(std::filesystem::is_regular_file(restartFilePath)) << "Файл с настройками мониторинга не был создан!";
-        EXPECT_TRUE(std::filesystem::remove(restartFilePath)) << "Не удалось удалить файл";
+        // файл рестарта должен был быть удалён после использования в тестах
+        EXPECT_FALSE(std::filesystem::is_regular_file(restartFilePath)) << "Файл рестарта не был удалён!";
     }
 
     return res;

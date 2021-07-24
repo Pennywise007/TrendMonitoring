@@ -7,7 +7,7 @@
 #include "TabTrendLog.h"
 #include "afxdialogex.h"
 
-#include "ITrendMonitoring.h"
+#include <include/ITrendMonitoring.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 IMPLEMENT_DYNAMIC(СTabTrendLog, CDialogEx)

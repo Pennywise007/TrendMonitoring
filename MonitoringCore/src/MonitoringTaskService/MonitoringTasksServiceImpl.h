@@ -14,8 +14,7 @@
 #include "Singleton.h"
 
 #include <ChannelDataCorrector/ChannelDataGetter.h>
-
-#include "IMonitoringTasksService.h"
+#include <include/IMonitoringTasksService.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // сервис для управления потоком получения данных используется для

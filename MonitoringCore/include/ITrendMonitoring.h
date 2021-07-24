@@ -82,7 +82,7 @@ struct MonitoringChannelData
         //eWaitingForData,           // ждем загрузки данных
         eDataLoaded,                // данные загружены успешно
         eLoadingError,              // ошибка при загрузке данных
-        //eErrorOnUpdatingData,       // возникла ошибка при обновлении данных
+        //eErrorOnUpdatingData,     // возникла ошибка при обновлении данных
 
         // оповещения
         eReportedFallenOff,         // произошло оповещение пользователей об отваливании датчика
@@ -91,6 +91,7 @@ struct MonitoringChannelData
 
         eLast
     };
+
     std::bitset<ChannelState::eLast> channelState;
 };
 

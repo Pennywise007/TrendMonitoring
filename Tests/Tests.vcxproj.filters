@@ -17,12 +17,18 @@
     <ClCompile Include="TestMonitoringTasks.cpp">
       <Filter>TestSources\TestMonitoringTasks</Filter>
     </ClCompile>
-    <ClCompile Include="TestTelegramBot.cpp">
-      <Filter>TestSources\TestTelegramBot</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="TestHelper.cpp">
       <Filter>TestHelper</Filter>
+    </ClCompile>
+    <ClCompile Include="Telegram\TestCallbacks.cpp">
+      <Filter>TestSources\Telegram</Filter>
+    </ClCompile>
+    <ClCompile Include="Telegram\TestCommands.cpp">
+      <Filter>TestSources\Telegram</Filter>
+    </ClCompile>
+    <ClCompile Include="Telegram\TestTelegramBot.cpp">
+      <Filter>TestSources\Telegram</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -49,11 +55,11 @@
     <ClInclude Include="TestMonitoringTasks.h">
       <Filter>TestSources\TestMonitoringTasks</Filter>
     </ClInclude>
-    <ClInclude Include="TestTelegramBot.h">
-      <Filter>TestSources\TestTelegramBot</Filter>
-    </ClInclude>
     <ClInclude Include="TestHelper.h">
       <Filter>TestHelper</Filter>
+    </ClInclude>
+    <ClInclude Include="Telegram\TestTelegramBot.h">
+      <Filter>TestSources\Telegram</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -75,11 +81,11 @@
     <Filter Include="TestSources\TestMonitoringTasks">
       <UniqueIdentifier>{d8b086be-38f4-4fdf-a25e-b5175bc44574}</UniqueIdentifier>
     </Filter>
-    <Filter Include="TestSources\TestTelegramBot">
-      <UniqueIdentifier>{114695d6-27e5-4bc0-a5c4-df740f8d6c1c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="TestHelper">
       <UniqueIdentifier>{4ae69fe3-f34c-4972-ad61-51f26b0d38ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TestSources\Telegram">
+      <UniqueIdentifier>{114695d6-27e5-4bc0-a5c4-df740f8d6c1c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -6,7 +6,7 @@
 
 #include <boost/scope_exit.hpp>
 
-#include <ITrendMonitoring.h>
+#include <include/ITrendMonitoring.h>
 
 #include "TestMonitoringTasks.h"
 
@@ -107,11 +107,11 @@ TEST_F(MonitoringTasksTestClass, RemoveTask)
 void MonitoringTasksTestClass::SetUp()
 {
     // подписываемся на события о выполнении заданий мониторинга
-    EventRecipientImpl::subscribeAssynch(onCompletingMonitoringTask);
+    EventRecipientImpl::subscribeAsync(onCompletingMonitoringTask);
 }
 
 //----------------------------------------------------------------------------//
-void MonitoringTasksTestClass::onEvent(const EventId& code, float eventValue,
+void MonitoringTasksTestClass::onEvent(const EventId& code, float /*eventValue*/,
                                        std::shared_ptr<IEventData> eventData)
 {
     if (code == onCompletingMonitoringTask)

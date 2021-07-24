@@ -33,9 +33,9 @@ TrendMonitoring::TrendMonitoring()
     loadConfiguration();
 
     // инициализируем бота после загрузки конфигурации
-    m_telegramBot.initBot(m_appConfig->getTelegramUsers());
+    m_telegramBot = std::make_unique<CTelegramBot>(m_appConfig->getTelegramUsers());
     // передаем боту настройки из конфигов
-    m_telegramBot.setBotSettings(getBotSettings());
+    m_telegramBot->setBotSettings(getBotSettings());
 
     // запускам задания для мониторинга, делаем отдельными заданиями ибо могут
     // долго грузиться данные для интервалов
@@ -95,7 +95,7 @@ std::set<CString> TrendMonitoring::getNamesOfAllChannels()
     for (const auto& channelInfo : channelsWithConversion)
         allChannelsNames.emplace(channelInfo.first);
 
-    return std::move(allChannelsNames);
+    return allChannelsNames;
 }
 
 //----------------------------------------------------------------------------//
@@ -372,7 +372,7 @@ void TrendMonitoring::setBotSettings(const TelegramBotSettings& newSettings)
     saveConfiguration();
 
     // инициализируем бота новым токеном
-    m_telegramBot.setBotSettings(getBotSettings());
+    m_telegramBot->setBotSettings(getBotSettings());
 }
 
 //----------------------------------------------------------------------------//
@@ -447,7 +447,7 @@ bool TrendMonitoring::handleUpdatingResult(const MonitoringResult::ResultData& m
 
             // анализируем новые данные
             {
-                // если установлено оповещение и за интервал не было значения меньше
+                // если установлено оповещение
                 if (_finite(channelParameters->alarmingValue) != 0)
                 {
                     // если за интервал все значения вышли за допустимое
@@ -456,21 +456,31 @@ bool TrendMonitoring::handleUpdatingResult(const MonitoringResult::ResultData& m
                          (channelParameters->alarmingValue < 0 &&
                           monitoringResult.maxValue <= channelParameters->alarmingValue))
                     {
-                        alertText.AppendFormat(L"Превышение допустимых значений. Допустимое значение %.02f, значения [%.02f..%.02f].",
-                                                channelParameters->alarmingValue,
-                                                monitoringResult.minValue, monitoringResult.maxValue);
-                        channelParameters->channelState[MonitoringChannelData::eReportedExcessOfValue] = true;
+                        if (!channelParameters->channelState[MonitoringChannelData::eReportedExcessOfValue])
+                        {
+                            alertText.AppendFormat(L"Превышение допустимых значений. Допустимое значение %.02f, значения [%.02f..%.02f].",
+                                                   channelParameters->alarmingValue,
+                                                   monitoringResult.minValue, monitoringResult.maxValue);
+                            channelParameters->channelState[MonitoringChannelData::eReportedExcessOfValue] = true;
+                        }
                     }
+                    else
+                        channelParameters->channelState[MonitoringChannelData::eReportedExcessOfValue] = false;
                 }
 
                 // проверяем количество пропусков, оповещаем если секунд без данных больше чем половина времени обновления интервала
-                if (auto emptySeconds = monitoringResult.emptyDataTime.GetTotalMinutes();
+                if (const auto emptySeconds = monitoringResult.emptyDataTime.GetTotalMinutes();
                     emptySeconds > kUpdateDataInterval.count() / 2)
                 {
-                    alertText.Append(CString(alertText.IsEmpty() ? L"" : L" ") + L"Много пропусков данных.");
+                    if (!channelParameters->channelState[MonitoringChannelData::eReportedALotOfEmptyData])
+                    {
+                        alertText.Append(CString(alertText.IsEmpty() ? L"" : L" ") + L"Много пропусков данных.");
 
-                    channelParameters->channelState[MonitoringChannelData::eReportedALotOfEmptyData] = true;
+                        channelParameters->channelState[MonitoringChannelData::eReportedALotOfEmptyData] = true;
+                    }
                 }
+                else
+                    channelParameters->channelState[MonitoringChannelData::eReportedALotOfEmptyData] = false;
             }
 
             channelParameters->channelState[MonitoringChannelData::eDataLoaded] = true;
@@ -589,7 +599,7 @@ bool TrendMonitoring::handleEveryDayReportResult(const MonitoringResult::ResultD
 
 //----------------------------------------------------------------------------//
 // IEventRecipient
-void TrendMonitoring::onEvent(const EventId& code, float eventValue,
+void TrendMonitoring::onEvent(const EventId& code, float /*eventValue*/,
                               std::shared_ptr<IEventData> eventData)
 {
     if (code == onCompletingMonitoringTask)
@@ -690,7 +700,7 @@ void TrendMonitoring::onEvent(const EventId& code, float eventValue,
                                                          std::static_pointer_cast<IEventData>(reportMessage));
 
                     // сообщаем пользователям телеграма
-                    m_telegramBot.sendMessageToAdmins(reportMessage->messageText);
+                    m_telegramBot->sendMessageToAdmins(reportMessage->messageText);
                 }
                 break;
             }
