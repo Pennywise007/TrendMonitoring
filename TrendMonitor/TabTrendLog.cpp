@@ -73,8 +73,7 @@ void СTabTrendLog::OnDestroy()
 }
 
 //----------------------------------------------------------------------------//
-void СTabTrendLog::onEvent(const EventId& code, float eventValue,
-                           std::shared_ptr<IEventData> eventData)
+void СTabTrendLog::onEvent(const EventId& code, float /*eventValue*/, const std::shared_ptr<IEventData>& eventData)
 {
     if (code == onNewLogMessageEvent)
     {

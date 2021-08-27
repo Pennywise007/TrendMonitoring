@@ -9,6 +9,12 @@
 #include "TestTrendMonitoring.h"
 #include "TestHelper.h"
 
+#include "gmock/gmock-actions.h"
+#include "gmock/gmock-matchers.h"
+#include "gmock/gmock-spec-builders.h"
+
+using namespace ::testing;
+
 // Список защитых в данных каналов мониторинга
 const size_t kMonitoringChannelsCount = 3;
 
@@ -20,9 +26,11 @@ TEST_F(MonitoringTestClass, CheckTrendMonitoring)
     std::set<CString> monitoringChannels = m_monitoringService->getNamesOfAllChannels();
 
     EXPECT_EQ(monitoringChannels.size(), kMonitoringChannelsCount)          << "Список каналов мониторинга отличается от эталонного";
-    EXPECT_EQ(*monitoringChannels.begin(), L"Прогибометр №1")               << "Список каналов мониторинга отличается от эталонного";
-    EXPECT_EQ(*std::next(monitoringChannels.begin()), L"Прогибометр №2")    << "Список каналов мониторинга отличается от эталонного";
-    EXPECT_EQ(*std::next(monitoringChannels.begin(), 2), L"Прогибометр №3") << "Список каналов мониторинга отличается от эталонного";
+
+    auto monitoringChannel = monitoringChannels.begin();
+    EXPECT_EQ(*monitoringChannel, L"Прогибометр №1") << "Список каналов мониторинга отличается от эталонного";
+    EXPECT_EQ(*++monitoringChannel, L"Прогибометр №2") << "Список каналов мониторинга отличается от эталонного";
+    EXPECT_EQ(*++monitoringChannel, L"Прогибометр №3") << "Список каналов мониторинга отличается от эталонного";
 
     // Проверка добавления каналов
     testAddChannels();
@@ -42,10 +50,39 @@ TEST_F(MonitoringTestClass, CheckTrendMonitoring)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void MonitoringTestClass::SetUp()
+void MonitoringTestClass::ExpectAddTask(const size_t channelIndex,
+                                        std::optional<CString> currentChannelName,
+                                        std::optional<MonitoringInterval> currentInterval)
 {
-    // сбрасывааем все настройки у сервиса которые уже могли появиться при более раннем использовании другими тестами
-    get_service<TestHelper>().resetMonitoringService();
+    TaskId taskId;
+    if (!SUCCEEDED(CoCreateGuid(&taskId)))
+        assert(!"Не удалось создать гуид!");
+
+    EXPECT_CALL(*m_monitoringServiceMock.get(), addTaskList(_, Matcher(IMonitoringTasksService::eNormal))).
+        WillOnce(Invoke(
+            [taskId, chanName = std::move(currentChannelName), interval = std::move(currentInterval)]
+    (const std::list<TaskParameters::Ptr>& listTaskParams, const IMonitoringTasksService::TaskPriority /*priority*/)
+    {
+        EXPECT_EQ(listTaskParams.size(), 1);
+        if (chanName.has_value())
+            EXPECT_STREQ(listTaskParams.front()->channelName, chanName.value()) << "Имя канала не совпало";
+        if (interval.has_value())
+            EXPECT_EQ(listTaskParams.front()->endTime - listTaskParams.front()->startTime, monitoring_interval_to_timespan(interval.value())) << "Интервал запроса данных не совпал";
+
+        return taskId;
+    }));
+
+    ASSERT_TRUE(m_channelsData.size() > channelIndex);
+    std::next(m_channelsData.begin(), channelIndex)->first = taskId;
+}
+
+void MonitoringTestClass::ExpectRemoveCurrentTask(const size_t channelIndex)
+{
+    ASSERT_TRUE(m_channelsData.size() > channelIndex);
+    auto channelIt = std::next(m_channelsData.begin(), channelIndex);
+    EXPECT_NE(channelIt->first, GUID_NULL);
+    EXPECT_CALL(*m_monitoringServiceMock.get(), removeTask(TaskIdComporator(channelIt->first))).Times(1);
+    channelIt->first = GUID_NULL;
 }
 
 //----------------------------------------------------------------------------//
@@ -61,20 +98,20 @@ void MonitoringTestClass::checkModelAndRealChannelsData(const std::string& testD
     // индекс проверяемого канала
     size_t index = 0;
     // проверяем что у локального списка каналов данные совпадают
-    for (const auto& modelChannelData : m_channelsData)
+    for (auto&& [taskId, modelChannelData] : m_channelsData)
     {
         const MonitoringChannelData& serviceChannelData = m_monitoringService->getMonitoringChannelData(index);
 
-        EXPECT_EQ(serviceChannelData.bNotify, serviceChannelData.bNotify) << reportText(index, "флаг включенности оповещений");
-        EXPECT_EQ(serviceChannelData.channelName, serviceChannelData.channelName) << reportText(index, "названия каналов");
-        EXPECT_EQ(serviceChannelData.monitoringInterval, serviceChannelData.monitoringInterval) << reportText(index, "интервалы мониторинга");
+        EXPECT_EQ(modelChannelData.bNotify, serviceChannelData.bNotify) << reportText(index, "флаг включенности оповещений");
+        EXPECT_STREQ(modelChannelData.channelName, serviceChannelData.channelName) << reportText(index, "названия каналов");
+        EXPECT_EQ(modelChannelData.monitoringInterval, serviceChannelData.monitoringInterval) << reportText(index, "интервалы мониторинга");
 
-        if (isfinite(serviceChannelData.alarmingValue) && isfinite(serviceChannelData.alarmingValue))
+        if (isfinite(modelChannelData.alarmingValue) && isfinite(serviceChannelData.alarmingValue))
             // если они не наны - сравниваем числа
-            EXPECT_FLOAT_EQ(serviceChannelData.alarmingValue, serviceChannelData.alarmingValue) << reportText(index, "оповещательное значение");
+            EXPECT_FLOAT_EQ(modelChannelData.alarmingValue, serviceChannelData.alarmingValue) << reportText(index, "оповещательное значение");
         else
             // если кто-то нан то второй тоже должен быть наном
-            EXPECT_EQ(isfinite(serviceChannelData.alarmingValue), isfinite(serviceChannelData.alarmingValue)) << reportText(index, "оповещательное значение");
+            EXPECT_EQ(isfinite(modelChannelData.alarmingValue), isfinite(serviceChannelData.alarmingValue)) << reportText(index, "оповещательное значение");
 
         ++index;
     }
@@ -85,12 +122,17 @@ void MonitoringTestClass::checkModelAndRealChannelsData(const std::string& testD
 //----------------------------------------------------------------------------//
 void MonitoringTestClass::testAddChannels()
 {
+    const CString defaultChannelName = *m_monitoringService->getNamesOfAllChannels().begin();
+    const MonitoringInterval defaultMonitoringInterval = MonitoringChannelData().monitoringInterval;
+
     // добавляем в списорк все каналы которые можем
     for (size_t ind = 0; ind < kMonitoringChannelsCount; ++ind)
     {
-        EXPECT_EQ(m_monitoringService->addMonitoringChannel(), ind) << "После добавления в списке каналов почему-то больше каналов чем должно";
-        m_channelsData.push_back(MonitoringChannelData());
-        m_channelsData.back().channelName = L"Прогибометр №1";
+        m_channelsData.emplace_back().second.channelName = L"Прогибометр №1";
+
+        ExpectAddTask(ind, defaultChannelName, defaultMonitoringInterval);
+        const size_t res = ExpectNotificationAboutListChangesWithReturn(&ITrendMonitoring::addMonitoringChannel);
+        EXPECT_EQ(res, ind) << "После добавления в списке каналов почему-то больше каналов чем должно";
     }
 
     // проверяем что параметры совпали
@@ -102,15 +144,21 @@ void MonitoringTestClass::testSetParamsToChannels()
 {
     auto applyModelSettingsToChannel = [&](const size_t channelIndex, const MonitoringChannelData& modelChannelData)
     {
-        m_monitoringService->changeMonitoringChannelNotify  (channelIndex, modelChannelData.bNotify);
-        m_monitoringService->changeMonitoringChannelName    (channelIndex, modelChannelData.channelName);
-        m_monitoringService->changeMonitoringChannelInterval(channelIndex, modelChannelData.monitoringInterval);
-        m_monitoringService->changeMonitoringChannelAlarmingValue(channelIndex, modelChannelData.alarmingValue);
+        ExpectNotificationAboutListChanges(&ITrendMonitoring::changeMonitoringChannelNotify,        channelIndex, modelChannelData.bNotify);
+        ExpectNotificationAboutListChanges(&ITrendMonitoring::changeMonitoringChannelAlarmingValue, channelIndex, modelChannelData.alarmingValue);
+
+        ExpectRemoveCurrentTask(channelIndex);
+        ExpectAddTask(channelIndex, modelChannelData.channelName);
+        ExpectNotificationAboutListChanges(&ITrendMonitoring::changeMonitoringChannelName,          channelIndex, modelChannelData.channelName);
+
+        ExpectRemoveCurrentTask(channelIndex);
+        ExpectAddTask(channelIndex, modelChannelData.channelName, modelChannelData.monitoringInterval);
+        ExpectNotificationAboutListChanges(&ITrendMonitoring::changeMonitoringChannelInterval,      channelIndex, modelChannelData.monitoringInterval);
     };
 
     size_t index = 1;
     // меняем настройки среднего канала
-    auto modelChannelData = std::next(m_channelsData.begin(), index);
+    MonitoringChannelData* modelChannelData = &(std::next(m_channelsData.begin(), index)->second);
     modelChannelData->bNotify = false;
     modelChannelData->channelName = L"Прогибометр №2";
     modelChannelData->monitoringInterval = MonitoringInterval::eThreeMonths;
@@ -119,8 +167,8 @@ void MonitoringTestClass::testSetParamsToChannels()
 
     index = kMonitoringChannelsCount - 1;
     // меняем настройки последнего канала
-    modelChannelData = std::next(m_channelsData.begin(), index);
-    modelChannelData->bNotify = true;
+    modelChannelData = &(std::next(m_channelsData.begin(), index)->second);
+    modelChannelData->bNotify = false;
     modelChannelData->channelName = L"Прогибометр №3";
     modelChannelData->monitoringInterval = MonitoringInterval::eOneDay;
     modelChannelData->alarmingValue = 100;
@@ -136,7 +184,8 @@ void MonitoringTestClass::testChannelListManagement()
     // 0 Прогибометр 1
     // 1 Прогибометр 2      ↑
     // 2 Прогибометр 3
-    EXPECT_EQ(m_monitoringService->moveUpMonitoringChannelByIndex(1), 0) << "После перемещения конала вверх его индекс не валиден";
+    size_t result = ExpectNotificationAboutListChangesWithReturn(&ITrendMonitoring::moveUpMonitoringChannelByIndex, 1);
+    EXPECT_EQ(result, 0) << "После перемещения конала вверх его индекс не валиден";
     m_channelsData.splice(m_channelsData.begin(), m_channelsData, ++m_channelsData.begin());
     // проверяем что у локального списка каналов данные совпадают
     checkModelAndRealChannelsData("Перемещение каналов в списке");
@@ -144,7 +193,8 @@ void MonitoringTestClass::testChannelListManagement()
     // 0 Прогибометр 2      ↑
     // 1 Прогибометр 1
     // 2 Прогибометр 3
-    EXPECT_EQ(m_monitoringService->moveUpMonitoringChannelByIndex(0), 2) << "После перемещения вверх первого канала он должен оказаться в конце";
+    result = ExpectNotificationAboutListChangesWithReturn(&ITrendMonitoring::moveUpMonitoringChannelByIndex, 0);
+    EXPECT_EQ(result, 2) << "После перемещения вверх первого канала он должен оказаться в конце";
     m_channelsData.splice(m_channelsData.end(), m_channelsData, m_channelsData.begin());
     // проверяем что у локального списка каналов данные совпадают
     checkModelAndRealChannelsData("Перемещение каналов в списке");
@@ -152,7 +202,8 @@ void MonitoringTestClass::testChannelListManagement()
     // 0 Прогибометр 1
     // 1 Прогибометр 3      ↓
     // 2 Прогибометр 2
-    EXPECT_EQ(m_monitoringService->moveDownMonitoringChannelByIndex(1), 2) << "После перемещения вниз среднего канала он должен оказаться последним";
+    result = ExpectNotificationAboutListChangesWithReturn(&ITrendMonitoring::moveDownMonitoringChannelByIndex, 1);
+    EXPECT_EQ(result, 2) << "После перемещения вниз среднего канала он должен оказаться последним";
     m_channelsData.splice(m_channelsData.end(), m_channelsData, ++m_channelsData.begin());
     // проверяем что у локального списка каналов данные совпадают
     checkModelAndRealChannelsData("Перемещение каналов в списке");
@@ -160,7 +211,8 @@ void MonitoringTestClass::testChannelListManagement()
     // 0 Прогибометр 1
     // 1 Прогибометр 2
     // 2 Прогибометр 3      ↓
-    EXPECT_EQ(m_monitoringService->moveDownMonitoringChannelByIndex(2), 0) << "После перемещения вниз последнего канала он должен оказаться первым";
+    result = ExpectNotificationAboutListChangesWithReturn(&ITrendMonitoring::moveDownMonitoringChannelByIndex, 2);
+    EXPECT_EQ(result, 0) << "После перемещения вниз последнего канала он должен оказаться первым";
     m_channelsData.splice(m_channelsData.begin(), m_channelsData, --m_channelsData.end());
     // проверяем что у локального списка каналов данные совпадают
     checkModelAndRealChannelsData("Перемещение каналов в списке");
@@ -173,12 +225,20 @@ void MonitoringTestClass::testDelChannels()
     // 1 Прогибометр 1
     // 2 Прогибометр 2
 
+    size_t channelIndex = 1;
+
     // удаление элементов
-    EXPECT_EQ(m_monitoringService->removeMonitoringChannelByIndex(1), 1) << "После удаления канала выделенный индекс не корректнен";
+    ExpectRemoveCurrentTask(channelIndex);
+    size_t result = ExpectNotificationAboutListChangesWithReturn(&ITrendMonitoring::removeMonitoringChannelByIndex, channelIndex);
+    EXPECT_EQ(result, 1) << "После удаления канала выделенный индекс не корректнен";
     m_channelsData.erase(++m_channelsData.begin());
     // проверяем что у локального списка каналов данные совпадают
     checkModelAndRealChannelsData("Удаление каналов из списка");
-    EXPECT_EQ(m_monitoringService->removeMonitoringChannelByIndex(0), 0) << "После удаления канала выделенный индекс не корректнен";
+
+    channelIndex = 0;
+    ExpectRemoveCurrentTask(channelIndex);
+    result = ExpectNotificationAboutListChangesWithReturn(&ITrendMonitoring::removeMonitoringChannelByIndex, channelIndex);
+    EXPECT_EQ(result, 0) << "После удаления канала выделенный индекс не корректнен";
     m_channelsData.erase(m_channelsData.begin());
     // проверяем что у локального списка каналов данные совпадают
     checkModelAndRealChannelsData("Удаление каналов из списка");

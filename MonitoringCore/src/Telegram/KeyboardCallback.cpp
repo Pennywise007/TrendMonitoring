@@ -3,8 +3,7 @@
 
 #include <regex>
 
-namespace callback
-{
+namespace telegram::callback {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Формирование колбэка
@@ -54,4 +53,4 @@ TgBot::InlineKeyboardButton::Ptr create_keyboard_button(const CString& text, con
     return channelButton;
 }
 
-} // namespace callback
+} // namespace telegram::callback

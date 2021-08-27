@@ -8,6 +8,7 @@
 #include "TestHelper.h"
 #include "TestTelegramBot.h"
 
+namespace telegram::bot {
 using namespace callback;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -109,7 +110,7 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
 
             expectedKeyboard->inlineKeyboard.push_back({ generateKeyBoardButton(chan.GetString(), callBackText.GetString()) });
         }
-        // проверяем отчёт по определенному каналу
+        // проверяем что предложит создать отчёт по каждому из каналов
         // /report type={'1'}");
         emulateBroadcastCallbackQuery(L"%hs %hs={'1'}", kKeyWord.c_str(), kParamType.c_str());
 
@@ -136,8 +137,20 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
             CString text;
             // /report type={'1'} chan={'chan'}
             text.Format(L"%hs %hs={'1'} %hs={'%s'}", kKeyWord.c_str(), kParamType.c_str(), kParamChan.c_str(), chan.GetString());
-            // запрашиваем очтёт по каналу chan
+            // запрашиваем отчёт по каналу chan, ожидаем что предложит все варианты интервалов
             emulateBroadcastCallbackQuery(text.GetString());
+
+            // делаем ту же проверку только без задания типа канала
+            for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
+            {
+                CString callBackText;
+                // /report chan={\\\'chan\\\'} interval={\\\'i\\\'}
+                callBackText.Format(L"%hs %hs={\\\'%s\\\'} %hs={\\\'%d\\\'}",
+                                    kKeyWord.c_str(), kParamChan.c_str(), chan.GetString(),
+                                    kParamInterval.c_str(), i);
+
+                expectedKeyboard->inlineKeyboard[i] = { generateKeyBoardButton(monitoring_interval_to_string(MonitoringInterval(i)).GetString(), callBackText.GetString()) };
+            }
 
             // запрашиваем данные для каждого интервала
             expectedMessage = L"Выполняется расчёт данных, это может занять некоторое время.";
@@ -149,6 +162,16 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
                 text.Format(L"%hs %hs={'1'} %hs={'%s'} %hs={'%d'}",
                             kKeyWord.c_str(), kParamType.c_str(),
                             kParamChan.c_str(), chan.GetString(),
+                            kParamInterval.c_str(), i);
+                emulateBroadcastCallbackQuery(text.GetString());
+            }
+
+            // проверяем что без задания type тоже работает
+            for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
+            {
+                // /report chan={'chan'} interval={'i'}
+                text.Format(L"%hs  %hs={'%s'} %hs={'%d'}",
+                            kKeyWord.c_str(), kParamChan.c_str(), chan.GetString(),
                             kParamInterval.c_str(), i);
                 emulateBroadcastCallbackQuery(text.GetString());
             }
@@ -419,6 +442,8 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
 // проверяем колбэк перезапуска
 TEST_F(TestTelegramBot, TestProcessingMonitoringError)
 {
+    using namespace users;
+
     const CString errorMsg = L"Тестовое сообщение 111235апывафф1Фвasd 41234%$#@$$%6sfda";
 
     // ожидаемое сообщение телеграм боту, тестовое сообщение об ошибке
@@ -470,7 +495,7 @@ TEST_F(TestTelegramBot, TestProcessingMonitoringError)
 
     // создаем тестовую ошибку
     auto errorMessage = std::make_shared<MonitoringErrorEventData>();
-    errorMessage->errorText = errorMsg;
+    errorMessage->errorTextForAllChannels = errorMsg;
     // генерим идентификатор ошибки
     if (!SUCCEEDED(CoCreateGuid(&errorMessage->errorGUID)))
         assert(!"Не удалось создать гуид!");
@@ -555,7 +580,7 @@ TEST_F(TestTelegramBot, TestUsingCallbacksWithoutPermission)
     allCallbacksVariants.emplace_back().Format(L"%hs %hs={\\\'RandomChannel\\\'} %hs={\\\'0.3\\\'}", alarmingValue::kKeyWord.c_str(), alarmingValue::kParamChan.c_str(), alarmingValue::kParamValue.c_str());
 
     // делаем нас никем
-    m_pUserList->setUserStatus(nullptr, ITelegramUsersList::UserStatus::eNotAuthorized);
+    m_pUserList->setUserStatus(nullptr, users::ITelegramUsersList::UserStatus::eNotAuthorized);
 
     expectedMessage = L"Для работы бота вам необходимо авторизоваться.";
     for (const auto& callback : allCallbacksVariants)
@@ -563,3 +588,5 @@ TEST_F(TestTelegramBot, TestUsingCallbacksWithoutPermission)
         emulateBroadcastCallbackQuery(callback.GetString());
     }
 }
+
+} // namespace telegram::bot

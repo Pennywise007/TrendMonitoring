@@ -7,16 +7,16 @@
 
 namespace
 {
-    //----------------------------------------------------------------------------//
-    // создание константного объекта обёртки над полями TgBot::User
-    // который можно в дальнейшем использовать для сравнения объектов
-    template <class T>
-    auto wrap_user_fields(T& pUser)
-    {
-        return std::tie(pUser.id,        pUser.isBot,
-                        pUser.firstName, pUser.lastName,
-                        pUser.username,  pUser.languageCode);
-    }
+//----------------------------------------------------------------------------//
+// создание константного объекта обёртки над полями TgBot::User
+// который можно в дальнейшем использовать для сравнения объектов
+template <class T>
+auto wrap_user_fields(T& pUser)
+{
+    return std::tie(pUser.id,        pUser.isBot,
+                    pUser.firstName, pUser.lastName,
+                    pUser.username,  pUser.languageCode);
+}
 };
 
 //****************************************************************************//
@@ -26,7 +26,7 @@ ChannelParameters::ChannelParameters(const CString& initChannelName)
 }
 
 //----------------------------------------------------------------------------//
-const MonitoringChannelData& ChannelParameters::getMonitoringData()
+const MonitoringChannelData& ChannelParameters::getMonitoringData() const
 {
     return *this;
 }
@@ -83,11 +83,14 @@ bool ChannelParameters::changeAlarmingValue(const float newvalue)
 void ChannelParameters::resetChannelData()
 {
     // сбрасываем состояние загруженности данных по каналу
-    channelState[MonitoringChannelData::eDataLoaded]    = false;
-    channelState[MonitoringChannelData::eLoadingError]  = false;
+    channelState.dataLoaded = false;
+    channelState.loadingDataError = false;
 
     m_loadingParametersIntervalEnd.reset();
 }
+
+namespace telegram {
+namespace users {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Реализация TelegramUser
@@ -164,7 +167,7 @@ void TelegramUsersList::ensureExist(const TgBot::User::Ptr& pUser, const int64_t
     {
         // вставляем пользователя с новым идентификатором
         userIt = m_telegramUsers.insert(m_telegramUsers.end(), TelegramUser::make(*pUser));
-        userIt->get()->m_chatId   = chatId;
+        userIt->get()->m_chatId = chatId;
         userIt->get()->m_userNote = getUNICODEString(pUser->firstName).c_str();
 
         bListChanged = true;
@@ -240,8 +243,7 @@ std::list<int64_t> TelegramUsersList::getAllChatIdsByStatus(const UserStatus use
 }
 
 //----------------------------------------------------------------------------//
-std::list<TelegramUser::Ptr>::iterator
-    TelegramUsersList::getUserIterator(const TgBot::User::Ptr& pUser)
+std::list<TelegramUser::Ptr>::iterator TelegramUsersList::getUserIterator(const TgBot::User::Ptr& pUser)
 {
     // проверяем что мьютекс на данные уже заблокирован
     assert(!m_usersMutex.try_lock());
@@ -278,6 +280,9 @@ void TelegramUsersList::onUsersListChanged() const
     get_service<CMassages>().postMessage(onUsersListChangedEvent);
 }
 
+} // namespace users
+
+namespace bot {
 ////////////////////////////////////////////////////////////////////////////////
 // Реализация функций класса с настрйками телеграм бота
 TelegramParameters& TelegramParameters::operator=(const TelegramBotSettings& botSettings)
@@ -291,22 +296,24 @@ TelegramParameters& TelegramParameters::operator=(const TelegramBotSettings& bot
 
     return *this;
 }
+} // namespace bot
+} // namespace telegram
 
 ////////////////////////////////////////////////////////////////////////////////
 // Реализация функций класса с настрйками приложения
-ITelegramUsersListPtr ApplicationConfiguration::getTelegramUsers() const
+telegram::users::ITelegramUsersListPtr ApplicationConfiguration::getTelegramUsers() const
 {
     return m_telegramParameters->m_telegramUsers;
 }
 
 //----------------------------------------------------------------------------//
-const TelegramBotSettings& ApplicationConfiguration::getTelegramSettings() const
+const telegram::bot::TelegramBotSettings& ApplicationConfiguration::getTelegramSettings() const
 {
     return *m_telegramParameters;
 }
 
 //----------------------------------------------------------------------------//
-void ApplicationConfiguration::setTelegramSettings(const TelegramBotSettings& newSettings)
+void ApplicationConfiguration::setTelegramSettings(const telegram::bot::TelegramBotSettings& newSettings)
 {
     *m_telegramParameters = newSettings;
 }

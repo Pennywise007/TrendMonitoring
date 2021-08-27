@@ -22,7 +22,7 @@ protected:
 public:
     // оповещение о произошедшем событии
     void onEvent(const EventId& code, float eventValue,
-                 std::shared_ptr<IEventData> eventData) override;
+                 const std::shared_ptr<IEventData>& eventData) override;
 
 protected:
     // задаем параметры всех тестовых каналов мониторинга в m_taskParams

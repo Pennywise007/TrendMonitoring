@@ -9,10 +9,22 @@
 // включение подробного логирования
 #define DETAILED_LOGGING
 
+std::shared_ptr<IMonitoringTasksService> g_mockTaskService = nullptr;
+
 ////////////////////////////////////////////////////////////////////////////////
 IMonitoringTasksService* get_monitoring_tasks_service()
 {
+    if (g_mockTaskService)
+        return g_mockTaskService.get();
+
     return &get_service<MonitoringTasksServiceImpl>();
+}
+
+void set_monitoring_tasks_service_mock(std::shared_ptr<IMonitoringTasksService> mockForService)
+{
+    // проверяем на двойную устанвоку сервиса
+    assert(!g_mockTaskService != !mockForService);
+    g_mockTaskService = mockForService;
 }
 
 //----------------------------------------------------------------------------//
@@ -44,7 +56,7 @@ TaskId MonitoringTasksServiceImpl::addTaskList(const std::list<CString>& channel
     std::list<TaskParameters::Ptr> listTaskParams;
 
     // запоминаем конец интервала по которому были загружены данные
-    for (auto& channelName : channelNames)
+    for (const auto& channelName : channelNames)
     {
         listTaskParams.emplace_back(new TaskParameters(channelName, intervalStart, intervalEnd));
     }
@@ -399,7 +411,7 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
                 get_service<CMassages>().postMessage(onCompletingMonitoringTask, 0.f,
                                                      std::static_pointer_cast<IEventData>(resultIt->second.m_pMonitoringResult));
 
-                // удаляем задание из локального спика заданий
+                // удаляем задание из локального списка заданий
                 m_resultsList.erase(resultIt);
             }
         }

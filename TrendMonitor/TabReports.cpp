@@ -70,8 +70,7 @@ void CTabReports::OnDestroy()
 
 //----------------------------------------------------------------------------//
 // IEventRecipient
-void CTabReports::onEvent(const EventId& code, float eventValue,
-                          std::shared_ptr<IEventData> eventData)
+void CTabReports::onEvent(const EventId& code, float /*eventValue*/, const std::shared_ptr<IEventData>& eventData)
 {
     if (code == onReportPreparedEvent)
     {

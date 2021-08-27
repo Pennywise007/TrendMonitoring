@@ -19,7 +19,7 @@ public:
 // IEventRecipient
 public:
     void onEvent(const EventId& code, float eventValue,
-                 std::shared_ptr<IEventData> eventData) override;
+                 const std::shared_ptr<IEventData>& eventData) override;
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME

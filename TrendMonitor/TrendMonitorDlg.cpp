@@ -107,14 +107,13 @@ BOOL CTrendMonitorDlg::OnInitDialog()
 
 //----------------------------------------------------------------------------//
 // IMessagesRecipient
-void CTrendMonitorDlg::onEvent(const EventId& code, float /*eventValue*/,
-                               std::shared_ptr<IEventData> eventData)
+void CTrendMonitorDlg::onEvent(const EventId& code, float /*eventValue*/, const std::shared_ptr<IEventData>& eventData)
 {
     if (code == onMonitoringListChanged)
         reloadChannelsList();
     else if (code == onNewLogMessageEvent)
     {
-        std::shared_ptr<LogMessageData> logMessageData = std::static_pointer_cast<LogMessageData>(eventData);
+        const std::shared_ptr<LogMessageData> logMessageData = std::static_pointer_cast<LogMessageData>(eventData);
 
         showTrayNotification(L"Новое сообщение в логе",
                              logMessageData->logMessage,
@@ -454,7 +453,7 @@ void CTrendMonitorDlg::reloadChannelsList()
         CString alarmingValStr = _finite(channelData.alarmingValue) != 0 ? monitoring_data_to_string(channelData.alarmingValue) : L"-";
         m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eAlarmingValue,  alarmingValStr);
 
-        if (channelData.channelState[MonitoringChannelData::ChannelState::eDataLoaded])
+        if (channelData.channelState.dataLoaded)
         {
             // заполняем данные трендов если они были загружены
             const auto& trendData = channelData.trendData;
@@ -482,7 +481,7 @@ void CTrendMonitorDlg::reloadChannelsList()
         else
         {
             CString columnsText;
-            if (channelData.channelState[MonitoringChannelData::ChannelState::eLoadingError])
+            if (channelData.channelState.loadingDataError)
                 columnsText = L"Возникла ошибка";
             else
                 // нет не данных не ошибки - данные ещё не загрузились
@@ -610,7 +609,7 @@ void CTrendMonitorDlg::OnNMCustomdrawListMonitoringChannels(NMHDR *pNMHDR, LRESU
 
                 const MonitoringChannelData& monitoringData =
                     get_monitoring_service()->getMonitoringChannelData(iItem);
-                if (monitoringData.channelState[MonitoringChannelData::ChannelState::eDataLoaded] &&
+                if (monitoringData.channelState.dataLoaded &&
                     _finite(monitoringData.alarmingValue) != 0)
                 {
                     // на сколько текущее значение близко в критическому

@@ -12,6 +12,8 @@
 #include <include/ITelegramUsersList.h>
 #include <src/Telegram/TelegramBot.h>
 
+namespace telegram {
+namespace users {
 ////////////////////////////////////////////////////////////////////////////////
 // Класс хранящий список пользователей телеграма
 // позволяет работать со списком пользователей из нескольких потоков
@@ -76,6 +78,8 @@ private:
     std::map<UserStatus, std::list<int64_t>> m_chatIdsToUserStatusMap;
 };
 
+} // namespace users
+namespace bot {
 ////////////////////////////////////////////////////////////////////////////////
 // тестовый телеграм бот
 class TestTelegramBot
@@ -85,7 +89,7 @@ protected:
     // Sets up the test fixture.
     void SetUp() override;
 
-// эмулятор команд от телеграма
+    // эмулятор команд от телеграма
 protected:
     // эмуляция отправки сообщения
     void emulateBroadcastMessage(const std::wstring& text) const;
@@ -101,13 +105,13 @@ protected:
     std::unique_ptr<CTelegramBot> m_testTelegramBot;
 
     // список пользователей
-    TestTelegramUsersList::Ptr m_pUserList;
+    users::TestTelegramUsersList::Ptr m_pUserList;
 
     // тестовый объект с фейковым потоком телеграма
     class TestTelegramThread* m_pTelegramThread = nullptr;
 
     // список команд и доступности для различных пользователей
-    std::map<std::wstring, std::set<ITelegramUsersList::UserStatus>> m_commandsToUserStatus;
+    std::map<std::wstring, std::set<users::ITelegramUsersList::UserStatus>> m_commandsToUserStatus;
 
     // текст со списком команд для админа
     CString m_adminCommandsInfo;
@@ -128,7 +132,9 @@ public:
 
         // Inherited via HttpClient
         std::string makeRequest(const TgBot::Url& url, const std::vector<TgBot::HttpReqArg>& args) const override
-        { return std::string(); }
+        {
+            return std::string();
+        }
     };
 
     TestTelegramThread()
@@ -217,6 +223,7 @@ public:
     // Колбэк на отправку сообщения в несколько чатов
     onSendMessageToChatsCallback m_sendMessageToChatsCallback;
 };
+} // namespace bot
 
 ////////////////////////////////////////////////////////////////////////////////
 // класс для проверки результа работы телеграм бота, проверяет какие сообщения
@@ -229,9 +236,11 @@ public:
     // pExpectedReply - ответ который должен получить пользователь(как правило тут клавиатура с кнопками ответа)
     // pExpectedRecipientsChats - список чатов которым предназначается сообщение
     // pExpectedMessageToRecipients - сообщение которое должно быть отправлено на указанный список чатов
-    TelegramUserMessagesChecker(TestTelegramThread* pTelegramThread,
+    TelegramUserMessagesChecker(bot::TestTelegramThread* pTelegramThread,
                                 CString* pExpectedUserMessage,
                                 TgBot::GenericReply::Ptr* pExpectedReply = nullptr,
                                 std::list<int64_t>** pExpectedRecipientsChats = nullptr,
                                 CString* pExpectedMessageToRecipients = nullptr);
 };
+
+} // namespace telegram

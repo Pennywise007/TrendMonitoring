@@ -227,7 +227,10 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     <ClInclude Include="$(UtilsDir)pugixml-1.10\src\pugixml.hpp" />
     <ClInclude Include="$(CommonHeadersDir)DirsService.h" />
     <ClInclude Include="$(CommonHeadersDir)Logger.h" />
+    <ClInclude Include="include\ChannelStateManager.h" />
+    <ClInclude Include="include\ITelegramBot.h" />
     <ClInclude Include="include\ITrendMonitoring.h" />
+    <ClInclude Include="src\TrendMonitoringTask.h" />
     <ClInclude Include="src\Telegram\CommandsInfoService.h" />
     <ClInclude Include="src\Telegram\KeyboardCallback.h" />
     <ClInclude Include="pch.h" />
@@ -309,6 +312,7 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\Telegram\TelegramCallbacks.cpp" />
+    <ClCompile Include="src\TrendMonitoringTask.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

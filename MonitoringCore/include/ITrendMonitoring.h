@@ -1,11 +1,11 @@
 #pragma once
 
-#include <bitset>
 #include <list>
 #include <memory>
-#include <optional>
 #include <set>
 
+#include "ChannelStateManager.h"
+#include "ITelegramBot.h"
 #include "Messages.h"
 
 // оповещение об изменении в списке наблюдаемых каналов
@@ -72,37 +72,10 @@ struct MonitoringChannelData
     MonitoringInterval monitoringInterval = MonitoringInterval::eOneMonth;
     // значение, достугнув которое необходимо оповестить. Не оповещать - NAN
     float alarmingValue = NAN;
-    // данные по наблюдаемому каналу, пока не eDataLoaded - не валидные/пустые
+    // данные по наблюдаемому каналу, пока не channelState.dataLoaded - не валидные/пустые
     TrendChannelData trendData;
-
-    // Состояние канала
-    enum ChannelState
-    {
-        // данные
-        //eWaitingForData,           // ждем загрузки данных
-        eDataLoaded,                // данные загружены успешно
-        eLoadingError,              // ошибка при загрузке данных
-        //eErrorOnUpdatingData,     // возникла ошибка при обновлении данных
-
-        // оповещения
-        eReportedFallenOff,         // произошло оповещение пользователей об отваливании датчика
-        eReportedExcessOfValue,     // произошло оповещение пользователей о превышении допустимого значения
-        eReportedALotOfEmptyData,   // произошло оповещение пользователей о большом количестве пропусков
-
-        eLast
-    };
-
-    std::bitset<ChannelState::eLast> channelState;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// настройки телеграм бота
-struct TelegramBotSettings
-{
-    // состояние работы бота
-    bool bEnable = false;
-    // токен бота
-    CString sToken;
+    // состояние канала, наличие данных, сообщений об ошибках
+    ChannelStateManager channelState;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -124,8 +97,9 @@ struct LogMessageData : public IEventData
 // Структура передаваемая в случае возникновения ошибки мониторинга(onMonitoringErrorEvent)
 struct MonitoringErrorEventData : public IEventData
 {
-    // текст ошибки
-    CString errorText;
+    CString errorTextForAllChannels;
+    std::vector<CString> problemChannelNames;
+
     // идентификатор ошибки
     GUID errorGUID = {};
 };
@@ -146,19 +120,19 @@ interface ITrendMonitoring
 
 #pragma region Общие функции над списком каналов
     /// <summary>Получить список имём всех доступным для мониторинга каналов.</summary>
-    virtual std::set<CString> getNamesOfAllChannels() = 0;
+    [[nodiscard]] virtual std::set<CString> getNamesOfAllChannels() const = 0;
     /// <summary>Получить список имен каналов по которым происходит мониторинг.</summary>
-    virtual std::list<CString> getNamesOfMonitoringChannels() = 0;
+    [[nodiscard]] virtual std::list<CString> getNamesOfMonitoringChannels() const = 0;
 
     /// <summary>Обновить данные для всех каналов.</summary>
     virtual void updateDataForAllChannels() = 0;
 
     /// <summary>Получить количества наблюдаемых каналов.</summary>
-    virtual size_t getNumberOfMonitoringChannels() = 0;
+    [[nodiscard]] virtual size_t getNumberOfMonitoringChannels() const = 0;
     /// <summary>Получить данные для наблюдаемого канала по индексу.</summary>
     /// <param name="channelIndex">Индекс в списке каналов.</param>
     /// <returns>Данные для канала.</returns>
-    virtual const MonitoringChannelData& getMonitoringChannelData(const size_t channelIndex) = 0;
+    [[nodiscard]] virtual const MonitoringChannelData& getMonitoringChannelData(const size_t channelIndex) const = 0;
 #pragma endregion Общие функции над списком каналов
 
 #pragma region Управление списком каналов
@@ -184,7 +158,7 @@ interface ITrendMonitoring
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newInterval">Новый интервал мониторинга.</param>
     virtual void changeMonitoringChannelInterval(const size_t channelIndex,
-                                                const MonitoringInterval newInterval) = 0;
+                                                 const MonitoringInterval newInterval) = 0;
     /// <summary>Изменить значение по достижению которого будет произведено оповещение.</summary>
     /// <param name="channelIndex">Индекс канала в списке каналов.</param>
     /// <param name="newValue">Новое значение с оповещением.</param>
@@ -204,18 +178,18 @@ interface ITrendMonitoring
 
 #pragma region Управление ботом
     // Получить настройки бота телеграма
-    virtual const TelegramBotSettings& getBotSettings() = 0;
+    [[nodiscard]] virtual const telegram::bot::TelegramBotSettings& getBotSettings() const = 0;
     // установить настройки бота телеграма
-    virtual void setBotSettings(const TelegramBotSettings& newSettings) = 0;
+    virtual void setBotSettings(const telegram::bot::TelegramBotSettings& newSettings) = 0;
 #pragma endregion Управление ботом
 };
 
 // получение сервиса для мониторинга
-ITrendMonitoring* get_monitoring_service();
+[[nodiscard]] ITrendMonitoring* get_monitoring_service();
 
 ////////////////////////////////////////////////////////////////////////////////
 // конвертация интервала мониторинга в текст
-inline CString monitoring_interval_to_string(const MonitoringInterval interval)
+[[nodiscard]] inline CString monitoring_interval_to_string(const MonitoringInterval interval)
 {
     switch (interval)
     {
@@ -241,7 +215,7 @@ inline CString monitoring_interval_to_string(const MonitoringInterval interval)
 
 //------------------------------------------------------------------------//
 // конвертация интервала мониторинга в промежуток времени
-inline CTimeSpan monitoring_interval_to_timespan(const MonitoringInterval interval)
+[[nodiscard]] inline CTimeSpan monitoring_interval_to_timespan(const MonitoringInterval interval)
 {
     switch (interval)
     {
@@ -267,35 +241,35 @@ inline CTimeSpan monitoring_interval_to_timespan(const MonitoringInterval interv
 
 //------------------------------------------------------------------------//
 // конвертация временного промежутка в текст
-inline CString time_span_to_string(const CTimeSpan& value)
+[[nodiscard]] inline CString time_span_to_string(const CTimeSpan& value)
 {
     CString res;
 
-    if (auto countDays = value.GetDays(); countDays > 0)
+    if (const auto countDays = value.GetDays(); countDays > 0)
     {
-        LONGLONG countHours = (value - CTimeSpan((LONG)countDays, 0, 0, 0)).GetTotalHours();
+        const LONGLONG countHours = (value - CTimeSpan((LONG)countDays, 0, 0, 0)).GetTotalHours();
         if (countHours == 0)
             res.Format(L"%lld дней", countDays);
         else
             res.Format(L"%lld дней %lld часов", countDays, countHours);
     }
-    else if (auto countHours = value.GetTotalHours(); countHours > 0)
+    else if (const auto countHours = value.GetTotalHours(); countHours > 0)
     {
-        LONGLONG countMinutes = (value - CTimeSpan(0, (LONG)countHours, 0, 0)).GetTotalMinutes();
+        const LONGLONG countMinutes = (value - CTimeSpan(0, (LONG)countHours, 0, 0)).GetTotalMinutes();
         if (countMinutes == 0)
             res.Format(L"%lld часов", countHours);
         else
             res.Format(L"%lld часов %lld минут", countHours, countMinutes);
     }
-    else if (auto countMinutes = value.GetTotalMinutes(); countMinutes > 0)
+    else if (const auto countMinutes = value.GetTotalMinutes(); countMinutes > 0)
     {
-        LONGLONG countSeconds = (value - CTimeSpan(0, 0, (LONG)countMinutes, 0)).GetTotalSeconds();
+        const LONGLONG countSeconds = (value - CTimeSpan(0, 0, (LONG)countMinutes, 0)).GetTotalSeconds();
         if (countSeconds == 0)
             res.Format(L"%lld минут", countMinutes);
         else
             res.Format(L"%lld минут %lld секунд", countMinutes, countSeconds);
     }
-    else if (auto countSeconds = value.GetTotalSeconds(); countSeconds > 0)
+    else if (const auto countSeconds = value.GetTotalSeconds(); countSeconds > 0)
         res.Format(L"%lld секунд", countSeconds);
     else
         res = L"Нет пропусков";

@@ -112,7 +112,7 @@ void MonitoringTasksTestClass::SetUp()
 
 //----------------------------------------------------------------------------//
 void MonitoringTasksTestClass::onEvent(const EventId& code, float /*eventValue*/,
-                                       std::shared_ptr<IEventData> eventData)
+                                       const std::shared_ptr<IEventData>& eventData)
 {
     if (code == onCompletingMonitoringTask)
     {

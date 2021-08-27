@@ -102,7 +102,7 @@ BOOL CTrendMonitorApp::InitInstance()
                                     return TRUE;
 
                                 // процесс который ищем
-                                DWORD searchProcessId = lParam;
+                                DWORD searchProcessId = (DWORD)lParam;
                                 // процесс окна
                                 DWORD windowProcessId = 0;
                                 ::GetWindowThreadProcessId(handle, &windowProcessId);

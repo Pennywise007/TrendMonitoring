@@ -12,8 +12,11 @@
 #include "TelegramCallbacks.h"
 #include "KeyboardCallback.h"
 
-namespace callback
-{
+namespace telegram::callback {
+
+using namespace command;
+using namespace users;
+
 // Максимальное количество последних ошибок хранимых программой
 constexpr size_t g_kMaxErrorInfoCount = 200;
 
@@ -21,32 +24,32 @@ constexpr size_t g_kMaxErrorInfoCount = 200;
 // парсинг колбэков
 namespace CallbackParser
 {
-    using namespace boost::spirit::x3;
+using namespace boost::spirit::x3;
 
-    namespace
+namespace
+{
+template <typename T>
+struct as_type
+{
+    template <typename Expr>
+    auto operator[](Expr expr) const
     {
-        template <typename T>
-        struct as_type
-        {
-            template <typename Expr>
-            auto operator[](Expr expr) const
-            {
-                return rule<struct _, T>{"as"} = expr;
-            }
-        };
-
-        template <typename T>
-        static const as_type<T> as = {};
+        return rule<struct _, T>{"as"} = expr;
     }
-    auto quoted = [](char q)
-    {
-        return lexeme[q >> *(q >> char_(q) | '\\' >> char_ | char_ - q) >> q];
-    };
+};
 
-    auto value  = quoted('\'') | quoted('"');
-    auto key    = lexeme[+alpha];
-    auto pair   = key >> "={" >> value >> '}';
-    auto parser = skip(space)[*as<std::pair<TelegramCallbacks::CallBackParams::key_type, TelegramCallbacks::CallBackParams::mapped_type>>[pair]];
+template <typename T>
+static const as_type<T> as = {};
+}
+auto quoted = [](char q)
+{
+    return lexeme[q >> *(q >> char_(q) | '\\' >> char_ | char_ - q) >> q];
+};
+
+auto value = quoted('\'') | quoted('"');
+auto key = lexeme[+alpha];
+auto pair = key >> "={" >> value >> '}';
+auto parser = skip(space)[*as<std::pair<TelegramCallbacks::CallBackParams::key_type, TelegramCallbacks::CallBackParams::mapped_type>>[pair]];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -171,7 +174,7 @@ bool TelegramCallbacks::gotResponseToPreviousCallback(const TgBot::Message::Ptr&
 
 //----------------------------------------------------------------------------//
 // IEventRecipient
-void TelegramCallbacks::onEvent(const EventId& code, float /*eventValue*/, std::shared_ptr<IEventData> eventData)
+void TelegramCallbacks::onEvent(const EventId& code, float /*eventValue*/, const std::shared_ptr<IEventData>& eventData)
 {
     if (code == onCompletingMonitoringTask)
     {
@@ -203,64 +206,64 @@ void TelegramCallbacks::onEvent(const EventId& code, float /*eventValue*/, std::
             CTimeSpan permissibleEmptyDataTime =
                 (channelResData.pTaskParameters->endTime - channelResData.pTaskParameters->startTime).GetTotalSeconds() / 30;
 
-            reportText.AppendFormat(L"Канал \"%s\":", channelResData.pTaskParameters->channelName.GetString());
+            reportText.AppendFormat(L"Канал \"%s\":\n", channelResData.pTaskParameters->channelName.GetString());
 
             switch (channelResData.resultType)
             {
             case MonitoringResult::Result::eSucceeded:  // данные успешно получены
+            {
+                if (bDetailedInfo)
                 {
-                    if (bDetailedInfo)
+                    // значение, достугнув которое необходимо оповестить. Не оповещать - NAN
+                    float alarmingValue = NAN;
+
+                    // если отчёт подробный - ищем какое оповещательное значение у канала
+                    auto pMonitoringService = get_monitoring_service();
+                    for (size_t i = 0, count = pMonitoringService->getNumberOfMonitoringChannels();
+                         i < count; ++i)
                     {
-                        // значение, достугнув которое необходимо оповестить. Не оповещать - NAN
-                        float alarmingValue = NAN;
-
-                        // если отчёт подробный - ищем какое оповещательное значение у канала
-                        auto pMonitoringService = get_monitoring_service();
-                        for (size_t i = 0, count = pMonitoringService->getNumberOfMonitoringChannels();
-                             i < count; ++i)
+                        const MonitoringChannelData& channelData = pMonitoringService->getMonitoringChannelData(i);
+                        if (channelData.channelName == channelResData.pTaskParameters->channelName)
                         {
-                            const MonitoringChannelData& channelData = pMonitoringService->getMonitoringChannelData(i);
-                            if (channelData.channelName == channelResData.pTaskParameters->channelName)
-                            {
-                                alarmingValue = channelData.alarmingValue;
-                                break;
-                            }
-                        }
-
-                        // если мы нашли значение при котором стоит оповещать - проверяем превышение этого значения
-                        if (isfinite(alarmingValue))
-                        {
-                            // если за интервал одно из значений вышло за допустимые
-                            if ((alarmingValue >= 0 && channelResData.maxValue >= alarmingValue) ||
-                                (alarmingValue < 0 && channelResData.minValue <= alarmingValue))
-                                reportText.AppendFormat(L"допустимый уровень %.02f был превышен, ",
-                                                        alarmingValue);
+                            alarmingValue = channelData.alarmingValue;
+                            break;
                         }
                     }
 
-                    reportText.AppendFormat(L"значения за интервал [%.02f..%.02f], последнее показание - %.02f.",
-                                            channelResData.minValue, channelResData.maxValue,
-                                            channelResData.currentValue);
+                    // если мы нашли значение при котором стоит оповещать - проверяем превышение этого значения
+                    if (isfinite(alarmingValue))
+                    {
+                        // если за интервал одно из значений вышло за допустимые
+                        if ((alarmingValue >= 0 && channelResData.maxValue >= alarmingValue) ||
+                            (alarmingValue < 0 && channelResData.minValue <= alarmingValue))
+                            reportText.AppendFormat(L" допустимый уровень %.02f был превышен. ",
+                                                    alarmingValue);
+                    }
 
                     // если много пропусков данных
-                    if (bDetailedInfo && channelResData.emptyDataTime > permissibleEmptyDataTime)
-                        reportText.AppendFormat(L" Много пропусков данных (%s).",
+                    if (channelResData.emptyDataTime > permissibleEmptyDataTime)
+                        reportText.AppendFormat(L"Много пропусков данных (%s).\n",
                                                 time_span_to_string(channelResData.emptyDataTime).GetString());
                 }
-                break;
+
+                reportText.AppendFormat(L"Значения за интервал [%.02f..%.02f], последнее показание - %.02f.\n",
+                                        channelResData.minValue, channelResData.maxValue,
+                                        channelResData.currentValue);
+            }
+            break;
             case MonitoringResult::Result::eNoData:     // в переданном интервале нет данных
             case MonitoringResult::Result::eErrorText:  // возникла ошибка
-                {
-                    // оповещаем о возникшей ошибке
-                    if (!channelResData.errorText.IsEmpty())
-                        reportText.Append(channelResData.errorText);
-                    else
-                        reportText.Append(L"Нет данных в запрошенном интервале.");
-                }
-                break;
+            {
+                // оповещаем о возникшей ошибке
+                if (!channelResData.errorText.IsEmpty())
+                    reportText.Append(channelResData.errorText);
+                else
+                    reportText.Append(L"Нет данных в запрошенном интервале.");
+            }
+            break;
             default:
-                assert(!"Не известный тип результата");
-                break;
+            assert(!"Не известный тип результата");
+            break;
             }
 
             reportText += L"\n";
@@ -272,11 +275,11 @@ void TelegramCallbacks::onEvent(const EventId& code, float /*eventValue*/, std::
     else if (code == onMonitoringErrorEvent)
     {
         std::shared_ptr<MonitoringErrorEventData> errorData = std::static_pointer_cast<MonitoringErrorEventData>(eventData);
-        assert(!errorData->errorText.IsEmpty());
+        assert(!errorData->errorTextForAllChannels.IsEmpty());
 
         // получаем список админских чатов
         const auto adminsChats = m_telegramUsers->getAllChatIdsByStatus(ITelegramUsersList::UserStatus::eAdmin);
-        if (adminsChats.empty() || errorData->errorText.IsEmpty())
+        if (adminsChats.empty() || errorData->errorTextForAllChannels.IsEmpty())
             return;
 
         // добавляем новую ошибку в список и запоминаем её идентификатор
@@ -289,19 +292,38 @@ void TelegramCallbacks::onEvent(const EventId& code, float /*eventValue*/, std::
         TgBot::InlineKeyboardMarkup::Ptr keyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
 
         // колбэк на перезапуск мониторинга
-        // kKeyWord
         KeyboardCallback callbackRestart(restart::kKeyWord);
 
         // колбэк на передачу этого сообщения обычным пользователям
-        // kKeyWord kParamid={'GUID'}
         KeyboardCallback callBackOrdinaryUsers(resend::kKeyWord);
         callBackOrdinaryUsers.addCallbackParam(resend::kParamId, CString(CComBSTR(errorData->errorGUID)));
 
         keyboard->inlineKeyboard.push_back({ create_keyboard_button(L"Перезапустить систему", callbackRestart),
-                                           create_keyboard_button(L"Оповестить обычных пользователей", callBackOrdinaryUsers) });
+                                             create_keyboard_button(L"Оповестить обычных пользователей", callBackOrdinaryUsers) });
+
+        // TODO test
+        if (!errorData->problemChannelNames.empty() && errorData->problemChannelNames.size() < 4)
+        {
+            for (auto& channelName : errorData->problemChannelNames)
+            {
+                KeyboardCallback turnOffNotifications(alertEnabling::kKeyWord);
+                turnOffNotifications.addCallbackParam(alertEnabling::kParamEnable, L"false");
+                turnOffNotifications.addCallbackParam(alertEnabling::kParamChan, channelName);
+
+                KeyboardCallback changeAlarmValue(alarmingValue::kKeyWord);
+                changeAlarmValue.addCallbackParam(alarmingValue::kParamChan, channelName);
+
+                KeyboardCallback channelReport(report::kKeyWord);
+                channelReport.addCallbackParam(report::kParamChan, channelName);
+
+                keyboard->inlineKeyboard.push_back({ create_keyboard_button(channelName + L" выключить оповещения", turnOffNotifications),
+                                                     create_keyboard_button(channelName + L" изменить уровень", changeAlarmValue),
+                                                     create_keyboard_button(channelName + L" отчёт, channelReport", channelReport) });
+            }
+        }
 
         // пересылаем всем админам текст ошибки и клавиатуру для решения проблем
-        m_telegramThread->sendMessage(adminsChats, errorData->errorText.GetString(), false, 0, keyboard);
+        m_telegramThread->sendMessage(adminsChats, errorData->errorTextForAllChannels.GetString(), false, 0, keyboard);
     }
     else
         assert(!"Неизвестное событие");
@@ -312,11 +334,9 @@ void TelegramCallbacks::executeCallbackReport(const TgBot::Message::Ptr& message
 {
     // В колбэке отчёта должны быть определенные параметры, итоговый колбэк должен быть вида
     // kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(ОПЦИОНАЛЬНО) kParamInterval={'1000000'}
-
-    // тип отчёта
-    auto reportTypeIt = reportParams.find(report::kParamType);
-    // проверяем какой вид колбэка пришел и каких параметров не хватает
-    if (reportTypeIt == reportParams.end())
+    const auto channelIt = reportParams.find(report::kParamChan);
+    const auto reportTypeIt = reportParams.find(report::kParamType);
+    if (reportTypeIt == reportParams.end() && channelIt == reportParams.end())
         throw std::runtime_error("Не известный колбэк.");
 
     // получаем список каналов
@@ -324,11 +344,11 @@ void TelegramCallbacks::executeCallbackReport(const TgBot::Message::Ptr& message
     if (monitoringChannels.empty())
         throw std::runtime_error("Не удалось получить список каналов, попробуйте повторить попытку");
 
-    // имя канала по которому делаем отчёт
-    const auto channelIt = reportParams.find(report::kParamChan);
-
-    // тип отчёта
-    const report::ReportType reportType = (report::ReportType)std::stoul(reportTypeIt->second);
+    report::ReportType reportType = report::ReportType::eSpecialChannel;
+    if (reportTypeIt != reportParams.end())
+        reportType = (report::ReportType)std::stoul(reportTypeIt->second);
+    else
+        assert(channelIt != reportParams.end());
 
     // первый колбэк формата "kKeyWord kParamType={'ReportType'}" и проверяем может надо спросить по какому каналу нужен отчёт
     switch (reportType)
@@ -337,32 +357,31 @@ void TelegramCallbacks::executeCallbackReport(const TgBot::Message::Ptr& message
         assert(!"Не известный тип отчёта.");
         [[fallthrough]];
     case report::ReportType::eSpecialChannel:
+    {
+        // если канал не указан надо его запросить
+        if (channelIt == reportParams.end())
         {
-            // если канал не указан надо его запросить
-            if (channelIt == reportParams.end())
+            // формируем колбэк
+            KeyboardCallback defCallBack(report::kKeyWord);
+            defCallBack.addCallbackParam(reportTypeIt->first, reportTypeIt->second);
+
+            // показываем пользователю кнопки в выбором канала по которому нужен отчёт
+            TgBot::InlineKeyboardMarkup::Ptr keyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
+            keyboard->inlineKeyboard.reserve(monitoringChannels.size());
+
+            for (const auto& channel : monitoringChannels)
             {
-                // формируем колбэк
-                KeyboardCallback defCallBack(report::kKeyWord);
-                defCallBack.addCallbackParam(reportTypeIt->first, reportTypeIt->second);
+                const auto channelButton =
+                    create_keyboard_button(channel, KeyboardCallback(defCallBack).addCallbackParam(report::kParamChan, channel));
 
-                // показываем пользователю кнопки в выбором канала по которому нужен отчёт
-                TgBot::InlineKeyboardMarkup::Ptr keyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
-                keyboard->inlineKeyboard.reserve(monitoringChannels.size());
-
-                for (const auto& channel : monitoringChannels)
-                {
-                    const auto channelButton =
-                        create_keyboard_button(channel, KeyboardCallback(defCallBack).addCallbackParam(report::kParamChan, channel));
-
-                    keyboard->inlineKeyboard.push_back({ channelButton });
-                }
-
-                m_telegramThread->sendMessage(message->chat->id, L"Выберите канал", false, 0, keyboard);
-                return;
+                keyboard->inlineKeyboard.push_back({ channelButton });
             }
-        }
-        break;
 
+            m_telegramThread->sendMessage(message->chat->id, L"Выберите канал", false, 0, keyboard);
+            return;
+        }
+    }
+    break;
     case report::ReportType::eAllChannels:
         break;
     }
@@ -658,4 +677,4 @@ void TelegramCallbacks::executeCallbackAlarmValue(const TgBot::Message::Ptr& mes
     }
 }
 
-} // namespace callback
+} // namespace telegram::callback

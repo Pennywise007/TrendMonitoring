@@ -1,28 +1,28 @@
 #pragma once
 
 #include <string>
+#include <map>
 
 #include <include/ITelegramUsersList.h>
 #include <include/IMonitoringTasksService.h>
 #include <TelegramDLL/TelegramThread.h>
 
-namespace callback
-{
+namespace telegram::callback {
+
+namespace report {
 // параметры дл€ колбэка отчЄта
 // kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(ќѕ÷»ќЌјЋ№Ќќ) kParamInterval={'1000000'}
-namespace report
+// тип формируемого отчЄта
+enum class ReportType : unsigned long
 {
-    // тип формируемого отчЄта
-    enum class ReportType : unsigned long
-    {
-        eAllChannels,       // все каналы дл€ мониторинга
-        eSpecialChannel     // выбранный канал
-    };
+    eAllChannels,       // все каналы дл€ мониторинга
+    eSpecialChannel     // выбранный канал
+};
 
 const std::string kKeyWord              = R"(/report)";     // ключевое слово
     // параметры
-    const std::string kParamType        = "type";           // тип отчЄта
-    const std::string kParamChan        = "chan";           // канал по которому нужен отчЄт
+    const std::string kParamType        = "type";           // тип отчЄта, может быть не задан если есть kParamChan
+    const std::string kParamChan        = "chan";           // если не задан - запрашиваетс€ у пользовател€
     const std::string kParamInterval    = "interval";       // интервал
 };
 
@@ -60,14 +60,14 @@ namespace alarmingValue
     const std::string kKeyWord          = R"(/alarmV)";     // ключевое слово
     // параметры
     const std::string kParamChan        = "chan";           // канал по которому нужно настроить уровень оповещений
-    const std::string kParamValue       = "val";            // новое значение уровн€ оповещений
+    const std::string kParamValue       = "val";            // OPTIONAL новое значение уровн€ оповещений
 }
 
 class TelegramCallbacks
     : private EventRecipientImpl
 {
 public:
-    explicit TelegramCallbacks(ITelegramThreadPtr& telegramThread, ITelegramUsersListPtr& userList);
+    explicit TelegramCallbacks(ITelegramThreadPtr& telegramThread, users::ITelegramUsersListPtr& userList);
 
     // ѕараметры формировани€ отчЄта
     using CallBackParams = std::map<std::string, std::string>;
@@ -81,7 +81,7 @@ public:
 // IEventRecipient
 private:
     // оповещение о произошедшем событии
-    void onEvent(const EventId& code, float eventValue, std::shared_ptr<IEventData> eventData) override;
+    void onEvent(const EventId& code, float eventValue, const std::shared_ptr<IEventData>& eventData) override;
 
 private:
     // ќтрабатывание колбэков на команды бота
@@ -98,7 +98,7 @@ private:
     // поток работающего телеграма
     ITelegramThreadPtr& m_telegramThread;
     // данные о пользовател€х телеграмма
-    ITelegramUsersListPtr& m_telegramUsers;
+    users::ITelegramUsersListPtr& m_telegramUsers;
 
 // задани€ которые запускал бот
 private:
@@ -108,7 +108,7 @@ private:
         // идентификатор чата из которого было получено задание
         int64_t chatId;
         // статус пользовател€ начавшего задание
-        ITelegramUsersList::UserStatus userStatus;
+        users::ITelegramUsersList::UserStatus userStatus;
     };
     // задани€ которые запускал телеграм бот
     std::map<TaskId, TaskInfo, TaskComparer> m_monitoringTasksInfo;
@@ -119,7 +119,7 @@ private:
     struct ErrorInfo
     {
         explicit ErrorInfo(const MonitoringErrorEventData* errorData) noexcept
-            : errorText(errorData->errorText)
+            : errorText(errorData->errorTextForAllChannels)
             , errorGUID(errorData->errorGUID)
         {}
 
@@ -136,4 +136,4 @@ private:
     std::list<ErrorInfo> m_monitoringErrors;
 };
 
-} // namespace callback
+} // namespace telegram::callback

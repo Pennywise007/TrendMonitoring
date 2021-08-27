@@ -10,6 +10,8 @@
 #include "DirsService.h"
 #include "../Utils.h"
 
+namespace telegram::command {
+
 ////////////////////////////////////////////////////////////////////////////////
 // выполнение команды на рестарт
 void execute_restart_command(const TgBot::Message::Ptr& message, ITelegramThread* telegramThread)
@@ -33,15 +35,15 @@ void execute_restart_command(const TgBot::Message::Ptr& message, ITelegramThread
         } BOOST_SCOPE_EXIT_END;
 
         if (FALSE != CreateProcess(batFullPath.GetBuffer(),     // имя исполняемого модуля
-                                   nullptr,	                    // Командная строка
-                                   NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
-                                   NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
-                                   0,                           // Флаг наследования текущего процесса
-                                   NULL,                        // Флаги способов создания процесса
-                                   NULL,                        // Указатель на блок среды
-                                   NULL,                        // Текущий диск или каталог
-                                   &cif,                        // Указатель на структуру STARTUPINFO
-                                   &m_ProcInfo))                // Указатель на структуру PROCESS_INFORMATION)
+            nullptr,	                    // Командная строка
+            NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
+            NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
+            0,                           // Флаг наследования текущего процесса
+            NULL,                        // Флаги способов создания процесса
+            NULL,                        // Указатель на блок среды
+            NULL,                        // Текущий диск или каталог
+            &cif,                        // Указатель на структуру STARTUPINFO
+            &m_ProcInfo))                // Указатель на структуру PROCESS_INFORMATION)
         {	// идентификатор потока не нужен
             CloseHandle(m_ProcInfo.hThread);
             CloseHandle(m_ProcInfo.hProcess);
@@ -82,7 +84,7 @@ std::wstring CommandsInfoService::getAvailableCommandsWithDescription(AvailableS
 }
 
 //----------------------------------------------------------------------------//
-bool CommandsInfoService::ensureNeedAnswerOnCommand(ITelegramUsersList* usersList, Command command,
+bool CommandsInfoService::ensureNeedAnswerOnCommand(users::ITelegramUsersList* usersList, Command command,
                                                     const MessagePtr& commandMessage, std::wstring& messageToUser) const
 {
     // пользователь отправивший сообщение
@@ -101,7 +103,7 @@ bool CommandsInfoService::ensureNeedAnswerOnCommand(ITelegramUsersList* usersLis
         std::wstring availableCommands = getAvailableCommandsWithDescription(userStatus);
         if (availableCommands.empty())
         {
-            if (userStatus == ITelegramUsersList::eNotAuthorized)
+            if (userStatus == users::ITelegramUsersList::eNotAuthorized)
                 messageToUser = L"Для работы бота вам необходимо авторизоваться.";
             else
                 messageToUser = L"Неизвестная команда. У вас нет доступных команд, обратитесь к администратору";
@@ -117,14 +119,14 @@ bool CommandsInfoService::ensureNeedAnswerOnCommand(ITelegramUsersList* usersLis
 }
 
 //----------------------------------------------------------------------------//
-bool CommandsInfoService::ensureNeedAnswerOnCallback(ITelegramUsersList* usersList,
+bool CommandsInfoService::ensureNeedAnswerOnCallback(users::ITelegramUsersList* usersList,
                                                      const std::string& callbackKeyWord,
                                                      const MessagePtr& commandMessage) const
 {
     // пользователь отправивший сообщение
     const TgBot::User::Ptr& pUser = commandMessage->from;
 
-    for (auto&& [command, commandInfo] : m_botCommands)
+    for (auto&&[command, commandInfo] : m_botCommands)
     {
         if (auto callbackKeywordIt = commandInfo.m_callbacksKeywords.find(callbackKeyWord);
             callbackKeywordIt != commandInfo.m_callbacksKeywords.end())
@@ -145,3 +147,5 @@ void CommandsInfoService::resetCommandList()
 {
     m_botCommands.clear();
 }
+
+} // namespace telegram::command

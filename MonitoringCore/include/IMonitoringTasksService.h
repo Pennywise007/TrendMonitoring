@@ -23,6 +23,11 @@ struct TaskComparer
         // comparison logic goes here
         return memcmp(&Left, &Right, sizeof(Right)) < 0;
     }
+
+    static bool Compare(const TaskId& Left, const TaskId& Right)
+    {
+        return memcmp(&Left, &Right, sizeof(Right)) == 0;
+    }
 };
 
 // ѕараметры запускаемого задани€
@@ -78,6 +83,7 @@ interface IMonitoringTasksService
 
 // получение сервиса заданий монитринга
 IMonitoringTasksService* get_monitoring_tasks_service();
+void set_monitoring_tasks_service_mock(std::shared_ptr<IMonitoringTasksService> mockForService);
 
 ////////////////////////////////////////////////////////////////////////////////
 // результат задани€ мониторинга
@@ -105,7 +111,7 @@ public:
     // структура с результатом мониторинга
     struct ResultData : public TrendChannelData
     {
-        ResultData(const TaskParameters::Ptr params) : pTaskParameters(params) {}
+        ResultData(const TaskParameters::Ptr& params) : pTaskParameters(params) {}
 
         // результат выполнени€ задани€
         Result resultType = Result::eSucceeded;

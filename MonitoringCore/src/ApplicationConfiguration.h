@@ -8,6 +8,7 @@
 
 #include <include/ITrendMonitoring.h>
 #include <include/ITelegramUsersList.h>
+#include <include/ITelegramBot.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Класс с настройками канала для мониторинга
@@ -30,7 +31,7 @@ public:
 
 public:
     /// <summary>Получить данные по каналу.</summary>
-    const MonitoringChannelData& getMonitoringData();
+    const MonitoringChannelData& getMonitoringData() const;
     /// <summary>Получить данные по каналу.</summary>
     void setTrendChannelData(const TrendChannelData& data);
     /// <summary>Изменить имя канала.</summary>
@@ -61,6 +62,9 @@ public:
 typedef std::list<ChannelParameters::Ptr> ChannelParametersList;
 // Итератор на канал
 typedef std::list<ChannelParameters::Ptr>::iterator ChannelIt;
+
+namespace telegram {
+namespace users {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Класс с данными пользователя телеграма
@@ -128,16 +132,16 @@ public:
 public:
     /// <summary>Оповещает о начале сериализации коллекции.</summary>
     /// <returns>true если коллекцию можно сериализовать.</returns>
-    virtual bool onStartSerializing() override;
+    bool onStartSerializing() override;
     /// <summary>Оповещает об окончании сериализации коллекции.</summary>
-    virtual void onEndSerializing() override;
+    void onEndSerializing() override;
 
     /// <summary>Оповещает о начале десериализации, передает список сохраненных при сериализации имен объектов.</summary>
     /// <param name="objNames">Имена объектов которые были сохранены при сериализации.</param>
     /// <returns>true если коллекцию можно десериализовать.</returns>
-    virtual bool onStartDeserializing(const std::list<CString>& objNames) override;
+    bool onStartDeserializing(const std::list<CString>& objNames) override;
     /// <summary>Оповещает о конце десериализации коллекции.</summary>
-    virtual void onEndDeserializing() override;
+    void onEndDeserializing() override;
 
 // ITelegramUsersList
 public:
@@ -169,6 +173,10 @@ private:
     std::mutex m_usersMutex;
 };
 
+} // namespace users
+
+namespace bot {
+
 ////////////////////////////////////////////////////////////////////////////////
 // Класс с настройками канала для мониторинга
 class ATL_NO_VTABLE TelegramParameters
@@ -190,8 +198,11 @@ public:
 
 public:
     // список пользователей телеграма
-    TelegramUsersList::Ptr m_telegramUsers = TelegramUsersList::create();
+    users::TelegramUsersList::Ptr m_telegramUsers = users::TelegramUsersList::create();
 };
+
+} // namespace bot
+} // namespace telegram
 
 ////////////////////////////////////////////////////////////////////////////////
 /*
@@ -213,11 +224,11 @@ public:
     ApplicationConfiguration() = default;
 
     // Получение списка пользователей телеграма
-    ITelegramUsersListPtr getTelegramUsers() const;
+    telegram::users::ITelegramUsersListPtr getTelegramUsers() const;
     // Получение настроек телеграм бота
-    const TelegramBotSettings& getTelegramSettings() const;
+    const telegram::bot::TelegramBotSettings& getTelegramSettings() const;
     // Получение настроек телеграм бота
-    void setTelegramSettings(const TelegramBotSettings& newSettings);
+    void setTelegramSettings(const telegram::bot::TelegramBotSettings& newSettings);
 
 public:
     // Объявляем сериализуемую коллекцию
@@ -227,6 +238,6 @@ public:
     DECLARE_CONTAINER((ChannelParametersList) m_chanelParameters);
 
     // настройки телеграм бота
-    DECLARE_SERIALIZABLE((TelegramParameters::Ptr) m_telegramParameters,
-                         TelegramParameters::create());
+    DECLARE_SERIALIZABLE((telegram::bot::TelegramParameters::Ptr) m_telegramParameters,
+                         telegram::bot::TelegramParameters::create());
 };

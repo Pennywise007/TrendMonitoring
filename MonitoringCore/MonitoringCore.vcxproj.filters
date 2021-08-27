@@ -33,6 +33,9 @@
     <Filter Include="MonitoringTasksService\ChannelDataGetter">
       <UniqueIdentifier>{6888f0e1-0ce8-4d89-8b68-b3a5d62306e0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="TelegramBot\Callback">
+      <UniqueIdentifier>{cbbbd1ff-cd87-4959-a2e2-071a4f612029}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -92,13 +95,7 @@
     <ClInclude Include="src\Telegram\CommandsInfoService.h">
       <Filter>TelegramBot</Filter>
     </ClInclude>
-    <ClInclude Include="src\Telegram\KeyboardCallback.h">
-      <Filter>TelegramBot</Filter>
-    </ClInclude>
     <ClInclude Include="src\Telegram\TelegramBot.h">
-      <Filter>TelegramBot</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Telegram\TelegramCallbacks.h">
       <Filter>TelegramBot</Filter>
     </ClInclude>
     <ClInclude Include="src\MonitoringTaskService\MonitoringTasksServiceImpl.h">
@@ -111,6 +108,21 @@
       <Filter>TelegramBot</Filter>
     </ClInclude>
     <ClInclude Include="include\ITrendMonitoring.h">
+      <Filter>TrendMonitoring</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Telegram\KeyboardCallback.h">
+      <Filter>TelegramBot\Callback</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Telegram\TelegramCallbacks.h">
+      <Filter>TelegramBot\Callback</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ITelegramBot.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\TrendMonitoringTask.h">
+      <Filter>TrendMonitoring</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ChannelStateManager.h">
       <Filter>TrendMonitoring</Filter>
     </ClInclude>
   </ItemGroup>
@@ -139,17 +151,20 @@
     <ClCompile Include="src\Telegram\CommandsInfoService.cpp">
       <Filter>TelegramBot</Filter>
     </ClCompile>
-    <ClCompile Include="src\Telegram\KeyboardCallback.cpp">
-      <Filter>TelegramBot</Filter>
-    </ClCompile>
     <ClCompile Include="src\Telegram\TelegramBot.cpp">
-      <Filter>TelegramBot</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Telegram\TelegramCallbacks.cpp">
       <Filter>TelegramBot</Filter>
     </ClCompile>
     <ClCompile Include="src\MonitoringTaskService\MonitoringTasksServiceImpl.cpp">
       <Filter>MonitoringTasksService</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Telegram\KeyboardCallback.cpp">
+      <Filter>TelegramBot\Callback</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Telegram\TelegramCallbacks.cpp">
+      <Filter>TelegramBot\Callback</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TrendMonitoringTask.cpp">
+      <Filter>TrendMonitoring</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,12 +1,18 @@
 #include "pch.h"
 
 #include <utility>
+#include <xstring>
 
 #include <Messages.h>
 #include <DirsService.h>
 
 #include "KeyboardCallback.h"
 #include "TelegramBot.h"
+
+namespace telegram::bot {
+
+using namespace users;
+using namespace command;
 
 // “екст который надо отправить боту дл€ авторизации
 constexpr std::wstring_view gBotPassword_User   = L"MonitoringAuth";      // авторизаци€ пользователем
@@ -101,7 +107,7 @@ void CTelegramBot::fillCommandHandlers(std::unordered_map<std::string, CommandFu
 
     // список пользователей которым доступны все команды по умолчанию
     const std::vector<ITelegramUsersList::UserStatus> kDefaultAvailability =
-    {   ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };
+     { ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };
 
     static_assert(ITelegramUsersList::UserStatus::eLastStatus == 3,
                   "—писок пользовтел€ изменилс€, возможно стоит пересмотреть доступность команд");
@@ -340,7 +346,7 @@ void CTelegramBot::onCommandAlert(const MessagePtr& commandMessage, bool bEnable
 
     // колбэк который должен быть у каждой кнопки
     KeyboardCallback defaultCallBack(alertEnabling::kKeyWord);
-    defaultCallBack.addCallbackParam(alertEnabling::kParamEnable, std::wstring(bEnable ? L"true" : L"false"));
+    defaultCallBack.addCallbackParam(alertEnabling::kParamEnable, (bEnable ? L"true" : L"false"));
 
     // добавл€ем кнопки дл€ каждого канала
     for (const auto& channelName : monitoringChannels)
@@ -387,8 +393,10 @@ void CTelegramBot::onCommandAlarmingValue(const MessagePtr& commandMessage) cons
         KeyboardCallback channelCallBack(alarmingValue::kKeyWord);
         channelCallBack.addCallbackParam(alarmingValue::kParamChan, channelName);
 
-        keyboard->inlineKeyboard.push_back({ create_keyboard_button(channelName, channelCallBack) });
+        keyboard->inlineKeyboard.push_back({ callback::create_keyboard_button(channelName, channelCallBack) });
     }
 
     m_telegramThread->sendMessage(commandMessage->chat->id, L"¬ыберите канал дл€ изменени€ уровн€ оповещений.", false, 0, keyboard);
 }
+
+} // namespace telegram::bot

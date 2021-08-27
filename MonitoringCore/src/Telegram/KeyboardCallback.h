@@ -5,8 +5,7 @@
 
 #include <TelegramDLL/TelegramThread.h>
 
-namespace callback
-{
+namespace telegram::callback {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Класс для формирования колбэка для кнопок телеграма, на выходе UTF-8
@@ -38,4 +37,4 @@ private:
 // создание кнопки с ответом
 TgBot::InlineKeyboardButton::Ptr create_keyboard_button(const CString& text, const KeyboardCallback& callback);
 
-} // namespace callback
+} // namespace telegram::callback

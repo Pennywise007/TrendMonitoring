@@ -10,6 +10,8 @@
 #include "Singleton.h"
 #include "TelegramCallbacks.h"
 
+namespace telegram::command {
+
 // выполнение команды на рестарт
 void execute_restart_command(const TgBot::Message::Ptr& message, ITelegramThread* telegramThread);
 
@@ -20,7 +22,7 @@ class CommandsInfoService
     friend class CSingleton<CommandsInfoService>;
 public:
     // статус пользователей которым доступно использование команды
-    typedef ITelegramUsersList::UserStatus AvailableStatus;
+    typedef users::ITelegramUsersList::UserStatus AvailableStatus;
 
     // Перечень команд
     enum class Command
@@ -52,12 +54,12 @@ public:
 
     // Проверка что надо ответить на команду пользователю
     // если false - в messageToUser будет ответ пользователю
-    bool ensureNeedAnswerOnCommand(ITelegramUsersList* usersList, Command command,
+    bool ensureNeedAnswerOnCommand(users::ITelegramUsersList* usersList, Command command,
                                    const MessagePtr& commandMessage, std::wstring& messageToUser) const;
 
     // Проверка что надо ответить на колбэк, пока пользователю показывали кнопку у него мог поменяться статус
     // если false - в messageToUser будет ответ пользователю
-    bool ensureNeedAnswerOnCallback(ITelegramUsersList* usersList,
+    bool ensureNeedAnswerOnCallback(users::ITelegramUsersList* usersList,
                                     const std::string& callbackKeyWord,
                                     const MessagePtr& commandMessage) const;
 
@@ -86,3 +88,5 @@ private:
     //       команда | описание команды
     std::map<Command, CommandDescription> m_botCommands;
 };
+
+} // namespace telegram::command

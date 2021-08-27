@@ -30,6 +30,15 @@
     <ClCompile Include="Telegram\TestTelegramBot.cpp">
       <Filter>TestSources\Telegram</Filter>
     </ClCompile>
+    <ClCompile Include="TestMonitoringReporting.cpp">
+      <Filter>TestSources\TestTrendMonitoring</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc">
+      <Filter>gtest</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gmock\gmock-all.cc">
+      <Filter>gtest</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -61,6 +70,12 @@
     <ClInclude Include="Telegram\TestTelegramBot.h">
       <Filter>TestSources\Telegram</Filter>
     </ClInclude>
+    <ClInclude Include="MonitoringTaskServiceMock.h">
+      <Filter>TestSources\TestMonitoringTasks</Filter>
+    </ClInclude>
+    <ClInclude Include="TelegamBotMock.h">
+      <Filter>TestSources\Telegram</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="TestSources">
@@ -87,9 +102,12 @@
     <Filter Include="TestSources\Telegram">
       <UniqueIdentifier>{114695d6-27e5-4bc0-a5c4-df740f8d6c1c}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <Filter Include="TestSources\Reporting">
+      <UniqueIdentifier>{f52e7473-c035-40d0-8d86-56a91a4ce67d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gtest">
+      <UniqueIdentifier>{5842ed49-cf09-4a96-9c55-e8bd5e1bee39}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Samples\TestXMLFileValid.xml">
@@ -104,5 +122,8 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Tests.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

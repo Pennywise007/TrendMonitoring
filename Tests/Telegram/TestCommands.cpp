@@ -5,6 +5,7 @@
 
 #include "TestTelegramBot.h"
 
+namespace telegram::bot {
 ////////////////////////////////////////////////////////////////////////////////
 // Проверка наличия обработчиков команд бота
 TEST_F(TestTelegramBot, CheckCommandListeners)
@@ -45,13 +46,13 @@ TEST_F(TestTelegramBot, CheckCommandsAvailability)
         // авторизуем пользователя как обычного eOrdinaryUser
         expectedMessage = L"Пользователь успешно авторизован.";
         emulateBroadcastMessage(L"MonitoringAuth");
-        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), ITelegramUsersList::UserStatus::eOrdinaryUser)
+        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eOrdinaryUser)
             << "У пользователя не соответствует статус после авторизации";
 
         // повторно отправляем сообщение авторизации
         expectedMessage = L"Пользователь уже авторизован.";
         emulateBroadcastMessage(L"MonitoringAuth");
-        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), ITelegramUsersList::UserStatus::eOrdinaryUser)
+        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eOrdinaryUser)
             << "У пользователя не соответствует статус после авторизации";
 
         CString unknownMessageText = L"Неизвестная команда. Поддерживаемые команды бота:\n\n\n/info - Перечень команд бота.\n/report - Сформировать отчёт.\n\n\nДля того чтобы их использовать необходимо написать их этому боту(обязательно использовать слэш перед текстом команды(/)!). Или нажать в этом окне, они должны подсвечиваться.";
@@ -59,7 +60,7 @@ TEST_F(TestTelegramBot, CheckCommandsAvailability)
         // проверяем доступные обычному пользователю команды
         for (const auto& command : m_commandsToUserStatus)
         {
-            if (command.second.find(ITelegramUsersList::UserStatus::eOrdinaryUser) == command.second.end())
+            if (command.second.find(users::ITelegramUsersList::UserStatus::eOrdinaryUser) == command.second.end())
             {
                 // недоступная команда
                 expectedMessage = unknownMessageText;
@@ -89,32 +90,32 @@ TEST_F(TestTelegramBot, CheckCommandsAvailability)
         // авторизуем пользователя как админа eAdmin
         expectedMessage = L"Пользователь успешно авторизован как администратор.";
         emulateBroadcastMessage(L"MonitoringAuthAdmin");
-        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), ITelegramUsersList::UserStatus::eAdmin)
+        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eAdmin)
             << "У пользователя не соответствует статус после авторизации";
 
         // повторно отправляем сообщение авторизации обычного пользователя
         expectedMessage = L"Пользователь является администратором системы. Авторизация не требуется.";
         emulateBroadcastMessage(L"MonitoringAuth");
-        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), ITelegramUsersList::UserStatus::eAdmin)
+        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eAdmin)
             << "У пользователя не соответствует статус после авторизации";
 
         // повторно отправляем сообщение авторизации админа
         expectedMessage = L"Пользователь уже авторизован как администратор.";
         emulateBroadcastMessage(L"MonitoringAuthAdmin");
-        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), ITelegramUsersList::UserStatus::eAdmin)
+        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eAdmin)
             << "У пользователя не соответствует статус после авторизации";
 
         // проверяем доступные обычному пользователю команды
         for (const auto& command : m_commandsToUserStatus)
         {
-            EXPECT_TRUE(command.second.find(ITelegramUsersList::UserStatus::eAdmin) != command.second.end())
+            EXPECT_TRUE(command.second.find(users::ITelegramUsersList::UserStatus::eAdmin) != command.second.end())
                 << "У админа есть недоступная ему команда " << command.first;
 
             if (command.first == L"info")
                 expectedMessage = m_adminCommandsInfo;
-            else if (command.first == L"alertingOn"     ||
-                     command.first == L"alertingOff"    ||
-                     command.first == L"alarmingValue"  ||
+            else if (command.first == L"alertingOn" ||
+                     command.first == L"alertingOff" ||
+                     command.first == L"alarmingValue" ||
                      command.first == L"report")
                 expectedMessage = L"Каналы для мониторинга не выбраны";
             else
@@ -133,3 +134,5 @@ TEST_F(TestTelegramBot, CheckCommandsAvailability)
         emulateBroadcastMessage(L"123");
     }
 }
+
+} // namespace telegram::bot

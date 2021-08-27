@@ -1,15 +1,17 @@
 #pragma once
 
+#include <chrono>
+
 #include <Messages.h>
 #include <Singleton.h>
 #include <TickService.h>
 
 #include <include/IMonitoringTasksService.h>
 #include <include/ITrendMonitoring.h>
+#include <include/ITelegramBot.h>
 
 #include "ApplicationConfiguration.h"
-
-#include "Telegram/TelegramBot.h"
+#include "TrendMonitoringTask.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Реализация сервиса для мониторинга каналов
@@ -24,22 +26,25 @@ class TrendMonitoring
 public:
     TrendMonitoring();
 
+    // интервал обновления данных
+    static std::chrono::minutes getUpdateDataInterval() { return std::chrono::minutes(5); }
+
 // ITrendMonitoring
 public:
     /// <summary>Получить список имен всех меющихся каналов.</summary>
-    std::set<CString> getNamesOfAllChannels() override;
+    [[nodiscard]] std::set<CString> getNamesOfAllChannels() const override;
     /// <summary>Получить список имен каналов по которым происходит мониторинг.</summary>
-    std::list<CString> getNamesOfMonitoringChannels() override;
+    [[nodiscard]] std::list<CString> getNamesOfMonitoringChannels() const override;
 
     /// <summary>Обновить данные для всех каналов.</summary>
     void updateDataForAllChannels() override;
 
     /// <summary>Получить количества наблюдаемых каналов.</summary>
-    size_t getNumberOfMonitoringChannels() override;
+    size_t getNumberOfMonitoringChannels() const override;
     /// <summary>Получить данные для наблюдаемого канала по индексу.</summary>
     /// <param name="channelIndex">Индекс в списке каналов.</param>
     /// <returns>Данные для канала.</returns>
-    const MonitoringChannelData& getMonitoringChannelData(const size_t channelIndex) override;
+    [[nodiscard]] const MonitoringChannelData& getMonitoringChannelData(const size_t channelIndex) const override;
 
     /// <summary>Добавить канал для мониторинга.</summary>
     /// <returns>Индекс добавленного канала в списке.</returns>
@@ -80,15 +85,15 @@ public:
     size_t moveDownMonitoringChannelByIndex(const size_t channelIndex) override;
 
     // Получить настройки бота телеграма
-    const TelegramBotSettings& getBotSettings() override;
+    [[nodiscard]] const telegram::bot::TelegramBotSettings& getBotSettings() const override;
     // установить настройки бота телеграма
-    void setBotSettings(const TelegramBotSettings& newSettings) override;
+    void setBotSettings(const telegram::bot::TelegramBotSettings& newSettings) override;
 
 // IEventRecipient
 public:
     // оповещение о произошедшем событии
     void onEvent(const EventId& code, float eventValue,
-                 std::shared_ptr<IEventData> eventData) override;
+                 const std::shared_ptr<IEventData>& eventData) override;
 
 // ITickHandler
 public:
@@ -104,6 +109,12 @@ public:
     /// <returns>true если все ок, false если надо прекратить этот таймер.</returns>
     bool onTick(TickParam tickParam) override;
 
+// tests
+public:
+    void installTelegramBot(const std::shared_ptr<telegram::bot::ITelegramBot>& telegramBot);
+
+    [[nodiscard]] ApplicationConfiguration& getConfiguration() const { return *m_appConfig; }
+
 // работа со списком каналов и настройками
 private:
     // сохранение текущих настроек программы
@@ -111,72 +122,40 @@ private:
     // загрузка настроек программы
     void loadConfiguration();
     // Получить путь к файлу XML с настройками приложения
-    CString getConfigurationXMLFilePath();
+    [[nodiscard]] CString getConfigurationXMLFilePath() const;
     // вызывается при изменении в списке наблюдаемых каналов
     // bAsynchNotify - флаг что надо оповестить об изменении в списке каналов асинхронно
     void onMonitoringChannelsListChanged(bool bAsynchNotify = true);
 
 // работа с заданиями мониторинга
 private:
-    // структура с параметрами задания
-    struct TaskInfo
-    {
-        // тип выполняемого задания
-        enum class TaskType
-        {
-            eIntervalInfo = 0,      // Запрос данных за указанный интервал(с перезаписью)
-            eUpdatingInfo,          // Запрос новых данных(обновление существующей информации)
-                                    // Происходит по таймеру раз в 5 минут
-            eEveryDayReport         // Запрос данных для ежедневного отчёта
-        } taskType = TaskType::eIntervalInfo;
-
-        // параметры каналов по которым выполеняется задание
-        ChannelParametersList channelParameters;
-    };
-
     // Добавить задание мониторинга для канала
     // @param channelParams - параметры канала по которому надо запустить задание мониторинга
     // @param taskType - тип выполняемого задания
     // @param monitoringInterval - интервал времени с настоящего момента до начала мониторинга
     // если -1 - используется channelParams->monitoringInterval
     void addMonitoringTaskForChannel(ChannelParameters::Ptr& channelParams,
-                                     const TaskInfo::TaskType taskType,
+                                     const MonitoringTaskInfo::TaskType taskType,
                                      CTimeSpan monitoringInterval = -1);
     // Добавить задание мониторинга для списка каналов
     void addMonitoringTaskForChannels(const ChannelParametersList& channelList,
-                                      const TaskInfo::TaskType taskType,
+                                      const MonitoringTaskInfo::TaskType taskType,
                                       CTimeSpan monitoringInterval);
     // Добавить задания мониторинга, каждому таску соответствует канал
     void addMonitoringTaskForChannels(const ChannelParametersList& channelList,
                                       const std::list<TaskParameters::Ptr>& taskParams,
-                                      const TaskInfo::TaskType taskType);
+                                      const MonitoringTaskInfo::TaskType taskType);
 
     // Удалить задания запроса новых данных мониторинга для указанного канала
     void delMonitoringTaskForChannel(const ChannelParameters::Ptr& channelParams);
 
-
-    // Обработка результатов мониторинга для канала
-    // @param monitoringResult - результат мониторинга
-    // @param channelParameters - параметры канала
-    // @param alertText - текст о котором нужно сообщить
-    // @return true - в случае необходимости обновить данные по каналам
-    bool handleIntervalInfoResult(const MonitoringResult::ResultData& monitoringResult,
-                                  ChannelParameters* channelParameters,
-                                  CString& alertText);   // запрос данных за интервал
-    bool handleUpdatingResult(const MonitoringResult::ResultData& monitoringResult,
-                              ChannelParameters* channelParameters,
-                              CString& alertText);       // обновление данных
-    bool handleEveryDayReportResult(const MonitoringResult::ResultData& monitoringResult,
-                                    ChannelParameters* channelParameters,
-                                    CString& alertText); // ежедневный отчёт
-
 private:
     // мапа с соответствием идентификатора задания и параметрами задания
-    std::map<TaskId, TaskInfo, TaskComparer> m_monitoringTasksInfo;
+    std::map<TaskId, MonitoringTaskInfo, TaskComparer> m_monitoringTasksInfo;
 
 private:
     // бот для работы с телеграмом
-    std::unique_ptr<CTelegramBot> m_telegramBot;
+    std::shared_ptr<telegram::bot::ITelegramBot> m_telegramBot;
 
 private:
     // данные приложения

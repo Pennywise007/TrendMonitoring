@@ -3,7 +3,7 @@
     <m_chanelParameters>
         <ChannelParameters>
             <channelName>Прогибометр №3</channelName>
-            <bNotify>true</bNotify>
+            <bNotify>false</bNotify>
             <monitoringInterval>0</monitoringInterval>
             <alarmingValue>100,000000</alarmingValue>
         </ChannelParameters>

@@ -7,6 +7,8 @@
 
 #include "BotSettingDlg.h"
 
+#include "include/ITrendMonitoring.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 // CBotSettingDlg dialog
 IMPLEMENT_DYNAMIC(CBotSettingDlg, CDialogEx)
@@ -51,11 +53,11 @@ BOOL CBotSettingDlg::OnInitDialog()
 void CBotSettingDlg::OnOK()
 {
     CString token;
-    ((CWnd*)GetDlgItem(IDC_EDIT_TOKEN))->GetWindowText(token);
+    GetDlgItem(IDC_EDIT_TOKEN)->GetWindowText(token);
 
     bool bEnableState = GetCheckedRadioButton(IDC_RADIO_ENABLE_ON, IDC_RADIO_ENABLE_OFF) == IDC_RADIO_ENABLE_ON;
 
-    bool bTokenChanged = m_botSettings.sToken != token;
+    const bool bTokenChanged = m_botSettings.sToken != token;
     bool bEnableChanged = m_botSettings.bEnable != bEnableState;
 
     if (!m_botSettings.sToken.IsEmpty() && bTokenChanged)

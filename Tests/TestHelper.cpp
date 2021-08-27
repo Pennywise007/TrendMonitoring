@@ -3,9 +3,11 @@
 #include <DirsService.h>
 #include <include/ITrendMonitoring.h>
 
+#include "src/TrendMonitoring.h"
 #include <src/Utils.h>
 
 #include "TestHelper.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 void TestHelper::resetMonitoringService()
@@ -16,9 +18,15 @@ void TestHelper::resetMonitoringService()
     // сбрасываем все каналы
     for (size_t i = monitoringService->getNumberOfMonitoringChannels(); i > 0; --i)
     {
-        monitoringService->removeMonitoringChannelByIndex(0);
+        monitoringService->removeMonitoringChannelByIndex(i - 1);
     }
-    monitoringService->setBotSettings(TelegramBotSettings());
+
+    // reset mock
+    TrendMonitoring* monitoring = dynamic_cast<TrendMonitoring*>(monitoringService);
+    ASSERT_TRUE(!!monitoring);
+    monitoring->installTelegramBot(nullptr);
+
+    monitoringService->setBotSettings(telegram::bot::TelegramBotSettings());
 
     // удаляем конфигурационный файл
     const std::filesystem::path currentConfigPath(getConfigFilePath());

@@ -7,6 +7,8 @@
 
 #include <tgbot/tgbot.h>
 
+namespace telegram::users {
+
 // оповещение об изменение в списке пользователей телеграма
 // {491F3E83-3A8B-48BF-9235-33E5CE2E9FEC}
 constexpr EventId onUsersListChangedEvent =
@@ -40,3 +42,5 @@ DECLARE_COM_INTERFACE(ITelegramUsersList, "EFB00D0B-3B37-4AEC-B63A-9ECEA34C0802"
     // получить все идентификаторы чатов пользователей с определенным статусом
     virtual std::list<int64_t> getAllChatIdsByStatus(const UserStatus usertatus) = 0;
 };
+
+} // namespace telegram::users

@@ -24,7 +24,7 @@ public:
 public:
     // оповещение о произошедшем событии
     void onEvent(const EventId& code, float eventValue,
-                 std::shared_ptr<IEventData> eventData) override;
+                 const std::shared_ptr<IEventData>& eventData) override;
 
 // Dialog Data
 protected:

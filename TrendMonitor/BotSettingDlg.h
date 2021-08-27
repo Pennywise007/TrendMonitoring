@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <include/ITrendMonitoring.h>
+#include <ITelegramBot.h>
 
 // диалог настройки бота Telegram
 class CBotSettingDlg : public CDialogEx
@@ -27,5 +27,5 @@ protected:
 
 private:
     // настройки телеграм бота
-    TelegramBotSettings m_botSettings;
+    telegram::bot::TelegramBotSettings m_botSettings;
 };

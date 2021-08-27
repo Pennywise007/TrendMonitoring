@@ -18,12 +18,17 @@
 
 #include <experimental/filesystem>
 
-// идентификатор фиктивного пользователя телеграма
+namespace telegram {
+
+    // идентификатор фиктивного пользователя телеграма
 const int64_t kTelegramTestChatId = 1234;
+
+namespace bot {
 
 ////////////////////////////////////////////////////////////////////////////////
 void TestTelegramBot::SetUp()
 {
+    using namespace users;
     // инициализируем список пользователей
     m_pUserList = TestTelegramUsersList::create();
 
@@ -42,12 +47,12 @@ void TestTelegramBot::SetUp()
     m_testTelegramBot->setBotSettings(botSettings);
 
     // заполняем перечень команд и доступность её для различных пользователей
-    m_commandsToUserStatus[L"info"]             = { ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };
-    m_commandsToUserStatus[L"report"]           = { ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };
-    m_commandsToUserStatus[L"restart"]          = { ITelegramUsersList::eAdmin };
-    m_commandsToUserStatus[L"alertingOn"]       = { ITelegramUsersList::eAdmin };
-    m_commandsToUserStatus[L"alertingOff"]      = { ITelegramUsersList::eAdmin };
-    m_commandsToUserStatus[L"alarmingValue"]    = { ITelegramUsersList::eAdmin };
+    m_commandsToUserStatus[L"info"] = { ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };
+    m_commandsToUserStatus[L"report"] = { ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };
+    m_commandsToUserStatus[L"restart"] = { ITelegramUsersList::eAdmin };
+    m_commandsToUserStatus[L"alertingOn"] = { ITelegramUsersList::eAdmin };
+    m_commandsToUserStatus[L"alertingOff"] = { ITelegramUsersList::eAdmin };
+    m_commandsToUserStatus[L"alarmingValue"] = { ITelegramUsersList::eAdmin };
 
     static_assert(ITelegramUsersList::eLastStatus == 3,
                   "Список пользовтеля изменился, возможно стоит пересмотреть доступность команд");
@@ -97,8 +102,8 @@ void TestTelegramBot::emulateBroadcastCallbackQuery(LPCWSTR queryFormat, ...) co
     pUpdate->callbackQuery->message = pMessage;
     // Надо заменить все \\' на просто '
     pUpdate->callbackQuery->data = getUtf8Str(std::regex_replace(queryText.GetString(),
-                                                                 std::wregex(LR"(\\')"),
-                                                                 L"'"));
+                                              std::wregex(LR"(\\')"),
+                                              L"'"));
 
     HandleTgUpdate(m_pTelegramThread->m_botApi->getEventHandler(), pUpdate);
 }
@@ -127,8 +132,10 @@ TgBot::Message::Ptr TestTelegramBot::generateMessage(const std::wstring& text) c
     return pMessage;
 }
 
+} // namespace bot
+
 ////////////////////////////////////////////////////////////////////////////////
-TelegramUserMessagesChecker::TelegramUserMessagesChecker(TestTelegramThread* pTelegramThread,
+TelegramUserMessagesChecker::TelegramUserMessagesChecker(bot::TestTelegramThread* pTelegramThread,
                                                          CString* pExpectedMessage,
                                                          TgBot::GenericReply::Ptr* pExpectedReply /*= nullptr*/,
                                                          std::list<int64_t>** pExpectedRecipientsChats /*= nullptr*/,
@@ -227,3 +234,5 @@ TelegramUserMessagesChecker::TelegramUserMessagesChecker(TestTelegramThread* pTe
                 EXPECT_TRUE(compareReply(replyMarkup, *pExpectedReply));
         });
 }
+
+} // namespace telegram
