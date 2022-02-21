@@ -120,7 +120,7 @@ interface ITrendMonitoring
 
 #pragma region Общие функции над списком каналов
     /// <summary>Получить список имём всех доступным для мониторинга каналов.</summary>
-    [[nodiscard]] virtual std::set<CString> getNamesOfAllChannels() const = 0;
+    [[nodiscard]] virtual std::list<CString> getNamesOfAllChannels() const = 0;
     /// <summary>Получить список имен каналов по которым происходит мониторинг.</summary>
     [[nodiscard]] virtual std::list<CString> getNamesOfMonitoringChannels() const = 0;
 

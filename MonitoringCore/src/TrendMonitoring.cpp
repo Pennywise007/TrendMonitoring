@@ -81,19 +81,14 @@ TrendMonitoring::TrendMonitoring()
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-std::set<CString> TrendMonitoring::getNamesOfAllChannels() const
+std::list<CString> TrendMonitoring::getNamesOfAllChannels() const
 {
     OUTPUT_LOG_FUNC_ENTER;
 
-    // получаем все данные по каналам
-    std::map<CString, CString> channelsWithConversion;
-    // ищем именно в директории с сжатыми сигналами ибо там меньше вложенность и поиск идёт быстрее
-    CChannelDataGetter::FillChannelList(get_service<DirsService>().getZetCompressedDir(), channelsWithConversion);
-
     // заполняем сортированный список каналов
-    std::set<CString> allChannelsNames;
-    for (const auto& channelInfo : channelsWithConversion)
-        allChannelsNames.emplace(channelInfo.first);
+    std::list<CString> allChannelsNames;
+    // ищем именно в директории с сжатыми сигналами ибо там меньше вложенность и поиск идёт быстрее
+    ChannelDataGetter::FillChannelList(allChannelsNames, false);
 
     return allChannelsNames;
 }

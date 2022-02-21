@@ -85,15 +85,15 @@ private:
 
 private:
     // Отрабатывание колбэков на команды бота
-    void executeCallbackReport      (const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
-    void executeCallbackRestart     (const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
-    void executeCallbackResend      (const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
-    void executeCallbackAlert       (const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
-    void executeCallbackAlarmValue  (const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void executeCallbackReport      (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void executeCallbackRestart     (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void executeCallbackResend      (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void executeCallbackAlert       (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void executeCallbackAlarmValue  (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
 
 private:
     // Мапа с ключевыми словами колбэков и их выполняемыми функциями
-    typedef void (TelegramCallbacks::*CommandCallback)(const TgBot::Message::Ptr&, const CallBackParams&, bool);
+    typedef void (TelegramCallbacks::*CommandCallback)(const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams&, bool);
     std::map<std::string, CommandCallback> m_commandCallbacks;
     // поток работающего телеграма
     ITelegramThreadPtr& m_telegramThread;

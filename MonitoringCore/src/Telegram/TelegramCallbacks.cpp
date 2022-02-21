@@ -91,7 +91,7 @@ void TelegramCallbacks::onCallbackQuery(const TgBot::CallbackQuery::Ptr& query)
             if (boost::spirit::x3::parse(query->data.begin(), query->data.end(),
                                          keyWord >> CallbackParser::parser, callBackParams))
             {
-                if (!get_service<CommandsInfoService>().ensureNeedAnswerOnCallback(m_telegramUsers.get(), keyWord, query->message))
+                if (!get_service<CommandsInfoService>().ensureNeedAnswerOnCallback(m_telegramUsers.get(), keyWord, query))
                 {
                     // пользователь отправивший сообщение
                     const TgBot::User::Ptr& pUser = query->message->from;
@@ -102,7 +102,7 @@ void TelegramCallbacks::onCallbackQuery(const TgBot::CallbackQuery::Ptr& query)
                         m_telegramThread->sendMessage(query->message->chat->id, L"Неизвестная или более не доступная команда.");
                 }
                 else
-                    (this->*callback)(query->message, callBackParams, false);
+                    (this->*callback)(query->from, query->message, callBackParams, false);
 
                 return;
             }
@@ -147,7 +147,7 @@ bool TelegramCallbacks::gotResponseToPreviousCallback(const TgBot::Message::Ptr&
                     callbackIt != m_commandCallbacks.end())
                 {
                     const CommandCallback& callback = callbackIt->second;
-                    (this->*callback)(commandMessage, callBackParams, true);
+                    (this->*callback)(commandMessage->from, commandMessage, callBackParams, true);
                     return true;
                 }
                 else
@@ -181,7 +181,7 @@ void TelegramCallbacks::onEvent(const EventId& code, float /*eventValue*/, const
         MonitoringResult::Ptr monitoringResult = std::static_pointer_cast<MonitoringResult>(eventData);
 
         // проверяем что это наше задание
-        auto taskIt = m_monitoringTasksInfo.find(monitoringResult->m_taskId);
+        const auto taskIt = m_monitoringTasksInfo.find(monitoringResult->m_taskId);
         if (taskIt == m_monitoringTasksInfo.end())
             return;
 
@@ -218,7 +218,7 @@ void TelegramCallbacks::onEvent(const EventId& code, float /*eventValue*/, const
                     float alarmingValue = NAN;
 
                     // если отчёт подробный - ищем какое оповещательное значение у канала
-                    auto pMonitoringService = get_monitoring_service();
+                    const auto* pMonitoringService = get_monitoring_service();
                     for (size_t i = 0, count = pMonitoringService->getNumberOfMonitoringChannels();
                          i < count; ++i)
                     {
@@ -318,7 +318,7 @@ void TelegramCallbacks::onEvent(const EventId& code, float /*eventValue*/, const
 
                 keyboard->inlineKeyboard.push_back({ create_keyboard_button(channelName + L" выключить оповещения", turnOffNotifications),
                                                      create_keyboard_button(channelName + L" изменить уровень", changeAlarmValue),
-                                                     create_keyboard_button(channelName + L" отчёт, channelReport", channelReport) });
+                                                     create_keyboard_button(channelName + L" сформировать отчёт", channelReport) });
             }
         }
 
@@ -330,7 +330,8 @@ void TelegramCallbacks::onEvent(const EventId& code, float /*eventValue*/, const
 }
 
 //----------------------------------------------------------------------------//
-void TelegramCallbacks::executeCallbackReport(const TgBot::Message::Ptr& message, const CallBackParams& reportParams, bool /*gotAnswer*/)
+void TelegramCallbacks::executeCallbackReport(const TgBot::User::Ptr& /*from*/, const TgBot::Message::Ptr& message,
+                                              const CallBackParams& reportParams, bool /*gotAnswer*/)
 {
     // В колбэке отчёта должны быть определенные параметры, итоговый колбэк должен быть вида
     // kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(ОПЦИОНАЛЬНО) kParamInterval={'1000000'}
@@ -460,22 +461,18 @@ void TelegramCallbacks::executeCallbackReport(const TgBot::Message::Ptr& message
 }
 
 //----------------------------------------------------------------------------//
-void TelegramCallbacks::executeCallbackRestart(const TgBot::Message::Ptr& message, const CallBackParams& params, bool /*gotAnswer*/)
+void TelegramCallbacks::executeCallbackRestart(const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message,
+                                               const CallBackParams& params, bool /*gotAnswer*/)
 {
     assert(params.empty() && "Параметров не предусмотрено");
 
-    std::wstring messageToUser;
-    if (!get_service<CommandsInfoService>().ensureNeedAnswerOnCommand(m_telegramUsers, CommandsInfoService::Command::eRestart, message, messageToUser))
-    {
-        m_telegramThread->sendMessage(message->chat->id, messageToUser);
-    }
-    else
-        // эмитируем что пользователь выполнил запрос рестарта
-        execute_restart_command(message, m_telegramThread.get());
+    // эмитируем что пользователь выполнил запрос рестарта
+    execute_restart_command(message->chat->id, m_telegramThread.get());
 }
 
 //----------------------------------------------------------------------------//
-void TelegramCallbacks::executeCallbackResend(const TgBot::Message::Ptr& message, const CallBackParams& params, bool /*gotAnswer*/)
+void TelegramCallbacks::executeCallbackResend(const TgBot::User::Ptr& /*from*/, const TgBot::Message::Ptr& message,
+                                              const CallBackParams& params, bool /*gotAnswer*/)
 {
     const auto errorIdIt = params.find(resend::kParamId);
     if (errorIdIt == params.end())
@@ -502,8 +499,7 @@ void TelegramCallbacks::executeCallbackResend(const TgBot::Message::Ptr& message
 
     if (errorIt->bResendToOrdinaryUsers)
     {
-        m_telegramThread->sendMessage(message->chat->id,
-                                      L"Ошибка уже была переслана.");
+        m_telegramThread->sendMessage(message->chat->id, L"Ошибка уже была переслана.");
         return;
     }
 
@@ -513,12 +509,12 @@ void TelegramCallbacks::executeCallbackResend(const TgBot::Message::Ptr& message
 
     errorIt->bResendToOrdinaryUsers = true;
 
-    m_telegramThread->sendMessage(message->chat->id,
-                                  L"Ошибка была успешно переслана обычным пользователям.");
+    m_telegramThread->sendMessage(message->chat->id, L"Ошибка была успешно переслана обычным пользователям.");
 }
 
 //----------------------------------------------------------------------------//
-void TelegramCallbacks::executeCallbackAlert(const TgBot::Message::Ptr& message, const CallBackParams& params, bool /*gotAnswer*/)
+void TelegramCallbacks::executeCallbackAlert(const TgBot::User::Ptr& /*from*/, const TgBot::Message::Ptr& message,
+                                             const CallBackParams& params, bool /*gotAnswer*/)
 {
     // Формат колбэка kKeyWord kParamEnable={'true'} kParamChan={'chan1'}
     const auto enableParam = params.find(alertEnabling::kParamEnable);
@@ -576,7 +572,8 @@ void TelegramCallbacks::executeCallbackAlert(const TgBot::Message::Ptr& message,
 }
 
 //----------------------------------------------------------------------------//
-void TelegramCallbacks::executeCallbackAlarmValue(const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer)
+void TelegramCallbacks::executeCallbackAlarmValue(const TgBot::User::Ptr& /*from*/, const TgBot::Message::Ptr& message,
+                                                  const CallBackParams& params, bool gotAnswer)
 {
     // Формат колбэка kKeyWord kParamChan={'chan1'} kLevel={'5.5'}
     const auto channelParam = params.find(alarmingValue::kParamChan);

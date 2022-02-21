@@ -45,8 +45,8 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
 
     // задаем перечень каналов мониторинга чтобы с ними работать
     ITrendMonitoring* trendMonitoring = get_monitoring_service();
-    std::set<CString> allChannels = trendMonitoring->getNamesOfAllChannels();
-    for (auto& chan : allChannels)
+    const auto allChannels = trendMonitoring->getNamesOfAllChannels();
+    for (const auto& chan : allChannels)
     {
         const size_t chanInd = trendMonitoring->addMonitoringChannel();
         trendMonitoring->changeMonitoringChannelName(chanInd, chan);
@@ -219,7 +219,7 @@ TEST_F(TestTelegramBot, CheckAlertCommandCallbacks)
 
     // задаем перечень каналов мониторинга чтобы им отключать оповещения
     ITrendMonitoring* trendMonitoring = get_monitoring_service();
-    std::set<CString> allChannels = trendMonitoring->getNamesOfAllChannels();
+    const auto allChannels = trendMonitoring->getNamesOfAllChannels();
     for (const auto& chan : allChannels)
     {
         const size_t chanInd = trendMonitoring->addMonitoringChannel();
@@ -326,8 +326,8 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
 
     // задаем перечень каналов мониторинга чтобы им отключать оповещения
     ITrendMonitoring* trendMonitoring = get_monitoring_service();
-    std::set<CString> allChannels = trendMonitoring->getNamesOfAllChannels();
-    for (auto& chan : allChannels)
+    auto allChannels = trendMonitoring->getNamesOfAllChannels();
+    for (const auto& chan : allChannels)
     {
         trendMonitoring->changeMonitoringChannelName(trendMonitoring->addMonitoringChannel(), chan);
     }

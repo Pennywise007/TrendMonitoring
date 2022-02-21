@@ -168,7 +168,10 @@ public:
                              const CommandFunction& onNonCommandMessage = nullptr) override
     {
         TgBot::EventBroadcaster& eventBroadCaster = getBotEvents();
-        eventBroadCaster.getCommandListeners() = commandsList;
+        for (auto&&[command, function] : commandsList)
+        {
+            eventBroadCaster.onCommand(command, function);
+        }
         eventBroadCaster.onUnknownCommand(onUnknownCommand);
         eventBroadCaster.onNonCommandMessage(onNonCommandMessage);
     }

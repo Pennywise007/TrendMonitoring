@@ -6,6 +6,8 @@
 #include "Logger.h"
 #include "MonitoringTasksServiceImpl.h"
 
+#include <ext/utils/string.h>
+
 // включение подробного логирования
 #define DETAILED_LOGGING
 
@@ -217,7 +219,7 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
     try
     {
         // создаем класс для получения данных по каналу
-        CChannelDataGetter channelDataGetter(channelName, startTime, endTime);
+        ChannelDataGetter channelDataGetter(channelName, startTime, endTime);
         // частота канала, считаем что она постоянная
         double frequency = channelDataGetter.getChannelInfo()->GetFrequency();
 
@@ -238,15 +240,12 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
             CTimeSpan allTimeSpan = endTime - lastLoadedTime;
 
             // рассчитываем количество секунд которые можем загрузить
-            LONGLONG loadingSeconds = std::min<LONGLONG>(allTimeSpan.GetTotalSeconds(),
-                                                            LONGLONG(maxPartSize / frequency));
+            const LONGLONG loadingSeconds = std::min<LONGLONG>(allTimeSpan.GetTotalSeconds(), LONGLONG(maxPartSize / frequency));
 
             try
             {
                 // загружаем данные текущией порции
-                channelDataGetter.getSourceChannelData(channelName, lastLoadedTime,
-                                                        lastLoadedTime + loadingSeconds,
-                                                        channelData);
+                channelDataGetter.getSourceChannelData(lastLoadedTime, lastLoadedTime + loadingSeconds, channelData);
 
                 // количество пустых значений
                 LONGLONG emptyValuesCount = 0;
@@ -320,7 +319,7 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
                 // рассчитываем количество секунд без данных
                 taskResult.emptyDataTime += LONGLONG(emptyValuesCount / frequency);
             }
-            catch (const CString& logMessage)
+            catch (const std::exception& exception)
             {
                 // в каком-то промежутке данных может вообще не быть, помечаем их пустыми
                 taskResult.emptyDataTime += loadingSeconds;
@@ -328,7 +327,7 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
 #ifdef DETAILED_LOGGING
                 OUTPUT_LOG_TEXT(L"Возникла ошибка при получении данных. Текущее количество пропусков %lld. Ошибка: %s",
                                 taskResult.emptyDataTime,
-                                logMessage.GetString());
+                                std::widen(exception.what()).c_str());
 #endif // DETAILED_LOGGING
             }
 
@@ -346,9 +345,9 @@ void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
         e->GetErrorMessage(logMessage, MAX_PATH);
         exceptionMessage = logMessage;
     }
-    catch (const CString& logMessage)
+    catch (const std::exception& exception)
     {
-        exceptionMessage = logMessage;
+        exceptionMessage = std::widen(exception.what()).c_str();
     }
 
     // Если было сообщение об ошибке - показываем его

@@ -13,7 +13,7 @@
 namespace telegram::command {
 
 // выполнение команды на рестарт
-void execute_restart_command(const TgBot::Message::Ptr& message, ITelegramThread* telegramThread);
+void execute_restart_command(const std::int64_t& chatId, ITelegramThread* telegramThread);
 
 ////////////////////////////////////////////////////////////////////////////////
 // вспомогательный клас дл€ работы с командами телеграма
@@ -55,13 +55,13 @@ public:
     // ѕроверка что надо ответить на команду пользователю
     // если false - в messageToUser будет ответ пользователю
     bool ensureNeedAnswerOnCommand(users::ITelegramUsersList* usersList, Command command,
-                                   const MessagePtr& commandMessage, std::wstring& messageToUser) const;
+                                   const TgBot::User::Ptr& from, const std::int64_t& chatId,  std::wstring& messageToUser) const;
 
     // ѕроверка что надо ответить на колбэк, пока пользователю показывали кнопку у него мог помен€тьс€ статус
     // если false - в messageToUser будет ответ пользователю
     bool ensureNeedAnswerOnCallback(users::ITelegramUsersList* usersList,
                                     const std::string& callbackKeyWord,
-                                    const MessagePtr& commandMessage) const;
+                                    const TgBot::CallbackQuery::Ptr& query) const;
 
     // ќчищаем список команд
     void resetCommandList();

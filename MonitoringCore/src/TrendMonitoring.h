@@ -32,7 +32,7 @@ public:
 // ITrendMonitoring
 public:
     /// <summary>Получить список имен всех меющихся каналов.</summary>
-    [[nodiscard]] std::set<CString> getNamesOfAllChannels() const override;
+    [[nodiscard]] std::list<CString> getNamesOfAllChannels() const override;
     /// <summary>Получить список имен каналов по которым происходит мониторинг.</summary>
     [[nodiscard]] std::list<CString> getNamesOfMonitoringChannels() const override;
 

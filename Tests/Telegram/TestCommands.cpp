@@ -7,22 +7,6 @@
 
 namespace telegram::bot {
 ////////////////////////////////////////////////////////////////////////////////
-// ѕроверка наличи€ обработчиков команд бота
-TEST_F(TestTelegramBot, CheckCommandListeners)
-{
-    TgBot::EventBroadcaster& botEvents = m_pTelegramThread->getBotEvents();
-    // провер€ем наличие обработчиков
-    auto& commandListeners = botEvents.getCommandListeners();
-    for (const auto& command : m_commandsToUserStatus)
-    {
-        EXPECT_NE(commandListeners.find(CStringA(command.first.c_str()).GetString()), commandListeners.end())
-            << "” команды бота \"" + CStringA(command.first.c_str()) + "\" отсутствует обработчик";
-    }
-
-    EXPECT_EQ(commandListeners.size(), 6) << " оличество обработчиков команд и самих команд не совпадает";
-}
-
-//----------------------------------------------------------------------------//
 // провер€ем реакцию на различных пользователей
 TEST_F(TestTelegramBot, CheckCommandsAvailability)
 {
@@ -135,4 +119,37 @@ TEST_F(TestTelegramBot, CheckCommandsAvailability)
     }
 }
 
+TEST_F(TestTelegramBot, CheckUnauthorizedUser)
+{
+    // ожидаемое сообщение телеграм боту
+    CString expectedMessage;
+
+    // класс дл€ проверки ответов пользователю
+    const TelegramUserMessagesChecker checker(m_pTelegramThread, &expectedMessage);
+
+    // по умолчанию у пользовател€ статус eNotAuthorized и у него нет доступных команд пока он не авторизуетс€
+    expectedMessage = L"ƒл€ работы бота вам необходимо авторизоватьс€.";
+    for (const auto& command : m_commandsToUserStatus)
+    {
+        emulateBroadcastMessage(L"/" + command.first);
+    }
+    // или любое рандомное сообщение кроме сообщени€ с авторизацией тоже должны ругатьс€
+    emulateBroadcastMessage(L"132123");
+    emulateBroadcastMessage(L"/22");
+
+    // check no sending error text
+    m_testTelegramBot->sendMessageToUsers(L"Random message");
+    m_testTelegramBot->sendMessageToAdmins(L"Random message");
+
+    auto errorMessage = std::make_shared<MonitoringErrorEventData>();
+    errorMessage->errorTextForAllChannels = L"Error";
+    get_service<CMassages>().sendMessage(onMonitoringErrorEvent, 0,
+                                         std::static_pointer_cast<IEventData>(errorMessage));
+
+    auto reportMessage = std::make_shared<MessageTextData>();
+    reportMessage->messageText = L"Test report";
+    get_service<CMassages>().postMessage(onReportPreparedEvent, 0,
+                                         std::static_pointer_cast<IEventData>(reportMessage));
+
+}
 } // namespace telegram::bot

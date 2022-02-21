@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <ITelegramBot.h>
+#include <include/ITelegramBot.h>
 
 // диалог настройки бота Telegram
 class CBotSettingDlg : public CDialogEx

@@ -80,6 +80,9 @@ void CTelegramBot::sendMessageToAdmins(const CString& message) const
 {
     if (!m_telegramThread)
         return;
+    const auto chats = m_telegramUsers->getAllChatIdsByStatus(ITelegramUsersList::UserStatus::eAdmin);
+    if (chats.empty())
+        return;
 
     m_telegramThread->sendMessage(
         m_telegramUsers->getAllChatIdsByStatus(ITelegramUsersList::UserStatus::eAdmin),
@@ -90,6 +93,10 @@ void CTelegramBot::sendMessageToAdmins(const CString& message) const
 void CTelegramBot::sendMessageToUsers(const CString& message) const
 {
     if (!m_telegramThread)
+        return;
+
+    const auto chats = m_telegramUsers->getAllChatIdsByStatus(ITelegramUsersList::UserStatus::eAdmin);
+    if (chats.empty())
         return;
 
     m_telegramThread->sendMessage(
@@ -192,7 +199,8 @@ void CTelegramBot::onNonCommandMessage(const MessagePtr& commandMessage)
             [[fallthrough]];
         case ITelegramUsersList::UserStatus::eNotAuthorized:
             m_telegramUsers->setUserStatus(pUser, ITelegramUsersList::UserStatus::eOrdinaryUser);
-            messageToUser = L"ѕользователь успешно авторизован.";
+            messageToUser = L"ѕользователь успешно авторизован.\n\n" +
+                get_service<CommandsInfoService>().getAvailableCommandsWithDescription(ITelegramUsersList::UserStatus::eOrdinaryUser);
             break;
         }
     }
@@ -210,7 +218,8 @@ void CTelegramBot::onNonCommandMessage(const MessagePtr& commandMessage)
         case ITelegramUsersList::UserStatus::eOrdinaryUser:
         case ITelegramUsersList::UserStatus::eNotAuthorized:
             m_telegramUsers->setUserStatus(pUser, ITelegramUsersList::UserStatus::eAdmin);
-            messageToUser = L"ѕользователь успешно авторизован как администратор.";
+            messageToUser = L"ѕользователь успешно авторизован как администратор.\n\n" +
+                get_service<CommandsInfoService>().getAvailableCommandsWithDescription(ITelegramUsersList::UserStatus::eAdmin);
             break;
         }
     }
@@ -221,7 +230,7 @@ void CTelegramBot::onNonCommandMessage(const MessagePtr& commandMessage)
 
         // особо убеждатьс€ не в чем, просто на eUnknown возвращаетс€ текст ошибки
         get_service<CommandsInfoService>().ensureNeedAnswerOnCommand(m_telegramUsers, CommandsInfoService::Command::eUnknown,
-                                                                     commandMessage, messageToUser);
+                                                                     commandMessage->from, commandMessage->chat->id, messageToUser);
     }
 
     if (!messageToUser.empty())
@@ -239,7 +248,7 @@ void CTelegramBot::onCommandMessage(CommandsInfoService::Command command, const 
             std::wstring messageToUser;
             // провер€ем что есть необходимость отвечать на команду этому пользователю
             if (get_service<CommandsInfoService>().ensureNeedAnswerOnCommand(m_telegramUsers, command,
-                                                                             message, messageToUser))
+                                                                             message->from, message->chat->id, messageToUser))
             {
                 m_telegramUsers->setUserLastCommand(message->from, message->text);
 
@@ -325,7 +334,7 @@ void CTelegramBot::onCommandReport(const MessagePtr& commandMessage) const
 //----------------------------------------------------------------------------//
 void CTelegramBot::onCommandRestart(const MessagePtr& commandMessage) const
 {
-    execute_restart_command(commandMessage, m_telegramThread.get());
+    execute_restart_command(commandMessage->chat->id, m_telegramThread.get());
 }
 
 //----------------------------------------------------------------------------//

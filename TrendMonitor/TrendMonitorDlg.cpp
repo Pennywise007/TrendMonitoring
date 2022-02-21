@@ -38,12 +38,14 @@ std::map<MonitoringInterval, CString> kMonitoringIntervalStrings;
 CTrendMonitorDlg::CTrendMonitorDlg(CWnd* pParent /*=nullptr*/)
     : CDialogEx(IDD_TRENDMONITOR_DIALOG, pParent)
 {
+    std::locale::global(std::locale(""));
+
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
     // добавляем все значение интервалов в комбобокс
     for (int i = 0; i < (int)MonitoringInterval::eLast; ++i)
     {
-        MonitoringInterval interval = (MonitoringInterval)i;
+        const MonitoringInterval interval = (MonitoringInterval)i;
         kMonitoringIntervalStrings[interval] = monitoring_interval_to_string(interval);
     }
 }
@@ -189,8 +191,13 @@ void CTrendMonitorDlg::initControls()
                                          CRect(), parentWindow, 0);
 
                         // добавляем все каналы из списка в комбобокс
-                        auto allChennelsNames = get_monitoring_service()->getNamesOfAllChannels();
-                        for (const auto& channelName : allChennelsNames)
+                        auto allChannelsNames = get_monitoring_service()->getNamesOfAllChannels();
+                        allChannelsNames.sort([](const CString& lhs, const CString& rhs)
+                        {
+                            return lhs.Compare(rhs);
+                        });
+
+                        for (const auto& channelName : allChannelsNames)
                             comboBox->AddString(channelName);
 
                         // получаем текущее имя канала которое выбранно в таблицы
@@ -198,9 +205,9 @@ void CTrendMonitorDlg::initControls()
                         if (!curSubItemText.IsEmpty())
                         {
                             // ищем и ставим на текущий выделенный канал выделение в комбобоксе
-                            auto it = allChennelsNames.find(curSubItemText);
-                            if (it != allChennelsNames.end())
-                                comboBox->SetCurSel((int)std::distance(allChennelsNames.begin(), it));
+                            const auto it = std::find(allChannelsNames.begin(), allChannelsNames.end(), curSubItemText);
+                            if (it != allChannelsNames.end())
+                                comboBox->SetCurSel((int)std::distance(allChannelsNames.begin(), it));
                         }
 
                         return std::shared_ptr<CWnd>(comboBox);
@@ -800,31 +807,13 @@ void CTrendMonitorDlg::OnBnClickedMfcbuttonRefresh()
 //----------------------------------------------------------------------------//
 void CTrendMonitorDlg::OnBnClickedMfcbuttonShowTrends()
 {
-    auto monitoringService = get_monitoring_service();
+    const auto* monitoringService = get_monitoring_service();
 
-    size_t countChannels = monitoringService->getNumberOfMonitoringChannels();
+    const size_t countChannels = monitoringService->getNumberOfMonitoringChannels();
     if (countChannels == 0)
     {
         MessageBox(L"", L"Нет выбранных каналов!", MB_OK);
         return;
-    }
-
-    // получаем полный пусть к программе с трендами
-    CString trendsFullPath;
-    {
-        CString zetInstallFolder = get_service<DirsService>().getZetInstallDir();
-        if (zetInstallFolder.IsEmpty())
-        {
-            MessageBox(L"", L"Директория установки зетлаба не найдена.", MB_OK);
-            return;
-        }
-
-        trendsFullPath = std::move(zetInstallFolder + L"ZETTrends.exe");
-        if (!std::filesystem::is_regular_file(trendsFullPath.GetString()))
-        {
-            MessageBox(L"", L"Программа просмотра трендов не найдена!", MB_OK);
-            return;
-        }
     }
 
     // список каналдов через ;
@@ -843,31 +832,79 @@ void CTrendMonitorDlg::OnBnClickedMfcbuttonShowTrends()
     CTime startTime = endTime - maxTimeSpan;
 
     // дополнительный отступ чтобы было удобнее смотреть
-    CTimeSpan extraTime(std::max<LONGLONG>(maxTimeSpan.GetDays() / 10, 1), 0, 0, 0);
+    const CTimeSpan extraTime(std::max<LONGLONG>(maxTimeSpan.GetDays() / 10, 1), 0, 0, 0);
     endTime += extraTime;
     startTime -= extraTime;
 
-    // запускаем тренды
+    // form the command line
     CString commandLine;
     commandLine.Format(L" -ip 127.0.0.1 -start %s -end %s -channels \"%s\" -autoscale",
                        startTime.Format(L"%d.%m.%Y").GetString(),
                        endTime  .Format(L"%d.%m.%Y").GetString(),
                        channels.GetString());
 
-    STARTUPINFO cif = { sizeof(STARTUPINFO) };
-    PROCESS_INFORMATION m_ProcInfo = { 0 };
-    if (FALSE != CreateProcess(trendsFullPath.GetBuffer(),  // имя исполняемого модуля
-                               commandLine.GetBuffer(),	    // Командная строка
-                               NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
-                               NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
-                               0,                           // Флаг наследования текущего процесса
-                               NULL,                        // Флаги способов создания процесса
-                               NULL,                        // Указатель на блок среды
-                               NULL,                        // Текущий диск или каталог
-                               &cif,                        // Указатель на структуру STARTUPINFO
-                               &m_ProcInfo))                // Указатель на структуру PROCESS_INFORMATION)
-    {	// идентификатор потока не нужен
-        CloseHandle(m_ProcInfo.hThread);
-        CloseHandle(m_ProcInfo.hProcess);
+    constexpr auto kTrendProgramName = L"ZETTrends.exe";
+    // if command line is too long zet trends will close with error, try to start it and send command line via WM_COPYDATA
+    HWND trendsMainWindow = FindMainWindowOfExe(kTrendProgramName);
+    if (trendsMainWindow == nullptr)
+    {
+        // Getting full path to trends
+        CString trendsFullPath;
+        {
+            CString zetInstallFolder = get_service<DirsService>().getZetInstallDir();
+            if (zetInstallFolder.IsEmpty())
+            {
+                MessageBox(L"", L"Директория установки зетлаба не найдена.", MB_OK);
+                return;
+            }
+
+            trendsFullPath = std::move(zetInstallFolder) + kTrendProgramName;
+            if (!std::filesystem::is_regular_file(trendsFullPath.GetString()))
+            {
+                MessageBox(L"", L"Программа просмотра трендов не найдена!", MB_OK);
+                return;
+            }
+        }
+
+        // start up exe
+        STARTUPINFO cif = { sizeof(STARTUPINFO) };
+        PROCESS_INFORMATION m_ProcInfo = { 0 };
+        if (FALSE != CreateProcess(trendsFullPath.GetBuffer(),  // имя исполнdяемого модуля
+            NULL,	                     // Командная строка
+            NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
+            NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
+            0,                           // Флаг наследования текущего процесса
+            NULL,                        // Флаги способов создания процесса
+            NULL,                        // Указатель на блок среды
+            NULL,                        // Текущий диск или каталог
+            &cif,                        // Указатель на структуру STARTUPINFO
+            &m_ProcInfo))                // Указатель на структуру PROCESS_INFORMATION)
+        {	// идентификатор потока не нужен
+            CloseHandle(m_ProcInfo.hThread);
+            CloseHandle(m_ProcInfo.hProcess);
+
+            // wait for start
+            Sleep(1000);
+        }
+
+        trendsMainWindow = FindMainWindowOfExe(kTrendProgramName);
+        if (trendsMainWindow == nullptr)
+        {
+            MessageBox(L"", CString(L"Can`t start ") + kTrendProgramName, MB_OK);
+            return;
+        }
     }
+
+    // send WM_COPYDATA with command line
+    COPYDATASTRUCT cds;
+    cds.dwData = 0;
+    cds.cbData = (commandLine.GetLength() + 1) * sizeof(wchar_t);
+    cds.lpData = (PVOID)commandLine.GetBuffer();
+    if (cds.lpData != 0)
+        memcpy_s(cds.lpData, cds.cbData, commandLine.GetBuffer(), cds.cbData);
+    ::SendMessage(trendsMainWindow, WM_COPYDATA, (WPARAM)trendsMainWindow, (LPARAM)&cds);
+
+    ::OpenIcon(trendsMainWindow);
+    ::SetActiveWindow(trendsMainWindow);
+    ::SetForegroundWindow(trendsMainWindow);
 }

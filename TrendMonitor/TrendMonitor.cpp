@@ -5,6 +5,7 @@
 #include "stdafx.h"
 
 #include <Windows.h>
+#include <TlHelp32.h>
 
 #include "TrendMonitor.h"
 #include "TrendMonitorDlg.h"
@@ -13,6 +14,72 @@
 #define new DEBUG_NEW
 #endif
 
+
+HWND FindMainWindowOfExe(CString exeName, bool ignoreCurrentProcess /*= true*/)
+{
+    HWND result = nullptr;
+
+    // получаем перечень всех запущенных процессов
+    const HANDLE m_hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
+    if (m_hSnapshot != INVALID_HANDLE_VALUE)
+    {
+        if (exeName.Find(L".exe") == -1)
+            exeName += L".exe";
+        exeName.MakeLower();
+
+        const auto currentProcessId = ::GetCurrentProcessId();
+
+        PROCESSENTRY32 pe = { sizeof(pe) };
+
+        // ищем все не наши процессы с именем нашей экзешки
+        for (auto bOk = ::Process32First(m_hSnapshot, &pe); bOk;
+             bOk = ::Process32Next(m_hSnapshot, &pe))
+        {
+            if ((ignoreCurrentProcess || pe.th32ProcessID != currentProcessId) &&
+                (CString(pe.szExeFile).MakeLower() == exeName))
+            {
+                struct WindowInfo
+                {
+                    WindowInfo(const DWORD _processId, HWND& _result)
+                        : processId(_processId)
+                        , resultHandle(_result)
+                    {}
+
+                    DWORD processId;
+                    HWND& resultHandle;
+                } info(pe.th32ProcessID, result);
+
+                // ищем основное окно у процесса
+                ::EnumWindows([](HWND handle, LPARAM lParam)
+                {
+                    // фильтруем не основные окна, считаем что это окна без владельцев
+                    // и икона со стилем WS_EX_APPWINDOW(вспомогательные окна могут быть тоже без родителя)
+                    if (::GetWindow(handle, GW_OWNER) != (HWND)0 ||
+                        !(GetWindowLongPtr(handle, GWL_EXSTYLE) & WS_EX_APPWINDOW))
+                        return TRUE;
+
+                    // процесс который ищем
+                    const DWORD searchProcessId = reinterpret_cast<WindowInfo*>(lParam)->processId;
+                    // процесс окна
+                    DWORD windowProcessId = 0;
+                    ::GetWindowThreadProcessId(handle, &windowProcessId);
+
+                    if (searchProcessId != windowProcessId)
+                        return TRUE;
+
+                    reinterpret_cast<WindowInfo*>(lParam)->resultHandle = handle;
+
+                    return FALSE;
+                }, LPARAM(&info));
+
+                break;
+            }
+        }
+        CloseHandle(m_hSnapshot);
+    }
+
+    return result;
+}
 
 // CTrendMonitorApp
 
@@ -54,7 +121,6 @@ BOOL CTrendMonitorApp::InitInstance()
 
     CWinApp::InitInstance();
 
-
     AfxEnableControlContainer();
 
     static CMutex m_RunOnceMutex(FALSE, _T("TrendMonitorRunning"));
@@ -64,68 +130,21 @@ BOOL CTrendMonitorApp::InitInstance()
     if (!m_RunOnceLock.Lock(0))
     {
         // ищем основное окно уже запущенной программы
-
         // получаем имя нашей экзешки
         TCHAR Buffer[MAX_PATH];
         if (::GetModuleFileName(NULL, Buffer, MAX_PATH))
         {
-            // получаем перечень всех запущенных процессов
-            HANDLE m_hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
-            if (m_hSnapshot != INVALID_HANDLE_VALUE)
+            // вычленяем из полного пути имя экзешки
+            const HWND handle = FindMainWindowOfExe(PathFindFileName(Buffer));
+            if (handle != nullptr)
             {
-                // вычленяем из полного пути имя экзешки
-                CString str = PathFindFileName(Buffer);
-                str.MakeLower();
-                // на всякий случай добавляем .exe
-                if (str.Find(L".exe") == -1)
-                    str += L".exe";
+                // если окно скрыто - показываем его
+                if (!::IsWindowVisible(handle))
+                    ::ShowWindow(handle, SW_SHOW);
 
-                auto currentProcessId = ::GetCurrentProcessId();
-
-                PROCESSENTRY32 pe = { sizeof(pe) };
-
-                // ищем все не наши процессы с именем нашей экзешки
-                for (BOOL bOk = ::Process32First(m_hSnapshot, &pe); bOk;
-                     bOk = ::Process32Next(m_hSnapshot, &pe))
-                {
-                    if (((CString)pe.szExeFile).MakeLower() == str &&
-                        pe.th32ProcessID != currentProcessId)
-                    {
-                        // ищем основное окно у процесса
-                        ::EnumWindows(
-                            [](HWND handle, LPARAM lParam)
-                            {
-                                // фильтруем не основные окна, считаем что это окна без владельцев
-                                // и кона со стилем WS_EX_APPWINDOW(вспомогательные окна могут быть тоже без родителя
-                                if (::GetWindow(handle, GW_OWNER) != (HWND)0 ||
-                                    !(GetWindowLongPtr(handle, GWL_EXSTYLE) & WS_EX_APPWINDOW))
-                                    return TRUE;
-
-                                // процесс который ищем
-                                DWORD searchProcessId = (DWORD)lParam;
-                                // процесс окна
-                                DWORD windowProcessId = 0;
-                                ::GetWindowThreadProcessId(handle, &windowProcessId);
-
-                                if (searchProcessId != windowProcessId)
-                                    return TRUE;
-
-                                // если окно скрыто - показываем его
-                                if (!::IsWindowVisible(handle))
-                                    ::ShowWindow(handle, SW_SHOW);
-
-                                ::OpenIcon(handle);
-                                ::SetActiveWindow(handle);
-                                ::SetForegroundWindow(handle);
-
-                                return FALSE;
-                            },
-                            pe.th32ProcessID);
-
-                        break;
-                    }
-                }
-                CloseHandle(m_hSnapshot);
+                ::OpenIcon(handle);
+                ::SetActiveWindow(handle);
+                ::SetForegroundWindow(handle);
             }
         }
 

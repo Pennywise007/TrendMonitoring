@@ -15,6 +15,8 @@
 // See TrendMonitor.cpp for the implementation of this class
 //
 
+inline HWND FindMainWindowOfExe(CString exeName, bool ignoreCurrentProcess = true);
+
 class CTrendMonitorApp : public CWinApp
 {
 public:

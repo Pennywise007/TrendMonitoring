@@ -21,9 +21,6 @@
     <Filter Include="Configuration\Serialization\SerializatorFabric">
       <UniqueIdentifier>{08ae2ab2-4d28-4d30-82e7-bb3ecedd83df}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Configuration\Serialization\pugixml">
-      <UniqueIdentifier>{d4b32d85-65bf-4f50-ac70-b875e8c0b770}</UniqueIdentifier>
-    </Filter>
     <Filter Include="TelegramBot">
       <UniqueIdentifier>{34c4a16a-4577-458b-b412-bb5850909444}</UniqueIdentifier>
     </Filter>
@@ -36,6 +33,9 @@
     <Filter Include="TelegramBot\Callback">
       <UniqueIdentifier>{cbbbd1ff-cd87-4959-a2e2-071a4f612029}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pugixml">
+      <UniqueIdentifier>{d4b32d85-65bf-4f50-ac70-b875e8c0b770}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -43,12 +43,6 @@
     </ClInclude>
     <ClInclude Include="src\ApplicationConfiguration.h">
       <Filter>Configuration</Filter>
-    </ClInclude>
-    <ClInclude Include="$(UtilsDir)pugixml-1.10\src\pugiconfig.hpp">
-      <Filter>Configuration\Serialization\pugixml</Filter>
-    </ClInclude>
-    <ClInclude Include="$(UtilsDir)pugixml-1.10\src\pugixml.hpp">
-      <Filter>Configuration\Serialization\pugixml</Filter>
     </ClInclude>
     <ClInclude Include="src\TrendMonitoring.h">
       <Filter>TrendMonitoring</Filter>
@@ -125,11 +119,14 @@
     <ClInclude Include="include\ChannelStateManager.h">
       <Filter>TrendMonitoring</Filter>
     </ClInclude>
+    <ClInclude Include="..\packages\pugixml.1.12.0\build\native\include\pugiconfig.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\packages\pugixml.1.12.0\build\native\include\pugixml.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(UtilsDir)pugixml-1.10\src\pugixml.cpp">
-      <Filter>Configuration\Serialization\pugixml</Filter>
-    </ClCompile>
     <ClCompile Include="src\TrendMonitoring.cpp">
       <Filter>TrendMonitoring</Filter>
     </ClCompile>
@@ -166,5 +163,11 @@
     <ClCompile Include="src\TrendMonitoringTask.cpp">
       <Filter>TrendMonitoring</Filter>
     </ClCompile>
+    <ClCompile Include="..\packages\pugixml.1.12.0\build\native\include\pugixml.cpp">
+      <Filter>pugixml</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
