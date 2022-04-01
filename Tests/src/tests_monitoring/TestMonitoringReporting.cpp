@@ -1,4 +1,4 @@
-#include "pch.h"
+п»ї#include "pch.h"
 
 #include <memory>
 
@@ -65,7 +65,7 @@ TaskId prepare_timer_task(ITrendMonitoring* monitoringService, MonitoringTaskSer
 {
     TaskId taskId;
     if (!SUCCEEDED(CoCreateGuid(&taskId)))
-        EXT_ASSERT(!"Не удалось создать гуид!");
+        EXT_ASSERT(!"РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ РіСѓРёРґ!");
 
     EXPECT_CALL(*monitoringServiceMock, AddTaskList(_, Matcher(IMonitoringTasksService::eNormal))).
         WillOnce(Invoke([&](const std::list<TaskParameters::Ptr>& listTaskParams,
@@ -161,7 +161,7 @@ TEST_F(MonitoringTestClass, ReportIntervalInfo_Error)
     const MonitoringChannelData& currentChannelData = m_monitoringService->GetMonitoringChannelData(0);
 
     CString reportTextForAllChannels;
-    reportTextForAllChannels.AppendFormat(L"Канал \"%s\": %s",
+    reportTextForAllChannels.AppendFormat(L"РљР°РЅР°Р» \"%s\": %s",
                                           currentChannelData.channelName.GetString(),
                                           errorText.GetString());
 
@@ -182,7 +182,7 @@ TEST_F(MonitoringTestClass, ReportIntervalInfo_NoData)
     auto&& [taskId, channelData] = m_channelsData.front();
     channelData.trendData.emptyDataTime = CTimeSpan(1, 0, 0, 0);
 
-    const CString errorText = L"Нет данных в запрошенном интервале.";
+    const CString errorText = L"РќРµС‚ РґР°РЅРЅС‹С… РІ Р·Р°РїСЂРѕС€РµРЅРЅРѕРј РёРЅС‚РµСЂРІР°Р»Рµ.";
     IMonitoringTaskEvent::ResultsPtrList monitoringResult;
     add_monitoring_result(monitoringResult, channelData, IMonitoringTaskEvent::Result::eNoData);
 
@@ -193,7 +193,7 @@ TEST_F(MonitoringTestClass, ReportIntervalInfo_NoData)
     const MonitoringChannelData& currentChannelData = m_monitoringService->GetMonitoringChannelData(0);
 
     CString reportTextForAllChannels;
-    reportTextForAllChannels.AppendFormat(L"Канал \"%s\": %s",
+    reportTextForAllChannels.AppendFormat(L"РљР°РЅР°Р» \"%s\": %s",
                                           currentChannelData.channelName.GetString(),
                                           errorText.GetString());
 
@@ -268,14 +268,14 @@ TEST_F(MonitoringTestClass, ReportUpdating_Failed)
         IMonitoringTaskEvent::ResultsPtrList monitoringResult;
         for (auto&&[taskId, channelData] : m_channelsData)
         {
-            channelData.channelState.dataLoaded = true; // вынести в imitate_data_loaded_and_prepared_for_next_loading и убрать тут и выше
+            channelData.channelState.dataLoaded = true; // РІС‹РЅРµСЃС‚Рё РІ imitate_data_loaded_and_prepared_for_next_loading Рё СѓР±СЂР°С‚СЊ С‚СѓС‚ Рё РІС‹С€Рµ
 
             auto& trendData = channelData.trendData;
             trendData.emptyDataTime = CTimeSpan(0, 0, TrendMonitoring::getUpdateDataInterval().count(), 0);
             trendData.lastDataExistTime = CTime::GetCurrentTime();
 
             CString alertText;
-            channelData.channelState.OnAddChannelErrorReport(ChannelStateManager::eFallenOff, alertText, L"Пропали данные по каналу.");
+            channelData.channelState.OnAddChannelErrorReport(ChannelStateManager::eFallenOff, alertText, L"РџСЂРѕРїР°Р»Рё РґР°РЅРЅС‹Рµ РїРѕ РєР°РЅР°Р»Сѓ.");
 
             add_monitoring_result(monitoringResult, channelData, IMonitoringTaskEvent::Result::eNoData, alertText);
         }

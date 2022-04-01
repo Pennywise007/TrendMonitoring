@@ -12,7 +12,8 @@
 #include <include/ITelegramUsersList.h>
 
 #include "ApplicationConfiguration.h"
-#include "TrendMonitoringTask.h"
+
+#include "MonitoringTaskService/MonitoringTaskResultHandler.h"
 
 // Implementation of a service for channel monitoring
 // Manages the list of monitored channels, performs tasks for monitoring

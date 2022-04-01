@@ -110,11 +110,11 @@
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>echo copy "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
+      <Command>echo copy "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
 
-echo copy "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+echo copy "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -140,11 +140,11 @@ xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>echo copy "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
+      <Command>echo copy "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
 
-echo copy "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+echo copy "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -174,11 +174,11 @@ xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>echo copy "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
+      <Command>echo copy "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
 
-echo copy "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+echo copy "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -208,11 +208,11 @@ xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>echo copy "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
+      <Command>echo copy "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
 
-echo copy "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+echo copy "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -247,8 +247,8 @@ xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
     <ClInclude Include="src\DirServiceImpl.h" />
     <ClInclude Include="src\MonitoringTaskService\ChannelDataGetter\ChannelDataGetter.h" />
     <ClInclude Include="src\MonitoringTaskService\ChannelDataGetter\ChannelsHelpHeader.h" />
+    <ClInclude Include="src\MonitoringTaskService\MonitoringTaskResultHandler.h" />
     <ClInclude Include="src\Telegram\TelegramThreadImpl.h" />
-    <ClInclude Include="src\TrendMonitoringTask.h" />
     <ClInclude Include="src\Telegram\CommandsInfoService.h" />
     <ClInclude Include="src\Telegram\KeyboardCallback.h" />
     <ClInclude Include="pch.h" />
@@ -268,6 +268,7 @@ xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\MonitoringTaskService\MonitoringTaskResultHandler.cpp" />
     <ClCompile Include="src\Telegram\TelegramSettings.cpp" />
     <ClCompile Include="DependencyRegistration.cpp" />
     <ClCompile Include="src\DirServiceImpl.cpp" />
@@ -304,7 +305,6 @@ xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\Telegram\TelegramCallbacks.cpp" />
-    <ClCompile Include="src\TrendMonitoringTask.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\ext\serialization\README.md" />

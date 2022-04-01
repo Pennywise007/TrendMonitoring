@@ -2,11 +2,8 @@
 
 #include "ApplicationConfiguration.h"
 
-//****************************************************************************//
 ChannelParameters::ChannelParameters()
 {
-    /* TODO SerializableObject<std::remove_pointer_t<decltype(this)>>::RegisterField(channelName, &MonitoringChannelData::channelName);
-*/
     REGISTER_SERIALIZABLE_OBJECT(channelName);
     REGISTER_SERIALIZABLE_OBJECT(bNotify);
     REGISTER_SERIALIZABLE_OBJECT(monitoringInterval);
@@ -23,19 +20,16 @@ ChannelParameters::ChannelParameters(const std::wstring& initChannelName)
     REGISTER_SERIALIZABLE_OBJECT(alarmingValue);
 }
 
-//----------------------------------------------------------------------------//
 const MonitoringChannelData& ChannelParameters::GetMonitoringData() const
 {
     return *this;
 }
 
-//----------------------------------------------------------------------------//
 void ChannelParameters::SetTrendChannelData(const TrendChannelData& data)
 {
     trendData = data;
 }
 
-//----------------------------------------------------------------------------//
 bool ChannelParameters::ChangeName(const std::wstring& newName)
 {
     if (channelName == newName)
@@ -46,7 +40,6 @@ bool ChannelParameters::ChangeName(const std::wstring& newName)
     return true;
 }
 
-//----------------------------------------------------------------------------//
 bool ChannelParameters::ChangeNotification(const bool state)
 {
     if (bNotify == state)
@@ -56,7 +49,6 @@ bool ChannelParameters::ChangeNotification(const bool state)
     return true;
 }
 
-//----------------------------------------------------------------------------//
 bool ChannelParameters::ChangeInterval(const MonitoringInterval newInterval)
 {
     if (monitoringInterval == newInterval)
@@ -67,7 +59,6 @@ bool ChannelParameters::ChangeInterval(const MonitoringInterval newInterval)
     return true;
 }
 
-//----------------------------------------------------------------------------//
 bool ChannelParameters::ChangeAlarmingValue(const float newvalue)
 {
     if (alarmingValue == newvalue)
@@ -77,10 +68,9 @@ bool ChannelParameters::ChangeAlarmingValue(const float newvalue)
     return true;
 }
 
-//----------------------------------------------------------------------------//
 void ChannelParameters::ResetChannelData()
 {
-    // сбрасываем состояние загруженности данных по каналу
+    // reset the state of data load on the channel
     channelState.dataLoaded = false;
     channelState.loadingDataError = false;
 

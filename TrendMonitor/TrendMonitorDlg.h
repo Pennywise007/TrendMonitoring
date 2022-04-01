@@ -127,7 +127,7 @@ public:
     };
 
     // Индексы вкладок
-    enum TabIndiсes
+    enum TabIndexes
     {
         eTabLog,        // вкладка с логом событий
         eTabReport      // таб с отчетом

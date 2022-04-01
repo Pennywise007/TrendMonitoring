@@ -1,4 +1,4 @@
-#include "pch.h"
+п»ї#include "pch.h"
 
 #include <include/ITrendMonitoring.h>
 #include <TelegramDLL/TelegramThread.h>
@@ -12,7 +12,7 @@ namespace telegram::bot {
 using namespace callback;
 
 ////////////////////////////////////////////////////////////////////////////////
-// создаем кнопки для ответа пользователем
+// СЃРѕР·РґР°РµРј РєРЅРѕРїРєРё РґР»СЏ РѕС‚РІРµС‚Р° РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј
 TgBot::InlineKeyboardButton::Ptr generateKeyBoardButton(const std::wstring& text, LPCWSTR commandFormat, ...)
 {
     va_list args;
@@ -28,22 +28,22 @@ TgBot::InlineKeyboardButton::Ptr generateKeyBoardButton(const std::wstring& text
 }
 
 //----------------------------------------------------------------------------//
-// проверяем колбэк отчёта
+// РїСЂРѕРІРµСЂСЏРµРј РєРѕР»Р±СЌРє РѕС‚С‡С‘С‚Р°
 TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
 {
-    // ожидаемое сообщение телеграм боту
+    // РѕР¶РёРґР°РµРјРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ С‚РµР»РµРіСЂР°Рј Р±РѕС‚Сѓ
     CString expectedMessage;
-    // ответ с кнопочками
+    // РѕС‚РІРµС‚ СЃ РєРЅРѕРїРѕС‡РєР°РјРё
     TgBot::GenericReply::Ptr expectedReply = std::make_shared<TgBot::GenericReply>();
 
-    // класс для проверки ответов пользователю
+    // РєР»Р°СЃСЃ РґР»СЏ РїСЂРѕРІРµСЂРєРё РѕС‚РІРµС‚РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ
     const TelegramUserMessagesChecker checker(m_pTelegramThread, &expectedMessage, &expectedReply);
 
-    // команда доступна только админам, делаем админа
-    expectedMessage = L"Пользователь успешно авторизован как администратор.";
+    // РєРѕРјР°РЅРґР° РґРѕСЃС‚СѓРїРЅР° С‚РѕР»СЊРєРѕ Р°РґРјРёРЅР°Рј, РґРµР»Р°РµРј Р°РґРјРёРЅР°
+    expectedMessage = L"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СѓСЃРїРµС€РЅРѕ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ РєР°Рє Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ.";
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
-    // задаем перечень каналов мониторинга чтобы с ними работать
+    // Р·Р°РґР°РµРј РїРµСЂРµС‡РµРЅСЊ РєР°РЅР°Р»РѕРІ РјРѕРЅРёС‚РѕСЂРёРЅРіР° С‡С‚РѕР±С‹ СЃ РЅРёРјРё СЂР°Р±РѕС‚Р°С‚СЊ
     ITrendMonitoring* trendMonitoring = GetInterface<ITrendMonitoring>();
     const auto allChannels = trendMonitoring->GetNamesOfAllChannels();
     for (const auto& chan : allChannels)
@@ -54,20 +54,20 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
 
     using namespace report;
 
-    // тестируем формирование отчётов
-    // kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(ОПЦИОНАЛЬНО) kParamInterval={'1000000'}
-    expectedMessage = L"По каким каналам сформировать отчёт?";
+    // С‚РµСЃС‚РёСЂСѓРµРј С„РѕСЂРјРёСЂРѕРІР°РЅРёРµ РѕС‚С‡С‘С‚РѕРІ
+    // kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(РћРџР¦РРћРќРђР›Р¬РќРћ) kParamInterval={'1000000'}
+    expectedMessage = L"РџРѕ РєР°РєРёРј РєР°РЅР°Р»Р°Рј СЃС„РѕСЂРјРёСЂРѕРІР°С‚СЊ РѕС‚С‡С‘С‚?";
     TgBot::InlineKeyboardMarkup::Ptr expectedKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
-    expectedKeyboard->inlineKeyboard = { { generateKeyBoardButton(L"Все каналы",
+    expectedKeyboard->inlineKeyboard = { { generateKeyBoardButton(L"Р’СЃРµ РєР°РЅР°Р»С‹",
                                                                   L"%hs %hs={\\\'0\\\'}", kKeyWord.c_str(), kParamType.c_str()) },
-                                         { generateKeyBoardButton(L"Определенный канал",
+                                         { generateKeyBoardButton(L"РћРїСЂРµРґРµР»РµРЅРЅС‹Р№ РєР°РЅР°Р»",
                                                                   L"%hs %hs={\\\'1\\\'}", kKeyWord.c_str(), kParamType.c_str()) } };
     expectedReply = expectedKeyboard;
     emulateBroadcastMessage(L"/report");
 
-    // тестируем отчёт по всем каналам
+    // С‚РµСЃС‚РёСЂСѓРµРј РѕС‚С‡С‘С‚ РїРѕ РІСЃРµРј РєР°РЅР°Р»Р°Рј
     {
-        expectedMessage = L"Выберите интервал времени за который нужно показать отчёт";
+        expectedMessage = L"Р’С‹Р±РµСЂРёС‚Рµ РёРЅС‚РµСЂРІР°Р» РІСЂРµРјРµРЅРё Р·Р° РєРѕС‚РѕСЂС‹Р№ РЅСѓР¶РЅРѕ РїРѕРєР°Р·Р°С‚СЊ РѕС‚С‡С‘С‚";
         expectedKeyboard->inlineKeyboard.resize((size_t)MonitoringInterval::eLast);
         for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
         {
@@ -77,29 +77,29 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
 
             expectedKeyboard->inlineKeyboard[i] = { generateKeyBoardButton(monitoring_interval_to_string(MonitoringInterval(i)).GetString(), callBackText.GetString()) };
         }
-        // проверяем отчёт по всем каналам
+        // РїСЂРѕРІРµСЂСЏРµРј РѕС‚С‡С‘С‚ РїРѕ РІСЃРµРј РєР°РЅР°Р»Р°Рј
         // kKeyWord kParamType={'0'} kParamInterval={'1000000'}
 
         // /report type={'0'}
         emulateBroadcastCallbackQuery(L"%hs %hs={'0'}", kKeyWord.c_str(), kParamType.c_str());
 
-        expectedMessage = L"Выполняется расчёт данных, это может занять некоторое время.";
+        expectedMessage = L"Р’С‹РїРѕР»РЅСЏРµС‚СЃСЏ СЂР°СЃС‡С‘С‚ РґР°РЅРЅС‹С…, СЌС‚Рѕ РјРѕР¶РµС‚ Р·Р°РЅСЏС‚СЊ РЅРµРєРѕС‚РѕСЂРѕРµ РІСЂРµРјСЏ.";
         expectedReply = std::make_shared<TgBot::GenericReply>();
-        // проверяем все интервалы
+        // РїСЂРѕРІРµСЂСЏРµРј РІСЃРµ РёРЅС‚РµСЂРІР°Р»С‹
         for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
         {
             CString text;
             // /report type={'0'} interval={'i'}
             text = std::string_swprintf(L"%hs %hs={'0'} %hs={'%d'}", kKeyWord.c_str(), kParamType.c_str(), kParamInterval.c_str(), i);
 
-            // kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(ОПЦИОНАЛЬНО) kParamInterval={'1000000'}
+            // kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(РћРџР¦РРћРќРђР›Р¬РќРћ) kParamInterval={'1000000'}
             emulateBroadcastCallbackQuery(text.GetString());
         }
     }
 
-    // тестируем отчёт по выбранному каналу
+    // С‚РµСЃС‚РёСЂСѓРµРј РѕС‚С‡С‘С‚ РїРѕ РІС‹Р±СЂР°РЅРЅРѕРјСѓ РєР°РЅР°Р»Сѓ
     {
-        expectedMessage = L"Выберите канал";
+        expectedMessage = L"Р’С‹Р±РµСЂРёС‚Рµ РєР°РЅР°Р»";
         expectedKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
         expectedReply = expectedKeyboard;
         for (auto& chan : allChannels)
@@ -110,18 +110,18 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
 
             expectedKeyboard->inlineKeyboard.push_back({ generateKeyBoardButton(chan.GetString(), callBackText.GetString()) });
         }
-        // проверяем что предложит создать отчёт по каждому из каналов
+        // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ РїСЂРµРґР»РѕР¶РёС‚ СЃРѕР·РґР°С‚СЊ РѕС‚С‡С‘С‚ РїРѕ РєР°Р¶РґРѕРјСѓ РёР· РєР°РЅР°Р»РѕРІ
         // /report type={'1'}");
         emulateBroadcastCallbackQuery(L"%hs %hs={'1'}", kKeyWord.c_str(), kParamType.c_str());
 
         expectedKeyboard->inlineKeyboard.resize((size_t)MonitoringInterval::eLast);
-        // проверяем что для каждого канала будет сформирован отчёт
+        // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ РґР»СЏ РєР°Р¶РґРѕРіРѕ РєР°РЅР°Р»Р° Р±СѓРґРµС‚ СЃС„РѕСЂРјРёСЂРѕРІР°РЅ РѕС‚С‡С‘С‚
         for (const auto& chan : allChannels)
         {
-            expectedMessage = L"Выберите интервал времени за который нужно показать отчёт";
+            expectedMessage = L"Р’С‹Р±РµСЂРёС‚Рµ РёРЅС‚РµСЂРІР°Р» РІСЂРµРјРµРЅРё Р·Р° РєРѕС‚РѕСЂС‹Р№ РЅСѓР¶РЅРѕ РїРѕРєР°Р·Р°С‚СЊ РѕС‚С‡С‘С‚";
             expectedReply = expectedKeyboard;
 
-            // для кнопка для каждого интервала мониторинга
+            // РґР»СЏ РєРЅРѕРїРєР° РґР»СЏ РєР°Р¶РґРѕРіРѕ РёРЅС‚РµСЂРІР°Р»Р° РјРѕРЅРёС‚РѕСЂРёРЅРіР°
             for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
             {
                 CString callBackText;
@@ -137,10 +137,10 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
             CString text;
             // /report type={'1'} chan={'chan'}
             text = std::string_swprintf(L"%hs %hs={'1'} %hs={'%s'}", kKeyWord.c_str(), kParamType.c_str(), kParamChan.c_str(), chan.GetString());
-            // запрашиваем отчёт по каналу chan, ожидаем что предложит все варианты интервалов
+            // Р·Р°РїСЂР°С€РёРІР°РµРј РѕС‚С‡С‘С‚ РїРѕ РєР°РЅР°Р»Сѓ chan, РѕР¶РёРґР°РµРј С‡С‚Рѕ РїСЂРµРґР»РѕР¶РёС‚ РІСЃРµ РІР°СЂРёР°РЅС‚С‹ РёРЅС‚РµСЂРІР°Р»РѕРІ
             emulateBroadcastCallbackQuery(text.GetString());
 
-            // делаем ту же проверку только без задания типа канала
+            // РґРµР»Р°РµРј С‚Сѓ Р¶Рµ РїСЂРѕРІРµСЂРєСѓ С‚РѕР»СЊРєРѕ Р±РµР· Р·Р°РґР°РЅРёСЏ С‚РёРїР° РєР°РЅР°Р»Р°
             for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
             {
                 CString callBackText;
@@ -152,10 +152,10 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
                 expectedKeyboard->inlineKeyboard[i] = { generateKeyBoardButton(monitoring_interval_to_string(MonitoringInterval(i)).GetString(), callBackText.GetString()) };
             }
 
-            // запрашиваем данные для каждого интервала
-            expectedMessage = L"Выполняется расчёт данных, это может занять некоторое время.";
+            // Р·Р°РїСЂР°С€РёРІР°РµРј РґР°РЅРЅС‹Рµ РґР»СЏ РєР°Р¶РґРѕРіРѕ РёРЅС‚РµСЂРІР°Р»Р°
+            expectedMessage = L"Р’С‹РїРѕР»РЅСЏРµС‚СЃСЏ СЂР°СЃС‡С‘С‚ РґР°РЅРЅС‹С…, СЌС‚Рѕ РјРѕР¶РµС‚ Р·Р°РЅСЏС‚СЊ РЅРµРєРѕС‚РѕСЂРѕРµ РІСЂРµРјСЏ.";
             expectedReply = std::make_shared<TgBot::GenericReply>();
-            // проверяем все интервалы
+            // РїСЂРѕРІРµСЂСЏРµРј РІСЃРµ РёРЅС‚РµСЂРІР°Р»С‹
             for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
             {
                 // /report type={'1'} chan={'chan'} interval={'i'}
@@ -166,7 +166,7 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
                 emulateBroadcastCallbackQuery(text.GetString());
             }
 
-            // проверяем что без задания type тоже работает
+            // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ Р±РµР· Р·Р°РґР°РЅРёСЏ type С‚РѕР¶Рµ СЂР°Р±РѕС‚Р°РµС‚
             for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
             {
                 // /report chan={'chan'} interval={'i'}
@@ -180,44 +180,44 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
 }
 
 //----------------------------------------------------------------------------//
-// проверяем колбэк перезапуска
+// РїСЂРѕРІРµСЂСЏРµРј РєРѕР»Р±СЌРє РїРµСЂРµР·Р°РїСѓСЃРєР°
 TEST_F(TestTelegramBot, CheckRestartCommandCallbacks)
 {
-    // ожидаемое сообщение телеграм боту
+    // РѕР¶РёРґР°РµРјРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ С‚РµР»РµРіСЂР°Рј Р±РѕС‚Сѓ
     CString expectedMessage;
 
-    // класс для проверки ответов пользователю
+    // РєР»Р°СЃСЃ РґР»СЏ РїСЂРѕРІРµСЂРєРё РѕС‚РІРµС‚РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ
     const TelegramUserMessagesChecker checker(m_pTelegramThread, &expectedMessage);
 
-    // команда доступна только админам, делаем админа
-    expectedMessage = L"Пользователь успешно авторизован как администратор.";
+    // РєРѕРјР°РЅРґР° РґРѕСЃС‚СѓРїРЅР° С‚РѕР»СЊРєРѕ Р°РґРјРёРЅР°Рј, РґРµР»Р°РµРј Р°РґРјРёРЅР°
+    expectedMessage = L"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СѓСЃРїРµС€РЅРѕ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ РєР°Рє Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ.";
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
-    // создаем пустой файл батника для эмуляции рестарта
+    // СЃРѕР·РґР°РµРј РїСѓСЃС‚РѕР№ С„Р°Р№Р» Р±Р°С‚РЅРёРєР° РґР»СЏ СЌРјСѓР»СЏС†РёРё СЂРµСЃС‚Р°СЂС‚Р°
     std::ofstream ofs(get_service<TestHelper>().getRestartFilePath());
     ofs.close();
 
-    expectedMessage = L"Перезапуск системы осуществляется.";
+    expectedMessage = L"РџРµСЂРµР·Р°РїСѓСЃРє СЃРёСЃС‚РµРјС‹ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚СЃСЏ.";
     emulateBroadcastCallbackQuery(L"%hs", restart::kKeyWord.c_str());
 }
 
 //----------------------------------------------------------------------------//
-// проверяем колбэк перезапуска
+// РїСЂРѕРІРµСЂСЏРµРј РєРѕР»Р±СЌРє РїРµСЂРµР·Р°РїСѓСЃРєР°
 TEST_F(TestTelegramBot, CheckAlertCommandCallbacks)
 {
-    // ожидаемое сообщение телеграм боту
+    // РѕР¶РёРґР°РµРјРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ С‚РµР»РµРіСЂР°Рј Р±РѕС‚Сѓ
     CString expectedMessage;
-    // ответ с кнопочками
+    // РѕС‚РІРµС‚ СЃ РєРЅРѕРїРѕС‡РєР°РјРё
     TgBot::GenericReply::Ptr expectedReply = std::make_shared<TgBot::GenericReply>();
 
-    // класс для проверки ответов пользователю
+    // РєР»Р°СЃСЃ РґР»СЏ РїСЂРѕРІРµСЂРєРё РѕС‚РІРµС‚РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ
     const TelegramUserMessagesChecker checker(m_pTelegramThread, &expectedMessage, &expectedReply);
 
-    // команда доступна только админам, делаем админа
-    expectedMessage = L"Пользователь успешно авторизован как администратор.";
+    // РєРѕРјР°РЅРґР° РґРѕСЃС‚СѓРїРЅР° С‚РѕР»СЊРєРѕ Р°РґРјРёРЅР°Рј, РґРµР»Р°РµРј Р°РґРјРёРЅР°
+    expectedMessage = L"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СѓСЃРїРµС€РЅРѕ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ РєР°Рє Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ.";
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
-    // задаем перечень каналов мониторинга чтобы им отключать оповещения
+    // Р·Р°РґР°РµРј РїРµСЂРµС‡РµРЅСЊ РєР°РЅР°Р»РѕРІ РјРѕРЅРёС‚РѕСЂРёРЅРіР° С‡С‚РѕР±С‹ РёРј РѕС‚РєР»СЋС‡Р°С‚СЊ РѕРїРѕРІРµС‰РµРЅРёСЏ
     ITrendMonitoring* trendMonitoring = GetInterface<ITrendMonitoring>();
     const auto allChannels = trendMonitoring->GetNamesOfAllChannels();
     for (const auto& chan : allChannels)
@@ -234,15 +234,15 @@ TEST_F(TestTelegramBot, CheckAlertCommandCallbacks)
 
         expectedReply = expectedKeyboard;
 
-        // тестируем включение/выключение оповещения
+        // С‚РµСЃС‚РёСЂСѓРµРј РІРєР»СЋС‡РµРЅРёРµ/РІС‹РєР»СЋС‡РµРЅРёРµ РѕРїРѕРІРµС‰РµРЅРёСЏ
         // kKeyWord kParamEnable={'true'} kParamChan={'chan1'}
-        expectedMessage = std::string_swprintf(L"Выберите канал для %s оповещений.", alertOn ? L"включения" : L"выключения");
+        expectedMessage = std::string_swprintf(L"Р’С‹Р±РµСЂРёС‚Рµ РєР°РЅР°Р» РґР»СЏ %s РѕРїРѕРІРµС‰РµРЅРёР№.", alertOn ? L"РІРєР»СЋС‡РµРЅРёСЏ" : L"РІС‹РєР»СЋС‡РµРЅРёСЏ");
 
         CString defCallBackText;
         // /alert enable={\\\'true\\\'}
         defCallBackText = std::string_swprintf(L"%hs %hs={\\\'%s\\\'}", kKeyWord.c_str(), kParamEnable.c_str(), alertOn ? L"true" : L"false");
 
-        // добавляем все кнопки
+        // РґРѕР±Р°РІР»СЏРµРј РІСЃРµ РєРЅРѕРїРєРё
         expectedKeyboard->inlineKeyboard.clear();
         for (const auto& chan : allChannels)
         {
@@ -250,81 +250,81 @@ TEST_F(TestTelegramBot, CheckAlertCommandCallbacks)
             callBack = std::string_swprintf(L"%s %hs={\\\'%s\\\'}", defCallBackText.GetString(), kParamChan.c_str(), chan.GetString());
             expectedKeyboard->inlineKeyboard.push_back({ generateKeyBoardButton(chan.GetString(), callBack.GetString()) });
         }
-        // Добавляем кнопку всех каналов
+        // Р”РѕР±Р°РІР»СЏРµРј РєРЅРѕРїРєСѓ РІСЃРµС… РєР°РЅР°Р»РѕРІ
         // chan={\\\'allChannels\\\'}
         defCallBackText.AppendFormat(L" %hs={\\\'%hs\\\'}", kParamChan.c_str(), kValueAllChannels.c_str());
-        expectedKeyboard->inlineKeyboard.push_back({ generateKeyBoardButton(L"Все каналы", defCallBackText.GetString()) });
+        expectedKeyboard->inlineKeyboard.push_back({ generateKeyBoardButton(L"Р’СЃРµ РєР°РЅР°Р»С‹", defCallBackText.GetString()) });
 
-        // эмулируем команду включения/выключения
+        // СЌРјСѓР»РёСЂСѓРµРј РєРѕРјР°РЅРґСѓ РІРєР»СЋС‡РµРЅРёСЏ/РІС‹РєР»СЋС‡РµРЅРёСЏ
         emulateBroadcastMessage(alertOn ? L"/alertingOn" : L"/alertingOff");
 
         expectedReply = std::make_shared<TgBot::GenericReply>();
-        // проверяем что кнопки делают своё дело
+        // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ РєРЅРѕРїРєРё РґРµР»Р°СЋС‚ СЃРІРѕС‘ РґРµР»Рѕ
         for (size_t ind = 0, count = expectedKeyboard->inlineKeyboard.size(); ind < count; ++ind)
         {
             const std::string& callBackStr = expectedKeyboard->inlineKeyboard[ind].front()->callbackData;
 
-            // проверяем что это последняя кнопка со всеми каналами
+            // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ СЌС‚Рѕ РїРѕСЃР»РµРґРЅСЏСЏ РєРЅРѕРїРєР° СЃРѕ РІСЃРµРјРё РєР°РЅР°Р»Р°РјРё
             if (ind == count - 1)
             {
-                // делаем обратное состояние у оповещений
+                // РґРµР»Р°РµРј РѕР±СЂР°С‚РЅРѕРµ СЃРѕСЃС‚РѕСЏРЅРёРµ Сѓ РѕРїРѕРІРµС‰РµРЅРёР№
                 for (size_t i = 0, channelsCount = allChannels.size(); i < channelsCount; ++i)
                 {
                     trendMonitoring->ChangeMonitoringChannelNotify(i, !alertOn);
                 }
 
-                expectedMessage = std::string_swprintf(L"Оповещения для всех каналов %s",
-                                       alertOn ? L"включены" : L"выключены");
+                expectedMessage = std::string_swprintf(L"РћРїРѕРІРµС‰РµРЅРёСЏ РґР»СЏ РІСЃРµС… РєР°РЅР°Р»РѕРІ %s",
+                                       alertOn ? L"РІРєР»СЋС‡РµРЅС‹" : L"РІС‹РєР»СЋС‡РµРЅС‹");
                 emulateBroadcastCallbackQuery(getUNICODEString(callBackStr).c_str());
 
-                // проверяем что состояние оповещения поменялось
+                // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ СЃРѕСЃС‚РѕСЏРЅРёРµ РѕРїРѕРІРµС‰РµРЅРёСЏ РїРѕРјРµРЅСЏР»РѕСЃСЊ
                 for (size_t i = 0, channelsCount = allChannels.size(); i < channelsCount; ++i)
                 {
                     EXPECT_EQ(trendMonitoring->GetMonitoringChannelData(i).bNotify, alertOn)
-                        << "После выполнения управления мониторингов состояние оповещения отличаются!";
+                        << "РџРѕСЃР»Рµ РІС‹РїРѕР»РЅРµРЅРёСЏ СѓРїСЂР°РІР»РµРЅРёСЏ РјРѕРЅРёС‚РѕСЂРёРЅРіРѕРІ СЃРѕСЃС‚РѕСЏРЅРёРµ РѕРїРѕРІРµС‰РµРЅРёСЏ РѕС‚Р»РёС‡Р°СЋС‚СЃСЏ!";
                 }
             }
             else
             {
-                // делаем обратное устанавливаемому состояние оповещений у канала
+                // РґРµР»Р°РµРј РѕР±СЂР°С‚РЅРѕРµ СѓСЃС‚Р°РЅР°РІР»РёРІР°РµРјРѕРјСѓ СЃРѕСЃС‚РѕСЏРЅРёРµ РѕРїРѕРІРµС‰РµРЅРёР№ Сѓ РєР°РЅР°Р»Р°
                 trendMonitoring->ChangeMonitoringChannelNotify(ind, !alertOn);
 
-                expectedMessage = std::string_swprintf(L"Оповещения для канала %s %s",
+                expectedMessage = std::string_swprintf(L"РћРїРѕРІРµС‰РµРЅРёСЏ РґР»СЏ РєР°РЅР°Р»Р° %s %s",
                                        std::next(allChannels.begin(), ind)->GetString(),
-                                       alertOn ? L"включены" : L"выключены");
+                                       alertOn ? L"РІРєР»СЋС‡РµРЅС‹" : L"РІС‹РєР»СЋС‡РµРЅС‹");
                 emulateBroadcastCallbackQuery(getUNICODEString(callBackStr).c_str());
 
-                // проверяем что состояние оповещения поменялось
+                // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ СЃРѕСЃС‚РѕСЏРЅРёРµ РѕРїРѕРІРµС‰РµРЅРёСЏ РїРѕРјРµРЅСЏР»РѕСЃСЊ
                 EXPECT_EQ(trendMonitoring->GetMonitoringChannelData(ind).bNotify, alertOn)
-                    << "После выполнения управления мониторингов состояние оповещения отличаются!";
+                    << "РџРѕСЃР»Рµ РІС‹РїРѕР»РЅРµРЅРёСЏ СѓРїСЂР°РІР»РµРЅРёСЏ РјРѕРЅРёС‚РѕСЂРёРЅРіРѕРІ СЃРѕСЃС‚РѕСЏРЅРёРµ РѕРїРѕРІРµС‰РµРЅРёСЏ РѕС‚Р»РёС‡Р°СЋС‚СЃСЏ!";
             }
         }
     };
 
-    // тестируем включение оповещений
+    // С‚РµСЃС‚РёСЂСѓРµРј РІРєР»СЋС‡РµРЅРёРµ РѕРїРѕРІРµС‰РµРЅРёР№
     checkAlert(true);
 
-    // тестируем выключение оповещений
+    // С‚РµСЃС‚РёСЂСѓРµРј РІС‹РєР»СЋС‡РµРЅРёРµ РѕРїРѕРІРµС‰РµРЅРёР№
     checkAlert(false);
 }
 
 //----------------------------------------------------------------------------//
-// проверяем колбэк перезапуска
+// РїСЂРѕРІРµСЂСЏРµРј РєРѕР»Р±СЌРє РїРµСЂРµР·Р°РїСѓСЃРєР°
 TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
 {
-    // ожидаемое сообщение телеграм боту
+    // РѕР¶РёРґР°РµРјРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ С‚РµР»РµРіСЂР°Рј Р±РѕС‚Сѓ
     CString expectedMessage;
-    // ответ с кнопочками
+    // РѕС‚РІРµС‚ СЃ РєРЅРѕРїРѕС‡РєР°РјРё
     TgBot::GenericReply::Ptr expectedReply = std::make_shared<TgBot::GenericReply>();
 
-    // класс для проверки ответов пользователю
+    // РєР»Р°СЃСЃ РґР»СЏ РїСЂРѕРІРµСЂРєРё РѕС‚РІРµС‚РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ
     const TelegramUserMessagesChecker checker(m_pTelegramThread, &expectedMessage, &expectedReply);
 
-    // команда доступна только админам, делаем админа
-    expectedMessage = L"Пользователь успешно авторизован как администратор.";
+    // РєРѕРјР°РЅРґР° РґРѕСЃС‚СѓРїРЅР° С‚РѕР»СЊРєРѕ Р°РґРјРёРЅР°Рј, РґРµР»Р°РµРј Р°РґРјРёРЅР°
+    expectedMessage = L"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СѓСЃРїРµС€РЅРѕ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ РєР°Рє Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ.";
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
-    // задаем перечень каналов мониторинга чтобы им отключать оповещения
+    // Р·Р°РґР°РµРј РїРµСЂРµС‡РµРЅСЊ РєР°РЅР°Р»РѕРІ РјРѕРЅРёС‚РѕСЂРёРЅРіР° С‡С‚РѕР±С‹ РёРј РѕС‚РєР»СЋС‡Р°С‚СЊ РѕРїРѕРІРµС‰РµРЅРёСЏ
     ITrendMonitoring* trendMonitoring = GetInterface<ITrendMonitoring>();
     auto allChannels = trendMonitoring->GetNamesOfAllChannels();
     for (const auto& chan : allChannels)
@@ -334,7 +334,7 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
 
     using namespace alarmingValue;
 
-    expectedMessage = L"Выберите канал для изменения уровня оповещений.";
+    expectedMessage = L"Р’С‹Р±РµСЂРёС‚Рµ РєР°РЅР°Р» РґР»СЏ РёР·РјРµРЅРµРЅРёСЏ СѓСЂРѕРІРЅСЏ РѕРїРѕРІРµС‰РµРЅРёР№.";
     TgBot::InlineKeyboardMarkup::Ptr expectedKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
 
     for (const auto& chan : allChannels)
@@ -346,10 +346,10 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
     }
     expectedReply = expectedKeyboard;
 
-    // эмулируем команду изменения уровня оповещений
+    // СЌРјСѓР»РёСЂСѓРµРј РєРѕРјР°РЅРґСѓ РёР·РјРµРЅРµРЅРёСЏ СѓСЂРѕРІРЅСЏ РѕРїРѕРІРµС‰РµРЅРёР№
     emulateBroadcastMessage(L"/alarmingValue");
 
-    // проверяем что кнопки делают своё дело
+    // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ РєРЅРѕРїРєРё РґРµР»Р°СЋС‚ СЃРІРѕС‘ РґРµР»Рѕ
     for (size_t ind = 0, count = expectedKeyboard->inlineKeyboard.size(); ind < count; ++ind)
     {
         const CString channelName = *std::next(allChannels.begin(), ind);
@@ -360,12 +360,12 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
             expectedReply = std::make_shared<TgBot::GenericReply>();
             callBackData = getUNICODEString(expectedKeyboard->inlineKeyboard[ind].front()->callbackData);
 
-            expectedMessage = std::string_swprintf(L"Для того чтобы изменить допустимый уровень значений у канала '%s' отправьте новый уровень ответным сообщением, отправьте NAN чтобы отключить оповещения совсем.",
+            expectedMessage = std::string_swprintf(L"Р”Р»СЏ С‚РѕРіРѕ С‡С‚РѕР±С‹ РёР·РјРµРЅРёС‚СЊ РґРѕРїСѓСЃС‚РёРјС‹Р№ СѓСЂРѕРІРµРЅСЊ Р·РЅР°С‡РµРЅРёР№ Сѓ РєР°РЅР°Р»Р° '%s' РѕС‚РїСЂР°РІСЊС‚Рµ РЅРѕРІС‹Р№ СѓСЂРѕРІРµРЅСЊ РѕС‚РІРµС‚РЅС‹Рј СЃРѕРѕР±С‰РµРЅРёРµРј, РѕС‚РїСЂР°РІСЊС‚Рµ NAN С‡С‚РѕР±С‹ РѕС‚РєР»СЋС‡РёС‚СЊ РѕРїРѕРІРµС‰РµРЅРёСЏ СЃРѕРІСЃРµРј.",
                                    channelName.GetString());
             emulateBroadcastCallbackQuery(callBackData.c_str());
         };
 
-        // установка нормального значения
+        // СѓСЃС‚Р°РЅРѕРІРєР° РЅРѕСЂРјР°Р»СЊРЅРѕРіРѕ Р·РЅР°С‡РµРЅРёСЏ
         {
             initCommand();
 
@@ -378,60 +378,60 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
             appendText = std::string_swprintf(L" %hs={\\'%s\\'}", kParamValue.c_str(), newLevelText.str().c_str());
 
             callBackData += appendText;
-            expectedMessage = std::string_swprintf(L"Установить значение оповещений для канала '%s' как %s?", channelName.GetString(), newLevelText.str().c_str());
+            expectedMessage = std::string_swprintf(L"РЈСЃС‚Р°РЅРѕРІРёС‚СЊ Р·РЅР°С‡РµРЅРёРµ РѕРїРѕРІРµС‰РµРЅРёР№ РґР»СЏ РєР°РЅР°Р»Р° '%s' РєР°Рє %s?", channelName.GetString(), newLevelText.str().c_str());
 
             TgBot::InlineKeyboardMarkup::Ptr acceptKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
-            acceptKeyboard->inlineKeyboard = { { generateKeyBoardButton(L"Установить", callBackData.c_str()) } };
+            acceptKeyboard->inlineKeyboard = { { generateKeyBoardButton(L"РЈСЃС‚Р°РЅРѕРІРёС‚СЊ", callBackData.c_str()) } };
             expectedReply = acceptKeyboard;
 
             emulateBroadcastMessage(newLevelText.str());
 
             expectedReply = std::make_shared<TgBot::GenericReply>();
-            expectedMessage = std::string_swprintf(L"Значение %s установлено для канала '%s' успешно", newLevelText.str().c_str(), channelName.GetString());
-            // Надо заменить все \\' на просто \'
+            expectedMessage = std::string_swprintf(L"Р—РЅР°С‡РµРЅРёРµ %s СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РґР»СЏ РєР°РЅР°Р»Р° '%s' СѓСЃРїРµС€РЅРѕ", newLevelText.str().c_str(), channelName.GetString());
+            // РќР°РґРѕ Р·Р°РјРµРЅРёС‚СЊ РІСЃРµ \\' РЅР° РїСЂРѕСЃС‚Рѕ \'
             emulateBroadcastCallbackQuery(callBackData.c_str());
 
-            // проверяем что число поменялось
+            // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ С‡РёСЃР»Рѕ РїРѕРјРµРЅСЏР»РѕСЃСЊ
             EXPECT_EQ(trendMonitoring->GetMonitoringChannelData(ind).alarmingValue, newValue)
-                << "После изменения уровня оповещений через бота уровень не соответствует заданному!";
+                << "РџРѕСЃР»Рµ РёР·РјРµРЅРµРЅРёСЏ СѓСЂРѕРІРЅСЏ РѕРїРѕРІРµС‰РµРЅРёР№ С‡РµСЂРµР· Р±РѕС‚Р° СѓСЂРѕРІРµРЅСЊ РЅРµ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ Р·Р°РґР°РЅРЅРѕРјСѓ!";
         }
 
         {
-            // установка рандомного текста
+            // СѓСЃС‚Р°РЅРѕРІРєР° СЂР°РЅРґРѕРјРЅРѕРіРѕ С‚РµРєСЃС‚Р°
             initCommand();
             expectedReply = std::make_shared<TgBot::GenericReply>();
-            expectedMessage = L"Неизвестная команда. " + m_adminCommandsInfo;
-            emulateBroadcastMessage(L"фывфывф");
+            expectedMessage = L"РќРµРёР·РІРµСЃС‚РЅР°СЏ РєРѕРјР°РЅРґР°. " + m_adminCommandsInfo;
+            emulateBroadcastMessage(L"С„С‹РІС„С‹РІС„");
 
-            // установка NAN
+            // СѓСЃС‚Р°РЅРѕРІРєР° NAN
             std::wstring newLevelText = L"NAN";
 
             //  val={\\'NAN\\'}
             CString appendText;
             appendText = std::string_swprintf(L" %hs={\\'%s\\'}", kParamValue.c_str(), newLevelText.c_str());
 
-            expectedMessage = std::string_swprintf(L"Отключить оповещения для канала '%s'?", channelName.GetString());
+            expectedMessage = std::string_swprintf(L"РћС‚РєР»СЋС‡РёС‚СЊ РѕРїРѕРІРµС‰РµРЅРёСЏ РґР»СЏ РєР°РЅР°Р»Р° '%s'?", channelName.GetString());
             callBackData += appendText;
 
             TgBot::InlineKeyboardMarkup::Ptr acceptKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
-            acceptKeyboard->inlineKeyboard = { { generateKeyBoardButton(L"Установить", callBackData.c_str()) } };
+            acceptKeyboard->inlineKeyboard = { { generateKeyBoardButton(L"РЈСЃС‚Р°РЅРѕРІРёС‚СЊ", callBackData.c_str()) } };
             expectedReply = acceptKeyboard;
 
             emulateBroadcastMessage(newLevelText);
 
             expectedReply = std::make_shared<TgBot::GenericReply>();
-            expectedMessage = std::string_swprintf(L"Оповещения для канала '%s' выключены", channelName.GetString());
-            // Надо заменить все \\' на просто \'
+            expectedMessage = std::string_swprintf(L"РћРїРѕРІРµС‰РµРЅРёСЏ РґР»СЏ РєР°РЅР°Р»Р° '%s' РІС‹РєР»СЋС‡РµРЅС‹", channelName.GetString());
+            // РќР°РґРѕ Р·Р°РјРµРЅРёС‚СЊ РІСЃРµ \\' РЅР° РїСЂРѕСЃС‚Рѕ \'
             emulateBroadcastCallbackQuery(callBackData.c_str());
 
-            // проверяем что число поменялось
+            // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ С‡РёСЃР»Рѕ РїРѕРјРµРЅСЏР»РѕСЃСЊ
             EXPECT_EQ(trendMonitoring->GetMonitoringChannelData(ind).bNotify, false)
-                << "После отключения оповещений они не выключены!";
+                << "РџРѕСЃР»Рµ РѕС‚РєР»СЋС‡РµРЅРёСЏ РѕРїРѕРІРµС‰РµРЅРёР№ РѕРЅРё РЅРµ РІС‹РєР»СЋС‡РµРЅС‹!";
 
-            // повторная установка NAN
+            // РїРѕРІС‚РѕСЂРЅР°СЏ СѓСЃС‚Р°РЅРѕРІРєР° NAN
             initCommand();
 
-            expectedMessage = std::string_swprintf(L"Оповещения у канала '%s' уже выключены.", channelName.GetString());
+            expectedMessage = std::string_swprintf(L"РћРїРѕРІРµС‰РµРЅРёСЏ Сѓ РєР°РЅР°Р»Р° '%s' СѓР¶Рµ РІС‹РєР»СЋС‡РµРЅС‹.", channelName.GetString());
             expectedReply = std::make_shared<TgBot::GenericReply>();
             emulateBroadcastMessage(newLevelText);
         }
@@ -439,29 +439,29 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
 }
 
 //----------------------------------------------------------------------------//
-// проверяем колбэк перезапуска
+// РїСЂРѕРІРµСЂСЏРµРј РєРѕР»Р±СЌРє РїРµСЂРµР·Р°РїСѓСЃРєР°
 TEST_F(TestTelegramBot, TestProcessingMonitoringError)
 {
     using namespace users;
 
-    const CString errorMsg = L"Тестовое сообщение 111235апывафф1Фвasd 41234%$#@$$%6sfda";
+    const CString errorMsg = L"РўРµСЃС‚РѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ 111235Р°РїС‹РІР°С„С„1Р¤РІasd 41234%$#@$$%6sfda";
 
-    // ожидаемое сообщение телеграм боту, тестовое сообщение об ошибке
+    // РѕР¶РёРґР°РµРјРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ С‚РµР»РµРіСЂР°Рј Р±РѕС‚Сѓ, С‚РµСЃС‚РѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ РѕР± РѕС€РёР±РєРµ
     CString expectedMessage = errorMsg;
     CString expectedMessageToRecipients = errorMsg;
 
-    // ответ с кнопочками
+    // РѕС‚РІРµС‚ СЃ РєРЅРѕРїРѕС‡РєР°РјРё
     TgBot::GenericReply::Ptr expectedReply = std::make_shared<TgBot::GenericReply>();
-    // ожидаемые список получателей
+    // РѕР¶РёРґР°РµРјС‹Рµ СЃРїРёСЃРѕРє РїРѕР»СѓС‡Р°С‚РµР»РµР№
     std::list<int64_t>* expectedRecipientsChats = nullptr;
 
-    // класс для проверки ответов пользователю
+    // РєР»Р°СЃСЃ РґР»СЏ РїСЂРѕРІРµСЂРєРё РѕС‚РІРµС‚РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ
     const TelegramUserMessagesChecker checker(m_pTelegramThread, &expectedMessage, &expectedReply, &expectedRecipientsChats, &expectedMessageToRecipients);
 
-    // перечень чатов обычных пользователей и админов
+    // РїРµСЂРµС‡РµРЅСЊ С‡Р°С‚РѕРІ РѕР±С‹С‡РЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ Рё Р°РґРјРёРЅРѕРІ
     std::list<int64_t> userChats;
     std::list<int64_t> adminChats;
-    // регистрируем список чатов и статусов
+    // СЂРµРіРёСЃС‚СЂРёСЂСѓРµРј СЃРїРёСЃРѕРє С‡Р°С‚РѕРІ Рё СЃС‚Р°С‚СѓСЃРѕРІ
     {
         int64_t currentChatNumber = 1;
         auto registerChat = [&](const ITelegramUsersList::UserStatus userStatus)
@@ -475,7 +475,7 @@ TEST_F(TestTelegramBot, TestProcessingMonitoringError)
                 userChats.push_back(currentChatNumber);
                 break;
             default:
-                ASSERT_FALSE("Регистрация пользователя с не обработанным статусом");
+                ASSERT_FALSE("Р РµРіРёСЃС‚СЂР°С†РёСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃ РЅРµ РѕР±СЂР°Р±РѕС‚Р°РЅРЅС‹Рј СЃС‚Р°С‚СѓСЃРѕРј");
                 break;
             }
 
@@ -488,58 +488,58 @@ TEST_F(TestTelegramBot, TestProcessingMonitoringError)
             registerChat(ITelegramUsersList::UserStatus::eOrdinaryUser);
         }
 
-        // дополнительно регаем пару пользователей просто потому что можем
+        // РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕ СЂРµРіР°РµРј РїР°СЂСѓ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РїСЂРѕСЃС‚Рѕ РїРѕС‚РѕРјСѓ С‡С‚Рѕ РјРѕР¶РµРј
         registerChat(ITelegramUsersList::UserStatus::eOrdinaryUser);
         registerChat(ITelegramUsersList::UserStatus::eOrdinaryUser);
     }
 
-    // создаем тестовую ошибку
+    // СЃРѕР·РґР°РµРј С‚РµСЃС‚РѕРІСѓСЋ РѕС€РёР±РєСѓ
     auto errorMessage = std::make_shared<MonitoringErrorEventData>();
     errorMessage->errorTextForAllChannels = errorMsg;
-    // генерим идентификатор ошибки
+    // РіРµРЅРµСЂРёРј РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РѕС€РёР±РєРё
     if (!SUCCEEDED(CoCreateGuid(&errorMessage->errorGUID)))
-        EXT_ASSERT(!"Не удалось создать гуид!");
+        EXT_ASSERT(!"РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ РіСѓРёРґ!");
 
-    // Клавиатура доступная пользователю
+    // РљР»Р°РІРёР°С‚СѓСЂР° РґРѕСЃС‚СѓРїРЅР°СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ
     TgBot::InlineKeyboardMarkup::Ptr expectedKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
-    expectedKeyboard->inlineKeyboard.push_back({ generateKeyBoardButton(L"Перезапустить систему", CString(restart::kKeyWord.c_str()).GetString()),
-                                                 generateKeyBoardButton(L"Оповестить обычных пользователей",
+    expectedKeyboard->inlineKeyboard.push_back({ generateKeyBoardButton(L"РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚СЊ СЃРёСЃС‚РµРјСѓ", CString(restart::kKeyWord.c_str()).GetString()),
+                                                 generateKeyBoardButton(L"РћРїРѕРІРµСЃС‚РёС‚СЊ РѕР±С‹С‡РЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№",
                                                                         L"%hs %hs={\\\'%s\\\'}", resend::kKeyWord.c_str(), resend::kParamId.c_str(), CString(CComBSTR(errorMessage->errorGUID)).GetString()) });
 
     expectedReply = expectedKeyboard;
     expectedRecipientsChats = &adminChats;
 
-    // эмулируем возникновение ошибки
+    // СЌРјСѓР»РёСЂСѓРµРј РІРѕР·РЅРёРєРЅРѕРІРµРЅРёРµ РѕС€РёР±РєРё
     get_service<CMassages>().SendMessage(onMonitoringErrorEvent, 0,
                                          std::static_pointer_cast<IEventData>(errorMessage));
 
-    // делаем нас админом
+    // РґРµР»Р°РµРј РЅР°СЃ Р°РґРјРёРЅРѕРј
     m_pUserList->SetUserStatus(nullptr, ITelegramUsersList::UserStatus::eAdmin);
 
-    // проверяем рестарт
+    // РїСЂРѕРІРµСЂСЏРµРј СЂРµСЃС‚Р°СЂС‚
 
-    // создаем пустой файл батника для эмуляции рестарта
+    // СЃРѕР·РґР°РµРј РїСѓСЃС‚РѕР№ С„Р°Р№Р» Р±Р°С‚РЅРёРєР° РґР»СЏ СЌРјСѓР»СЏС†РёРё СЂРµСЃС‚Р°СЂС‚Р°
     std::ofstream ofs(get_service<TestHelper>().getRestartFilePath());
     ofs.close();
 
     expectedReply = std::make_shared<TgBot::GenericReply>();
-    expectedMessage = L"Перезапуск системы осуществляется.";
+    expectedMessage = L"РџРµСЂРµР·Р°РїСѓСЃРє СЃРёСЃС‚РµРјС‹ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚СЃСЏ.";
     emulateBroadcastCallbackQuery(CString(restart::kKeyWord.c_str()).GetString());
 
-    // удаляем файл рестарта системы
+    // СѓРґР°Р»СЏРµРј С„Р°Р№Р» СЂРµСЃС‚Р°СЂС‚Р° СЃРёСЃС‚РµРјС‹
     std::filesystem::remove(get_service<TestHelper>().getRestartFilePath());
 
-    // проверяем пересылку сообщения
+    // РїСЂРѕРІРµСЂСЏРµРј РїРµСЂРµСЃС‹Р»РєСѓ СЃРѕРѕР±С‰РµРЅРёСЏ
     expectedRecipientsChats = &userChats;
 
-    // пересылаем ошибку рандомную
-    expectedMessage = L"Пересылаемой ошибки нет в списке, возможно ошибка является устаревшей (хранятся последние 200 ошибок) или программа была перезапущена.";
+    // РїРµСЂРµСЃС‹Р»Р°РµРј РѕС€РёР±РєСѓ СЂР°РЅРґРѕРјРЅСѓСЋ
+    expectedMessage = L"РџРµСЂРµСЃС‹Р»Р°РµРјРѕР№ РѕС€РёР±РєРё РЅРµС‚ РІ СЃРїРёСЃРєРµ, РІРѕР·РјРѕР¶РЅРѕ РѕС€РёР±РєР° СЏРІР»СЏРµС‚СЃСЏ СѓСЃС‚Р°СЂРµРІС€РµР№ (С…СЂР°РЅСЏС‚СЃСЏ РїРѕСЃР»РµРґРЅРёРµ 200 РѕС€РёР±РѕРє) РёР»Рё РїСЂРѕРіСЂР°РјРјР° Р±С‹Р»Р° РїРµСЂРµР·Р°РїСѓС‰РµРЅР°.";
     const GUID testGuid = { 123 };
     // /resend errorId={'testGuid'}
     emulateBroadcastCallbackQuery(L"%hs %hs={'%s'}", resend::kKeyWord.c_str(), resend::kParamId.c_str(), CString(CComBSTR(testGuid)).GetString());
 
-    // пересылаем реальную
-    expectedMessage = L"Ошибка была успешно переслана обычным пользователям.";
+    // РїРµСЂРµСЃС‹Р»Р°РµРј СЂРµР°Р»СЊРЅСѓСЋ
+    expectedMessage = L"РћС€РёР±РєР° Р±С‹Р»Р° СѓСЃРїРµС€РЅРѕ РїРµСЂРµСЃР»Р°РЅР° РѕР±С‹С‡РЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏРј.";
     expectedMessageToRecipients = errorMsg;
 
     // /resend errorId={'errorGUID'}
@@ -547,22 +547,22 @@ TEST_F(TestTelegramBot, TestProcessingMonitoringError)
     resendString = std::string_swprintf(L"%hs %hs={'%s'}", resend::kKeyWord.c_str(), resend::kParamId.c_str(), CString(CComBSTR(errorMessage->errorGUID)).GetString());
     emulateBroadcastCallbackQuery(resendString.GetString());
 
-    // проверяем на двойную пересылку
-    expectedMessage = L"Ошибка уже была переслана.";
+    // РїСЂРѕРІРµСЂСЏРµРј РЅР° РґРІРѕР№РЅСѓСЋ РїРµСЂРµСЃС‹Р»РєСѓ
+    expectedMessage = L"РћС€РёР±РєР° СѓР¶Рµ Р±С‹Р»Р° РїРµСЂРµСЃР»Р°РЅР°.";
     emulateBroadcastCallbackQuery(resendString.GetString());
 }
 
 //----------------------------------------------------------------------------//
-// проверяем что не авторизованный пользователь не имеет доступа к выполнению команд
+// РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ РЅРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅРЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РёРјРµРµС‚ РґРѕСЃС‚СѓРїР° Рє РІС‹РїРѕР»РЅРµРЅРёСЋ РєРѕРјР°РЅРґ
 TEST_F(TestTelegramBot, TestUsingCallbacksWithoutPermission)
 {
-    // ожидаемое сообщение телеграм боту, тестовое сообщение об ошибке
+    // РѕР¶РёРґР°РµРјРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ С‚РµР»РµРіСЂР°Рј Р±РѕС‚Сѓ, С‚РµСЃС‚РѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ РѕР± РѕС€РёР±РєРµ
     CString expectedMessage;
 
-    // ответ с кнопочками
+    // РѕС‚РІРµС‚ СЃ РєРЅРѕРїРѕС‡РєР°РјРё
     TgBot::GenericReply::Ptr expectedReply = std::make_shared<TgBot::GenericReply>();
 
-    // класс для проверки ответов пользователю
+    // РєР»Р°СЃСЃ РґР»СЏ РїСЂРѕРІРµСЂРєРё РѕС‚РІРµС‚РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ
     const TelegramUserMessagesChecker checker(m_pTelegramThread, &expectedMessage, &expectedReply);
 
     std::list<CString> allCallbacksVariants;
@@ -579,10 +579,10 @@ TEST_F(TestTelegramBot, TestUsingCallbacksWithoutPermission)
     // /alarmV chan={\\\'RandomChannel\\\'} val={\\\'0.3\\\'}
     allCallbacksVariants.emplace_back() = std::string_swprintf(L"%hs %hs={\\\'RandomChannel\\\'} %hs={\\\'0.3\\\'}", alarmingValue::kKeyWord.c_str(), alarmingValue::kParamChan.c_str(), alarmingValue::kParamValue.c_str());
 
-    // делаем нас никем
+    // РґРµР»Р°РµРј РЅР°СЃ РЅРёРєРµРј
     m_pUserList->SetUserStatus(nullptr, users::ITelegramUsersList::UserStatus::eNotAuthorized);
 
-    expectedMessage = L"Для работы бота вам необходимо авторизоваться.";
+    expectedMessage = L"Р”Р»СЏ СЂР°Р±РѕС‚С‹ Р±РѕС‚Р° РІР°Рј РЅРµРѕР±С…РѕРґРёРјРѕ Р°РІС‚РѕСЂРёР·РѕРІР°С‚СЊСЃСЏ.";
     for (const auto& callback : allCallbacksVariants)
     {
         emulateBroadcastCallbackQuery(callback.GetString());

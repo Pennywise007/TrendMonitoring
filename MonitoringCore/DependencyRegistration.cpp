@@ -1,4 +1,4 @@
-#include "pch.h"
+п»ї#include "pch.h"
 #include "DependencyRegistration.h"
 
 #include <tuple>
@@ -242,7 +242,7 @@ void TelegramUsersList::EnsureExist(const TgBot::User::Ptr& pUser, const int64_t
     if (auto userIt = GetUserIterator(pUser);
         userIt == m_telegramUsers.end())
     {
-        // вставляем пользователя с новым идентификатором
+        // insert user with new id
         userIt = m_telegramUsers.insert(m_telegramUsers.end(), std::make_shared<TelegramUser>(*pUser));
         userIt->get()->m_chatId = chatId;
         userIt->get()->m_userNote = getUNICODEString(pUser->firstName).c_str();
@@ -262,7 +262,6 @@ void TelegramUsersList::EnsureExist(const TgBot::User::Ptr& pUser, const int64_t
         OnUsersListChanged();
 }
 
-
 void TelegramUsersList::SetUserStatus(const TgBot::User::Ptr& _pUser, const UserStatus newStatus)
 {
     std::lock_guard lock(m_usersMutex);
@@ -275,14 +274,12 @@ void TelegramUsersList::SetUserStatus(const TgBot::User::Ptr& _pUser, const User
     }
 }
 
-
 ITelegramUsersList::UserStatus TelegramUsersList::GetUserStatus(const TgBot::User::Ptr& pUser)
 {
     std::lock_guard lock(m_usersMutex);
 
     return (*GetOrCreateUsertIterator(pUser))->m_userStatus;
 }
-
 
 void TelegramUsersList::SetUserLastCommand(const TgBot::User::Ptr& _pUser, const std::string& command)
 {
@@ -296,14 +293,12 @@ void TelegramUsersList::SetUserLastCommand(const TgBot::User::Ptr& _pUser, const
     }
 }
 
-
 std::string TelegramUsersList::GetUserLastCommand(const TgBot::User::Ptr& pUser)
 {
     std::lock_guard lock(m_usersMutex);
 
     return (*GetOrCreateUsertIterator(pUser))->m_userLastCommand;
 }
-
 
 std::list<int64_t> TelegramUsersList::GetAllChatIdsByStatus(const UserStatus userStatus)
 {
@@ -319,10 +314,9 @@ std::list<int64_t> TelegramUsersList::GetAllChatIdsByStatus(const UserStatus use
     return chats;
 }
 
-
 std::list<TelegramUser::Ptr>::iterator TelegramUsersList::GetUserIterator(const TgBot::User::Ptr& pUser)
 {
-    // проверяем что мьютекс на данные уже заблокирован
+    // check if the data mutex is already locked
     EXT_ASSERT(!m_usersMutex.try_lock());
 
     return std::find_if(m_telegramUsers.begin(), m_telegramUsers.end(),
@@ -333,17 +327,16 @@ std::list<TelegramUser::Ptr>::iterator TelegramUsersList::GetUserIterator(const 
 }
 
 
-std::list<TelegramUser::Ptr>::iterator
-    TelegramUsersList::GetOrCreateUsertIterator(const TgBot::User::Ptr& pUser)
+std::list<TelegramUser::Ptr>::iterator TelegramUsersList::GetOrCreateUsertIterator(const TgBot::User::Ptr& pUser)
 {
     auto userIt = GetUserIterator(pUser);
     if (userIt == m_telegramUsers.end())
     {
-        EXT_ASSERT(!"Пользователя ещё не создали!");
+        EXT_ASSERT("User has not been created yet!");
 
-        // Создаем пользователя с идентификатором чата равным идентификатору пользователя
+        // Create a user with a chat id equal to the user id
         EnsureExist(pUser, (int64_t)pUser->id);
-        // Получаем его ещё раз
+        // Get it again
         userIt = GetUserIterator(pUser);
         EXT_ASSERT(userIt != m_telegramUsers.end());
     }

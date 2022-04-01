@@ -16,8 +16,7 @@
 
 namespace telegram::bot {
 
-////////////////////////////////////////////////////////////////////////////////
-// класс управления телеграм ботом
+// telegram bot control class
 class CTelegramBot final
     : public ITelegramBot
     , public ext::events::ScopeSubscription<telegram::bot::ISettingsChangedEvent>
@@ -61,7 +60,7 @@ private:
     std::shared_ptr<ITelegramThread> m_telegramThread;
     // Telegram users list
     std::shared_ptr<users::ITelegramUsersList> m_telegramUsers;
-    // обработчик колбэков от телеграма
+    // callback handler from telegram
     std::shared_ptr<callback::TelegramCallbacks> m_callbacksHandler;
 };
 

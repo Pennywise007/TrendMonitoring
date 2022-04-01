@@ -1,4 +1,4 @@
-п»ї
+
 // TrendMonitorDlg.cpp : implementation file
 //
 
@@ -30,10 +30,10 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-// С‚РµРєСЃС‚ РѕС‚РѕР±СЂР°Р¶Р°РµРјС‹Р№ РІ С‚Р°Р±Р»РёС†Рµ РїРѕРєР° РіСЂСѓР·СЏС‚СЃСЏ РґР°РЅРЅС‹Рµ РїРѕ РєР°РЅР°Р»Сѓ
-const CString kWaitingDataString = L"Р—Р°РіСЂСѓР¶Р°РµС‚СЃСЏ...";
+// текст отображаемый в таблице пока грузятся данные по каналу
+const CString kWaitingDataString = L"Загружается...";
 
-// РёРЅС‚РµСЂРїСЂРµС‚Р°С‚РѕСЂ РёРЅС‚РµСЂРІР°Р»Р° РјРѕРЅРёС‚РѕСЂРёРЅРіР° РІ С‚РµРєСЃС‚
+// интерпретатор интервала мониторинга в текст
 std::map<MonitoringInterval, CString> kMonitoringIntervalStrings;
 
 //----------------------------------------------------------------------------//
@@ -45,7 +45,7 @@ CTrendMonitorDlg::CTrendMonitorDlg(ext::ServiceProvider::Ptr serviceProvider, CW
 {
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-    // РґРѕР±Р°РІР»СЏРµРј РІСЃРµ Р·РЅР°С‡РµРЅРёРµ РёРЅС‚РµСЂРІР°Р»РѕРІ РІ РєРѕРјР±РѕР±РѕРєСЃ
+    // добавляем все значение интервалов в комбобокс
     for (int i = 0; i < (int)MonitoringInterval::eLast; ++i)
     {
         const MonitoringInterval interval = (MonitoringInterval)i;
@@ -88,18 +88,18 @@ BOOL CTrendMonitorDlg::OnInitDialog()
     SetIcon(m_hIcon, TRUE);			// Set big icon
     SetIcon(m_hIcon, FALSE);		// Set small icon
 
-    // РїР°СЂСЃРёРј Рё РїСЂРёРјРµРЅСЏРµРј РЅР°СЃС‚СЂРѕР№РєРё РёР· РєРѕРјР°РЅРґРЅРѕР№ СЃС‚СЂРѕРєРё
+    // парсим и применяем настройки из командной строки
     processCommandLine();
 
-    // РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РєРѕРЅС‚СЂРѕР»С‹, РґРѕР±Р°РІР»СЏРµРј РєРѕР»РѕРЅРєРё С‚Р°Р±Р»РёС†С‹ Рё РІРєР»Р°РґРєРё
+    // инициализируем контролы, добавляем колонки таблицы и вкладки
     initControls();
 
     ScopeSubscription::SubscribeAll();
 
-    // Р·Р°РіСЂСѓР¶Р°РµРј РґР°РЅРЅС‹Рµ Рё Р¶РґРµРј РёРЅС„РѕСЂРјР°С†РёСЋ РїРѕ РЅРёРј
+    // загружаем данные и ждем информацию по ним
     reloadChannelsList();
 
-    // Р”РѕР±Р°РІР»СЏРµРј РёРєРѕРЅРєСѓ РІ С‚СЂРµР№
+    // Добавляем иконку в трей
     addTrayIcon();
 
     return TRUE;  // return TRUE  unless you set the focus to a control
@@ -112,26 +112,26 @@ void CTrendMonitorDlg::OnChanged()
 
 void CTrendMonitorDlg::OnNewLogMessage(const std::shared_ptr<LogMessageData>& logMessage)
 {
-    showTrayNotification(L"РќРѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ РІ Р»РѕРіРµ",
+    showTrayNotification(L"Новое сообщение в логе",
                          logMessage->logMessage.c_str(),
                          logMessage->messageType == LogMessageData::MessageType::eError ?
                          NIIF_ERROR : NIIF_WARNING,
                          [tabControl = &m_tabCtrl]()
     {
-        // РїРµСЂРµРєР»С‡СЋР°РµРјСЃСЏ РЅРµ РІРєР»Р°РґРєСѓ СЃ Р»РѕРіРѕРј
-        tabControl->SetCurSel(TabIndiСЃes::eTabLog);
+        // переклчюаемся не вкладку с логом
+        tabControl->SetCurSel(TabIndexes::eTabLog);
     });
 }
 
 void CTrendMonitorDlg::OnReportDone(std::wstring /*messageText*/)
 {
-    showTrayNotification(L"РќРѕРІС‹Р№ РѕС‚С‡С‘С‚ СЃС„РѕСЂРјРёСЂРѕРІР°РЅ",
-                         L"РќР°Р¶РјРёС‚Рµ С‡С‚РѕР±С‹ РѕР·РЅР°РєРѕРјРёС‚СЊСЃСЏ СЃ РЅРёРј",
+    showTrayNotification(L"Новый отчёт сформирован",
+                         L"Нажмите чтобы ознакомиться с ним",
                          NIIF_INFO,
                          [tabControl = &m_tabCtrl]()
     {
-        // РїРµСЂРµРєР»С‡СЋР°РµРјСЃСЏ РЅРµ РІРєР»Р°РґРєСѓ СЃ Р»РѕРіРѕРј
-        tabControl->SetCurSel(TabIndiСЃes::eTabReport);
+        // переклчюаемся не вкладку с логом
+        tabControl->SetCurSel(TabIndexes::eTabReport);
     });
 }
 
@@ -140,30 +140,30 @@ void CTrendMonitorDlg::initControls()
 {
     m_monitorChannelsList.ModifyStyle(0, LVS_EX_CHECKBOXES);
 
-    // СЃРѕР·РґР°РµРј РєРѕР»РѕРЅРєРё С‚Р°Р±Р»РёС†С‹
-    m_monitorChannelsList.InsertColumn(TableColumns::eNotify,           L"РћРїРѕРІРµС‰Р°С‚СЊ", -1, 25);
-    m_monitorChannelsList.InsertColumn(TableColumns::eChannelName,      L"РќР°Р·РІР°РЅРёРµ РєР°РЅР°Р»Р°",         LVCFMT_LEFT, 145, -1,
+    // создаем колонки таблицы
+    m_monitorChannelsList.InsertColumn(TableColumns::eNotify,           L"Оповещать", -1, 25);
+    m_monitorChannelsList.InsertColumn(TableColumns::eChannelName,      L"Название канала",         LVCFMT_LEFT, 145, -1,
                                        [](const CString& str1, const CString& str2) mutable
                                        {
                                            return str1.CompareNoCase(str2);
                                        });
 
-    m_monitorChannelsList.InsertColumn(TableColumns::eInterval,         L"РРЅС‚РµСЂРІР°Р» РјРѕРЅРёС‚РѕСЂРёРЅРіР°",    LVCFMT_CENTER, 80, -1,
+    m_monitorChannelsList.InsertColumn(TableColumns::eInterval,         L"Интервал мониторинга",    LVCFMT_CENTER, 80, -1,
                                        [](const CString& str1, const CString& str2) mutable
                                        {
                                            return str1.CompareNoCase(str2);
                                        });
-    m_monitorChannelsList.InsertColumn(TableColumns::eAlarmingValue,    L"РћРїРѕРІРµСЃС‚РёС‚СЊ РїСЂРё РґРѕСЃС‚РёР¶РµРЅРёРё", LVCFMT_CENTER, 90);
-    m_monitorChannelsList.InsertColumn(TableColumns::eLastDataExistTime,L"РџРѕСЃР»РµРґРЅРёРµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёРµ РґР°РЅРЅС‹Рµ",   LVCFMT_CENTER, 140);
-    m_monitorChannelsList.InsertColumn(TableColumns::eNoDataTime,       L"РќРµС‚ РґР°РЅРЅС‹С…",              LVCFMT_CENTER, 120);
+    m_monitorChannelsList.InsertColumn(TableColumns::eAlarmingValue,    L"Оповестить при достижении", LVCFMT_CENTER, 90);
+    m_monitorChannelsList.InsertColumn(TableColumns::eLastDataExistTime,L"Последние существующие данные",   LVCFMT_CENTER, 140);
+    m_monitorChannelsList.InsertColumn(TableColumns::eNoDataTime,       L"Нет данных",              LVCFMT_CENTER, 120);
 
     const int kValueSize = 100;
-    m_monitorChannelsList.InsertColumn(TableColumns::eStartValue,       L"РќР°С‡Р°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ",      LVCFMT_CENTER, kValueSize);
-    m_monitorChannelsList.InsertColumn(TableColumns::eCurrentValue,     L"РўРµРєСѓС‰РµРµ Р·РЅР°С‡РµРЅРёРµ",        LVCFMT_CENTER, kValueSize);
-    m_monitorChannelsList.InsertColumn(TableColumns::eMaxValue,         L"РњР°РєСЃРёРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ",   LVCFMT_CENTER, kValueSize);
-    m_monitorChannelsList.InsertColumn(TableColumns::eMinValue,         L"РњРёРЅРёРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ",    LVCFMT_CENTER, kValueSize);
+    m_monitorChannelsList.InsertColumn(TableColumns::eStartValue,       L"Начальное значение",      LVCFMT_CENTER, kValueSize);
+    m_monitorChannelsList.InsertColumn(TableColumns::eCurrentValue,     L"Текущее значение",        LVCFMT_CENTER, kValueSize);
+    m_monitorChannelsList.InsertColumn(TableColumns::eMaxValue,         L"Максимальное значение",   LVCFMT_CENTER, kValueSize);
+    m_monitorChannelsList.InsertColumn(TableColumns::eMinValue,         L"Минимальное значение",    LVCFMT_CENTER, kValueSize);
 
-    // Р·Р°РґР°РµРј СЂРµРґР°РєС‚РѕСЂС‹ РґР»СЏ С‚Р°Р±Р»РёС†С‹
+    // задаем редакторы для таблицы
     for (int i = 0, count = TableColumns::eColumnsCount; i < count; ++i)
     {
         std::shared_ptr<CWnd> pControlWindow;
@@ -182,7 +182,7 @@ void CTrendMonitorDlg::initControls()
                                          CBS_DROPDOWN | CBS_HASSTRINGS | CBS_AUTOHSCROLL | WS_VSCROLL,
                                          CRect(), parentWindow, 0);
 
-                        // РґРѕР±Р°РІР»СЏРµРј РІСЃРµ РєР°РЅР°Р»С‹ РёР· СЃРїРёСЃРєР° РІ РєРѕРјР±РѕР±РѕРєСЃ
+                        // добавляем все каналы из списка в комбобокс
                         auto allChannelsNames = ServiceProviderHolder::GetInterface<ITrendMonitoring>()->GetNamesOfAllChannels();
                         allChannelsNames.sort([](const std::wstring& lhs, const std::wstring& rhs)
                         {
@@ -192,11 +192,11 @@ void CTrendMonitorDlg::initControls()
                         for (const auto& channelName : allChannelsNames)
                             comboBox->AddString(channelName.c_str());
 
-                        // РїРѕР»СѓС‡Р°РµРј С‚РµРєСѓС‰РµРµ РёРјСЏ РєР°РЅР°Р»Р° РєРѕС‚РѕСЂРѕРµ РІС‹Р±СЂР°РЅРЅРѕ РІ С‚Р°Р±Р»РёС†С‹
+                        // получаем текущее имя канала которое выбранно в таблицы
                         std::wstring curSubItemText = pList->GetItemText(pParams->iItem, pParams->iSubItem).GetString();
                         if (!curSubItemText.empty())
                         {
-                            // РёС‰РµРј Рё СЃС‚Р°РІРёРј РЅР° С‚РµРєСѓС‰РёР№ РІС‹РґРµР»РµРЅРЅС‹Р№ РєР°РЅР°Р» РІС‹РґРµР»РµРЅРёРµ РІ РєРѕРјР±РѕР±РѕРєСЃРµ
+                            // ищем и ставим на текущий выделенный канал выделение в комбобоксе
                             const auto it = std::find(allChannelsNames.begin(), allChannelsNames.end(), curSubItemText);
                             if (it != allChannelsNames.end())
                                 comboBox->SetCurSel((int)std::distance(allChannelsNames.begin(), it));
@@ -232,15 +232,15 @@ void CTrendMonitorDlg::initControls()
                                      CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_AUTOHSCROLL | WS_VSCROLL,
                                      CRect(), parentWindow, 0);
 
-                    // РґРѕР±Р°РІР»СЏРµРј РІСЃРµ Р·РЅР°С‡РµРЅРёРµ РёРЅС‚РµСЂРІР°Р»РѕРІ РІ РєРѕРјР±РѕР±РѕРєСЃ
+                    // добавляем все значение интервалов в комбобокс
                     for (const auto& intervalStr : kMonitoringIntervalStrings)
                         comboBox->AddString(intervalStr.second);
 
-                    // РїРѕР»СѓС‡Р°РµРј С‚РµРєСѓС‰РµРµ РёРјСЏ РєР°РЅР°Р»Р° РєРѕС‚РѕСЂРѕРµ РІС‹Р±СЂР°РЅРЅРѕ РІ С‚Р°Р±Р»РёС†С‹
+                    // получаем текущее имя канала которое выбранно в таблицы
                     CString curSubItemText = pList->GetItemText(pParams->iItem, pParams->iSubItem);
                     if (!curSubItemText.IsEmpty())
                     {
-                        // РёС‰РµРј Рё СЃС‚Р°РІРёРј РЅР° С‚РµРєСѓС‰РёР№ РІС‹РґРµР»РµРЅРЅС‹Р№ РєР°РЅР°Р» РІС‹РґРµР»РµРЅРёРµ РІ РєРѕРјР±РѕР±РѕРєСЃРµ
+                        // ищем и ставим на текущий выделенный канал выделение в комбобоксе
                         auto it = std::find_if(kMonitoringIntervalStrings.begin(),
                                                kMonitoringIntervalStrings.end(),
                                                [&curSubItemText](const auto& intervalPair)
@@ -266,7 +266,7 @@ void CTrendMonitorDlg::initControls()
 
                     pList->SetItemText(pParams->iItem, pParams->iSubItem, text);
 
-                    // РёС‰РµРј Рё СЃРѕРѕР±С‰Р°РµРј РєР°РєРѕР№ РЅРѕРІС‹Р№ РёРЅС‚РµСЂРІР°Р» РјРѕРЅРёС‚РѕСЂРёРЅРіР° Сѓ РєР°РЅР°Р»Р°
+                    // ищем и сообщаем какой новый интервал мониторинга у канала
                     auto it = std::find_if(kMonitoringIntervalStrings.begin(),
                                            kMonitoringIntervalStrings.end(),
                                            [&text](const auto& intervalPair)
@@ -309,50 +309,50 @@ void CTrendMonitorDlg::initControls()
         case TableColumns::eCurrentValue:
         case TableColumns::eMaxValue:
         case TableColumns::eMinValue:
-            // РЅРµ СЂРµРґР°РєС‚РёСЂСѓРµРјС‹Рµ РєРѕР»РѕРЅРєРё
+            // не редактируемые колонки
             m_monitorChannelsList.setSubItemEditorController(i, std::shared_ptr<ISubItemEditorController>());
             break;
         default:
-            EXT_ASSERT(!"РќРµРёР·РІРµСЃС‚РЅР°СЏ РєРѕР»РѕРЅРєР°, РґРѕР±Р°РІР»РµРЅРёРµ СЂРµРґР°РєС‚РѕСЂР° РЅРµ СѓРґР°Р»РѕСЃСЊ");
+            EXT_ASSERT(!"Неизвестная колонка, добавление редактора не удалось");
             break;
         }
     }
 
-    // РІСЃС‚Р°РІР»СЏРµРј С‚Р°Р±С‹ СЃ Р»РѕРіРѕРј Рё РѕС‚С‡С‘С‚Р°РјРё
-    m_tabCtrl.InsertTab(TabIndiСЃes::eTabLog, L"Р›РѕРі СЃРѕР±С‹С‚РёР№",
-                        std::make_shared<РЎTabTrendLog>(), IDD_TAB_EVENTS_LOG);
-    m_tabCtrl.InsertTab(TabIndiСЃes::eTabReport, L"РћС‚С‡С‘С‚С‹",
+    // вставляем табы с логом и отчётами
+    m_tabCtrl.InsertTab(TabIndexes::eTabLog, L"Лог событий",
+                        std::make_shared<CTabTrendLog>(), IDD_TAB_EVENTS_LOG);
+    m_tabCtrl.InsertTab(TabIndexes::eTabReport, L"Отчёты",
                         std::make_shared<CTabReports>(), IDD_TAB_REPORTS);
 }
 
 //----------------------------------------------------------------------------//
 void CTrendMonitorDlg::processCommandLine()
 {
-    // РїРѕР»СѓС‡Р°РµРј РєРѕРјР°РЅРґРЅСѓСЋ СЃС‚СЂРѕРєСѓ
+    // получаем командную строку
     int nArgc = 0;
     LPWSTR *pArgv = ::CommandLineToArgvW(::GetCommandLine(), &nArgc);
 
     try
     {
-        // Р·Р°РїРѕР»РЅСЏРµРј РїР°СЂР°РјРµС‚СЂР°РјРё РєРѕРјР°РЅРґРЅРѕР№ СЃС‚СЂРѕРєРё
+        // заполняем параметрами командной строки
         boost::program_options::options_description desc("Allowed options");
         desc.add_options()
-            ("hidden", "РЎРєСЂС‹С‚С‹Р№ СЂРµР¶РёРј Р·Р°РїСѓСЃРєР° РїСЂРѕРіСЂР°РјРјС‹");
+            ("hidden", "Скрытый режим запуска программы");
 
         int xstyle = 0;
         {
             using namespace boost::program_options::command_line_style;
-            // РµСЃР»Рё С…РѕС‚РёРј РЅР°СЃС‚СЂРѕРёС‚СЊ СЃС‚РёР»СЊ - РЅР°РґРѕ РїРѕСЃС‚Р°РІРёС‚СЊ СЃС‚Р°РЅРґР°СЂС‚РЅС‹Рµ СЃС‚РёР»Рё
-            // РІ С‡Р°СЃС‚РЅРѕСЃС‚Рё РЅСѓР¶РµРЅ allow_long РґР»СЏ long_case_insensitive
+            // если хотим настроить стиль - надо поставить стандартные стили
+            // в частности нужен allow_long для long_case_insensitive
             xstyle = default_style | case_insensitive;
         }
 
-        // РґРµР»Р°РµРј С‚Р°Рє, Р° РЅРµ С‡РµСЂРµР· boost::program_options::parse_command_line РёР±Рѕ РЅР°Рј РЅР°РґРѕ allow_unregistered
-        // С‡С‚РѕР±С‹ РµСЃР»Рё РІРІРµР»Рё РЅРµ РєРѕСЂСЂРµРєС‚РЅСѓСЋ РєРѕРјР°РЅРґРЅСѓСЋ СЃС‚СЂРѕРєСѓ РјС‹ С‡С‚Рѕ-С‚Рѕ РґР° СЂР°СЃРїР°СЂСЃРёР»Рё
+        // делаем так, а не через boost::program_options::parse_command_line ибо нам надо allow_unregistered
+        // чтобы если ввели не корректную командную строку мы что-то да распарсили
         boost::program_options::wparsed_options parsed =
             boost::program_options::wcommand_line_parser(nArgc, pArgv)
             .options(desc).style(xstyle).allow_unregistered().run();
-        // РѕРїС†РёРё РєРѕС‚РѕСЂС‹Рµ РµСЃС‚СЊ РІ СЂРµР·СѓР»СЊС‚Р°С‚Рµ
+        // опции которые есть в результате
         boost::program_options::variables_map vm;
         boost::program_options::store(parsed, vm);
 
@@ -361,15 +361,15 @@ void CTrendMonitorDlg::processCommandLine()
     catch (const boost::program_options::error& err)
     {
         ::MessageBox(NULL, CString(err.what()),
-                     L"Р’РѕР·РЅРёРєР»Рѕ РёСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё Р°РЅР°Р»РёР·Рµ РєРѕРјР°РЅРґРЅРѕР№ СЃС‚СЂРѕРєРё", MB_ICONERROR | MB_OK);
+                     L"Возникло исключение при анализе командной строки", MB_ICONERROR | MB_OK);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// РђРЅРѕРЅРёРјРЅС‹Р№ РЅРµР№РјСЃРїРµР№СЃ РґР»СЏ РІРЅСѓС‚СЂРµРЅРЅРёС… С„СѓРЅРєС†РёР№ РєРѕС‚РѕСЂС‹РјРё РЅРµ С…РѕС‡РµС‚СЃСЏ С‚РѕСЂС‡Р°С‚СЊ РЅР°СЂСѓР¶Сѓ
+// Анонимный неймспейс для внутренних функций которыми не хочется торчать наружу
 namespace {
 //------------------------------------------------------------------------//
-// С„СѓРЅРєС†РёСЏ РєРѕРЅРІРµСЂС‚Р°С†РёРё РґР°РЅРЅС‹С… РјРѕРЅРёС‚РѕСЂРёРЅРіР° РІ СЃС‚СЂРѕРєСѓ
+// функция конвертации данных мониторинга в строку
 CString monitoring_data_to_string(const float value)
 {
     CString res;
@@ -380,18 +380,18 @@ CString monitoring_data_to_string(const float value)
 }
 
 //------------------------------------------------------------------------//
-// С„СѓРЅРєС†РёСЏ РєРѕРЅРІРµСЂС‚Р°С†РёРё РґР°РЅРЅС‹С… РјРѕРЅРёС‚РѕСЂРёРЅРіР° РІ СЃС‚СЂРѕРєСѓ
+// функция конвертации данных мониторинга в строку
 CString monitoring_data_to_string(const CTime& value)
 {
     return value.Format(L"%d.%m.%Y %H:%M");
 }
 
 //------------------------------------------------------------------------//
-/// Р¤СѓРЅРєС†РёСЏ СЂР°СЃСЃС‡РµС‚Р° РіСЂР°РґРёРµРЅС‚Р°
-/// @param startColor - РЅР°С‡Р°Р»СЊРЅС‹Р№ С†РІРµС‚
-/// @param endColor - РєРѕРЅРµС‡РЅС‹Р№ С†РІРµС‚
-/// @param percent - РїСЂРѕС†РµРЅС‚ РЅР° СЃРєРѕР»СЊРєРѕ СЂРµР·СѓР»СЊС‚Р°С‚ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїРѕС…РѕР¶ РЅР° startColor Рё endColor
-/// @return СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РёР№ РіСЂР°РґРёРµРЅС‚РЅС‹Р№ С†РІРµС‚
+/// Функция рассчета градиента
+/// @param startColor - начальный цвет
+/// @param endColor - конечный цвет
+/// @param percent - процент на сколько результат должен быть похож на startColor и endColor
+/// @return результирующий градиентный цвет
 COLORREF calc_graditent_color(COLORREF startColor, COLORREF endColor, float percent)
 {
     if (percent <= 0.f)
@@ -413,17 +413,17 @@ COLORREF calc_graditent_color(COLORREF startColor, COLORREF endColor, float perc
 //----------------------------------------------------------------------------//
 void CTrendMonitorDlg::reloadChannelsList()
 {
-    // РџРµСЂРµР·Р°РїРѕР»РЅСЏРµРј РЅР°С€Сѓ С‚Р°Р±Р»РёС†Сѓ
+    // Перезаполняем нашу таблицу
     ext::scope::AutoSet set(m_bUpdatingTable, true, false);
 
-    // РїРѕР»СѓС‡Р°РµРј СЃРµСЂРІРёСЃ СЃ РґР°РЅРЅС‹РјРё
+    // получаем сервис с данными
     auto monitoringService = ServiceProviderHolder::GetInterface<ITrendMonitoring>();
 
-    // РїРѕР»СѓС‡Р°РµРј С‚РµРєСѓС‰РµРµ Рё РЅРѕРІРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РєР°РЅР°Р»РѕРІ
+    // получаем текущее и новое количество каналов
     int newChannelsCount = (int)monitoringService->GetNumberOfMonitoringChannels();
     int curChannelsCount = m_monitorChannelsList.GetItemCount();
 
-    // СЂРµСЃР°Р№Р·РёРј С‚Р°Р±Р»РёС†Сѓ РґРѕ РЅР°С€РµРіРѕ РєРѕР»РёС‡РµСЃС‚РІР° РєР°РЅР°Р»РѕРІ
+    // ресайзим таблицу до нашего количества каналов
     while (curChannelsCount != newChannelsCount)
     {
         if (curChannelsCount < newChannelsCount)
@@ -432,12 +432,12 @@ void CTrendMonitorDlg::reloadChannelsList()
             m_monitorChannelsList.DeleteItem(--curChannelsCount);
     }
 
-    // РїСЂРѕС…РѕРґРёРј РїРѕ РІСЃРµРј РєР°РЅР°Р»Р°Рј Рё Р·Р°РЅРѕСЃРёРј РІ С‚Р°Р±Р»РёС†Сѓ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РєР°РЅР°Р»Рµ
+    // проходим по всем каналам и заносим в таблицу информацию о канале
     for (int channelIndex = 0, channelsCount = (int)monitoringService->GetNumberOfMonitoringChannels();
          channelIndex < channelsCount; ++channelIndex)
     {
         const MonitoringChannelData& channelData = monitoringService->GetMonitoringChannelData(channelIndex);
-        // РѕС‚СЂР°Р±Р°С‚С‹РІР°РµРј РѕРїРѕРІРµС‰РµРЅРёСЏ
+        // отрабатываем оповещения
         m_monitorChannelsList.SetCheck(channelIndex, channelData.bNotify);
         m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eChannelName,     channelData.channelName.c_str());
         m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eInterval,        monitoring_interval_to_string(channelData.monitoringInterval).c_str());
@@ -447,10 +447,10 @@ void CTrendMonitorDlg::reloadChannelsList()
 
         if (channelData.channelState.dataLoaded)
         {
-            // Р·Р°РїРѕР»РЅСЏРµРј РґР°РЅРЅС‹Рµ С‚СЂРµРЅРґРѕРІ РµСЃР»Рё РѕРЅРё Р±С‹Р»Рё Р·Р°РіСЂСѓР¶РµРЅС‹
+            // заполняем данные трендов если они были загружены
             const auto& trendData = channelData.trendData;
 
-            // Р±СѓРґРµРј РїРёСЃР°С‚СЊ С„РѕСЂРјР°С‚РѕРј 12.02.20 15:00 (5 С‡)
+            // будем писать форматом 12.02.20 15:00 (5 ч)
             CString lastExistData = monitoring_data_to_string(trendData.lastDataExistTime);
             if (CTimeSpan noDataTime(CTime::GetCurrentTime() - trendData.lastDataExistTime);
                 noDataTime.GetTotalMinutes() > 10)
@@ -460,7 +460,7 @@ void CTrendMonitorDlg::reloadChannelsList()
             m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eNoDataTime,      time_span_to_string(trendData.emptyDataTime).c_str());
             m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eStartValue,      monitoring_data_to_string(trendData.startValue));
 
-            // СЃС‡РёС‚Р°РµРј РЅР° СЃРєРѕР»СЊРєРѕ РёР·РјРµРЅРёР»РѕСЃСЊ Р·РЅР°С‡РµРЅРёРµ
+            // считаем на сколько изменилось значение
             float deltaVal = trendData.currentValue - trendData.startValue;
             CString currentValStr;
             currentValStr.Format(L"%s (%s)", monitoring_data_to_string(trendData.currentValue).GetString(),
@@ -474,12 +474,12 @@ void CTrendMonitorDlg::reloadChannelsList()
         {
             CString columnsText;
             if (channelData.channelState.loadingDataError)
-                columnsText = L"Р’РѕР·РЅРёРєР»Р° РѕС€РёР±РєР°";
+                columnsText = L"Возникла ошибка";
             else
-                // РЅРµС‚ РЅРµ РґР°РЅРЅС‹С… РЅРµ РѕС€РёР±РєРё - РґР°РЅРЅС‹Рµ РµС‰С‘ РЅРµ Р·Р°РіСЂСѓР·РёР»РёСЃСЊ
+                // нет не данных не ошибки - данные ещё не загрузились
                 columnsText = kWaitingDataString;
 
-            // СЃС‚Р°РІРёРј РєРѕР»РѕРЅРєР°Рј СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёР№ С‚РµРєСЃС‚
+            // ставим колонкам соответствующий текст
             for (int i = TableColumns::eStartDataColumns; i <= TableColumns::eEndDataColumns; ++i)
                 m_monitorChannelsList.SetItemText(channelIndex, i, columnsText);
         }
@@ -498,8 +498,8 @@ void CTrendMonitorDlg::selectChannelsListItem(const size_t index)
 //----------------------------------------------------------------------------//
 void CTrendMonitorDlg::addTrayIcon()
 {
-    // Р”РѕР±Р°РІР»СЏРµРј РёРєРѕРЅРєСѓ РІ С‚СЂРµР№
-    m_trayHelper.addTrayIcon(m_hIcon, L"РњРѕРЅРёС‚РѕСЂРёРЅРі РґР°РЅРЅС‹С…",
+    // Добавляем иконку в трей
+    m_trayHelper.addTrayIcon(m_hIcon, L"Мониторинг данных",
                              []()
                              {
                                  return ::GetSubMenu(LoadMenu(AfxGetInstanceHandle(),
@@ -512,12 +512,12 @@ void CTrendMonitorDlg::addTrayIcon()
                                  switch (commandId)
                                  {
                                  case ID_MENU_OPEN:
-                                     // РџРѕРєР°Р·С‹РІР°РµРј РЅР°С€ РґРёР°Р»РѕРі
+                                     // Показываем наш диалог
                                      restoreDlg();
                                      break;
                                  case ID_MENU_BOTSETTINGS:
                                      {
-                                         // РџРѕРєР°Р·С‹РІР°РµРј РґРёР°Р»РѕРі РЅР°СЃС‚СЂРѕР№РєРё
+                                         // Показываем диалог настройки
                                          auto botSettingsDlg = ServiceProviderHolder::CreateObject<CBotSettingDlg>();
                                          botSettingsDlg->DoModal();
                                      }
@@ -526,13 +526,13 @@ void CTrendMonitorDlg::addTrayIcon()
                                      EndDialog(IDCANCEL);
                                      break;
                                  default:
-                                     EXT_ASSERT(!"РќРµ РёР·РІРµСЃС‚РЅС‹Р№ РїСѓРЅРєС‚ РјРµРЅСЋ!");
+                                     EXT_ASSERT(!"Не известный пункт меню!");
                                      break;
                                  }
                              },
                              [this]()
                              {
-                                 // РџРѕРєР°Р·С‹РІР°РµРј РЅР°С€ РґРёР°Р»РѕРі
+                                 // Показываем наш диалог
                                  restoreDlg();
                              });
 }
@@ -543,14 +543,14 @@ void CTrendMonitorDlg::showTrayNotification(const CString& title,
                                             DWORD dwBubbleFlags /*= NIIF_WARNING*/,
                                             const CTrayHelper::OnUserClick& onUserClick /*= nullptr*/)
 {
-    // РїСЂРѕРєСЃРёСЂСѓРµРј РІ РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Р№ РєР»Р°СЃСЃ, РґРѕР±Р°РІР»СЏРµРј РїРѕРєР°Р· РЅР°С€РµРіРѕ РґРёР°Р»РѕРіР° РїСЂРё РєР»РёРєРµ
+    // проксируем в вспомогательный класс, добавляем показ нашего диалога при клике
     m_trayHelper.showBubble(title, descr, dwBubbleFlags,
                             [this, onUserClick]()
                             {
-                                // РџРѕРєР°Р·С‹РІР°РµРј РЅР°С€ РґРёР°Р»РѕРі
+                                // Показываем наш диалог
                                 restoreDlg();
 
-                                // РѕС‚СЂР°Р±Р°С‚С‹РІР°РµРј РєР»РёРє
+                                // отрабатываем клик
                                 if (onUserClick)
                                     onUserClick();
                             });
@@ -561,7 +561,7 @@ void CTrendMonitorDlg::restoreDlg()
 {
     m_bHiddenDialog = false;
 
-    // РџРѕРєР°Р·С‹РІР°РµРј РЅР°С€ РґРёР°Р»РѕРі
+    // Показываем наш диалог
     ShowWindow(SW_RESTORE);
     SetForegroundWindow();
 }
@@ -571,32 +571,32 @@ void CTrendMonitorDlg::OnNMCustomdrawListMonitoringChannels(NMHDR *pNMHDR, LRESU
 {
     LPNMLVCUSTOMDRAW pNMCD = reinterpret_cast<LPNMLVCUSTOMDRAW>(pNMHDR);
 
-    // РЎРЅР°С‡Р°Р»Рѕ РЅР°РґРѕ РѕРїСЂРµРґРµР»РёС‚СЊ С‚РµРєСѓС‰СѓСЋ СЃС‚Р°РґРёСЋ
+    // Сначало надо определить текущую стадию
     switch (pNMCD->nmcd.dwDrawStage)
     {
     case CDDS_PREPAINT:
-        // РµСЃР»Рё СЂРёСЃСѓРµС‚СЃСЏ РІРµСЃСЊ СЌР»РµРјРµРЅС‚ С†РµР»РёРєРѕРј - Р·Р°РїСЂР°С€РёРІР°РµРј РїРѕР»СѓС‡РµРЅРёРµ СЃРѕРѕР±С‰РµРЅРёР№
-        // РґР»СЏ РєР°Р¶РґРѕРіРѕ СЌР»РµРјРµРЅС‚Р° СЃРїРёСЃРєР°.
+        // если рисуется весь элемент целиком - запрашиваем получение сообщений
+        // для каждого элемента списка.
         *pResult = CDRF_NOTIFYSUBITEMDRAW;
         break;
 
     case CDDS_ITEMPREPAINT:
-        // РµСЃР»Рё СЂРёСЃСѓРµС‚СЃСЏ РІРµСЃСЊ СЌР»РµРјРµРЅС‚ СЃРїРёСЃРєР° С†РµР»РёРєРѕРј - Р·Р°РїСЂР°С€РёРІР°РµРј РїРѕР»СѓС‡РµРЅРёРµ СЃРѕРѕР±С‰РµРЅРёР№
-        // РґР»СЏ РєР°Р¶РґРѕРіРѕ РїРѕРґСЌР»РµРјРµРЅС‚Р° СЃРїРёСЃРєР°.
+        // если рисуется весь элемент списка целиком - запрашиваем получение сообщений
+        // для каждого подэлемента списка.
         *pResult = CDRF_NOTIFYSUBITEMDRAW;
         break;
 
     case CDDS_SUBITEM | CDDS_ITEMPREPAINT:
         {
-            // РЎС‚Р°РґРёСЏ, РєРѕС‚РѕСЂР°СЏ РЅР°СЃС‚СѓРїР°РµС‚ РїРµСЂРµРґ РѕС‚СЂРёСЃРѕРІРєРѕР№ РєР°Р¶РґРѕРіРѕ СЌР»РµРјРµРЅС‚Р° СЃРїРёСЃРєР°.
+            // Стадия, которая наступает перед отрисовкой каждого элемента списка.
             int iSubItem = pNMCD->iSubItem;
 
-            // СЃС‚Р°РІРёРј Р·РЅР°С‡РµРЅРёРµ С„РѕРЅР° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+            // ставим значение фона по умолчанию
             pNMCD->clrTextBk = m_monitorChannelsList.GetTextBkColor();
 
             if (iSubItem == TableColumns::eCurrentValue)
             {
-                // РµСЃР»Рё СЌС‚Рѕ РєРѕР»РѕРЅРєР° СЃ С‚РµРєСѓС‰РёРј Р·РЅР°С‡РµРЅРёРµРј РїСЂРѕРІРµСЂСЏРµРј РєР°РєРёРј С†РІРµС‚РѕРј РµРіРѕ РѕС‚СЂРёСЃРѕРІР°С‚СЊ
+                // если это колонка с текущим значением проверяем каким цветом его отрисовать
                 DWORD_PTR iItem = pNMCD->nmcd.dwItemSpec;
 
                 const MonitoringChannelData& monitoringData =
@@ -604,37 +604,37 @@ void CTrendMonitorDlg::OnNMCustomdrawListMonitoringChannels(NMHDR *pNMHDR, LRESU
                 if (monitoringData.channelState.dataLoaded &&
                     _finite(monitoringData.alarmingValue) != 0)
                 {
-                    // РЅР° СЃРєРѕР»СЊРєРѕ С‚РµРєСѓС‰РµРµ Р·РЅР°С‡РµРЅРёРµ Р±Р»РёР·РєРѕ РІ РєСЂРёС‚РёС‡РµСЃРєРѕРјСѓ
+                    // на сколько текущее значение близко в критическому
                     float percent = monitoringData.trendData.currentValue /
                         monitoringData.alarmingValue;
 
-                    // РґРѕРїСѓСЃС‚РёРјРѕРµ Р·РЅР°С‡РµРЅРёРµ
+                    // допустимое значение
                     const float allowablePercent = 0.8f;
 
                     if (percent > allowablePercent)
                     {
                         float allowableValue = monitoringData.alarmingValue * allowablePercent;
 
-                        // РµСЃР»Рё РїСЂРѕС†РµРЅС‚ Р±РѕР»СЊС€Рµ 80 Р±СѓРґРµРј РїРѕРєР°Р·С‹РІР°С‚СЊ РіСЂР°РґРёРµРЅС‚РЅС‹Рј С†РІРµС‚РѕРј
-                        // СЂР°СЃСЃС‡РёС‚С‹РІР°РµРј С†РІРµС‚РЅРѕСЃС‚СЊ РІ РѕСЃС‚Р°РІС€РёС…СЃСЏ 80%
+                        // если процент больше 80 будем показывать градиентным цветом
+                        // рассчитываем цветность в оставшихся 80%
                         float newPercent = (monitoringData.trendData.currentValue - allowableValue) /
                             (monitoringData.alarmingValue - allowableValue);
 
                         pNMCD->clrTextBk = calc_graditent_color(RGB(255, 255, 128), RGB(255, 128, 128), newPercent);
                     }
                     else
-                        // РїРѕРєР°Р·С‹РІР°РµРј РѕР±С‹С‡РЅС‹Рј С†РІРµС‚РѕРј
+                        // показываем обычным цветом
                         pNMCD->clrTextBk = RGB(128, 255, 128);
                 }
             }
 
-            // РЈРІРµРґРѕРјР»СЏРµРј СЃРёСЃС‚РµРјСѓ, С‡С‚РѕР±С‹ РѕРЅР° СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅРѕ РЅР°СЂРёСЃРѕРІР°Р»Р° СЌР»РµРјРµРЅС‚.
+            // Уведомляем систему, чтобы она самостоятельно нарисовала элемент.
             *pResult = CDRF_DODEFAULT;
         }
         break;
 
     default:
-        // Р‘СѓРґРµРј РІС‹РїРѕР»РЅСЏС‚СЊ СЃС‚Р°РЅРґР°СЂС‚РЅСѓСЋ РѕР±СЂР°Р±РѕС‚РєСѓ РґР»СЏ РІСЃРµС… СЃРѕРѕР±С‰РµРЅРёР№ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+        // Будем выполнять стандартную обработку для всех сообщений по умолчанию
         *pResult = CDRF_DODEFAULT;
         break;
     }
@@ -668,12 +668,12 @@ void CTrendMonitorDlg::OnSysCommand(UINT nID, LPARAM lParam)
     switch (nID)
     {
     case SC_MINIMIZE:
-        // СЃРєСЂС‹РІР°РµРј РЅР°С€Рµ РїСЂРёР»РѕР¶РµРЅРёРµ
+        // скрываем наше приложение
         ShowWindow(SW_MINIMIZE);
         ShowWindow(SW_HIDE);
-        // РѕРїРѕРІРµС‰Р°РµРј С‡С‚Рѕ РїСЂРёР»РѕР¶РµРЅРёРµ СЃРІРµСЂРЅСѓС‚Рѕ
-        showTrayNotification(L"РџСЂРёР»РѕР¶РµРЅРёРµ СЃРІС‘СЂРЅСѓС‚Рѕ РІ С‚СЂРµР№",
-                             L"Р”Р»СЏ СЂР°Р·РІРѕСЂР°С‡РёРІР°РЅРёСЏ РїСЂРёР»РѕР¶РµРЅРёСЏ РЅР°Р¶РјРёС‚Рµ РґРІР° СЂР°Р·Р° РЅР° РёРєРѕРЅРєСѓ РёР»Рё РІС‹Р±РµСЂРёС‚Рµ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёР№ РїСѓРЅРєС‚ РјРµРЅСЋ.",
+        // оповещаем что приложение свернуто
+        showTrayNotification(L"Приложение свёрнуто в трей",
+                             L"Для разворачивания приложения нажмите два раза на иконку или выберите соответствующий пункт меню.",
                              NIIF_INFO);
         break;
     }
@@ -684,7 +684,7 @@ void CTrendMonitorDlg::OnSysCommand(UINT nID, LPARAM lParam)
 //----------------------------------------------------------------------------//
 void CTrendMonitorDlg::OnWindowPosChanging(WINDOWPOS* lpwndpos)
 {
-    // РїСЂСЏС‡РµРј РґРёР°Р»РѕРі
+    // прячем диалог
     if (m_bHiddenDialog)
         lpwndpos->flags &= ~SWP_SHOWWINDOW;
 
@@ -726,7 +726,7 @@ HCURSOR CTrendMonitorDlg::OnQueryDragIcon()
 //----------------------------------------------------------------------------//
 void CTrendMonitorDlg::OnOK()
 {
-    // РЅРµ РґР°РµРј Р·Р°РєСЂС‹С‚СЊСЃСЏ РїРѕ Enter`Сѓ
+    // не даем закрыться по Enter`у
 }
 
 //----------------------------------------------------------------------------//
@@ -794,13 +794,13 @@ void CTrendMonitorDlg::OnBnClickedMfcbuttonShowTrends()
     const size_t countChannels = monitoringService->GetNumberOfMonitoringChannels();
     if (countChannels == 0)
     {
-        MessageBox(L"", L"РќРµС‚ РІС‹Р±СЂР°РЅРЅС‹С… РєР°РЅР°Р»РѕРІ!", MB_OK);
+        MessageBox(L"", L"Нет выбранных каналов!", MB_OK);
         return;
     }
 
-    // СЃРїРёСЃРѕРє РєР°РЅР°Р»РґРѕРІ С‡РµСЂРµР· ;
+    // список каналдов через ;
     CString channels;
-    // РјР°РєСЃРёРјР°Р»СЊРЅС‹Р№ РІСЂРµРјРµРЅРЅРѕР№ РїСЂРѕРјРµР¶СѓС‚РѕРє РјРѕРЅРёС‚РѕСЂРёРЅРіР°
+    // максимальный временной промежуток мониторинга
     CTimeSpan maxTimeSpan = 0;
     for (size_t ind = 0; ind < countChannels; ++ind)
     {
@@ -809,11 +809,11 @@ void CTrendMonitorDlg::OnBnClickedMfcbuttonShowTrends()
         maxTimeSpan = std::max<CTimeSpan>(maxTimeSpan, monitoring_interval_to_timespan(channelData.monitoringInterval));
     }
 
-    // РЅР°С‡Р°Р»СЊРЅС‹Р№ Рё РєРѕРЅРµС‡РЅС‹Р№ РёРЅС‚РµСЂРІР°Р»
+    // начальный и конечный интервал
     CTime endTime = CTime::GetCurrentTime();
     CTime startTime = endTime - maxTimeSpan;
 
-    // РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Р№ РѕС‚СЃС‚СѓРї С‡С‚РѕР±С‹ Р±С‹Р»Рѕ СѓРґРѕР±РЅРµРµ СЃРјРѕС‚СЂРµС‚СЊ
+    // дополнительный отступ чтобы было удобнее смотреть
     const CTimeSpan extraTime(std::max<LONG>(static_cast<long>(maxTimeSpan.GetDays()) / 10l, 1l), 0, 0, 0);
     endTime += extraTime;
     startTime -= extraTime;
@@ -836,14 +836,14 @@ void CTrendMonitorDlg::OnBnClickedMfcbuttonShowTrends()
             CString zetInstallFolder = ServiceProviderHolder::GetInterface<IDirService>()->GetZetInstallDir().c_str();
             if (zetInstallFolder.IsEmpty())
             {
-                MessageBox(L"", L"Р”РёСЂРµРєС‚РѕСЂРёСЏ СѓСЃС‚Р°РЅРѕРІРєРё Р·РµС‚Р»Р°Р±Р° РЅРµ РЅР°Р№РґРµРЅР°.", MB_OK);
+                MessageBox(L"", L"Директория установки зетлаба не найдена.", MB_OK);
                 return;
             }
 
             trendsFullPath = std::move(zetInstallFolder) + kTrendProgramName;
             if (!std::filesystem::is_regular_file(trendsFullPath.GetString()))
             {
-                MessageBox(L"", L"РџСЂРѕРіСЂР°РјРјР° РїСЂРѕСЃРјРѕС‚СЂР° С‚СЂРµРЅРґРѕРІ РЅРµ РЅР°Р№РґРµРЅР°!", MB_OK);
+                MessageBox(L"", L"Программа просмотра трендов не найдена!", MB_OK);
                 return;
             }
         }
@@ -851,17 +851,17 @@ void CTrendMonitorDlg::OnBnClickedMfcbuttonShowTrends()
         // start up exe
         STARTUPINFO cif = { sizeof(STARTUPINFO) };
         PROCESS_INFORMATION m_ProcInfo = { 0 };
-        if (FALSE != CreateProcess(trendsFullPath.GetBuffer(),  // РёРјСЏ РёСЃРїРѕР»РЅdСЏРµРјРѕРіРѕ РјРѕРґСѓР»СЏ
-            NULL,	                     // РљРѕРјР°РЅРґРЅР°СЏ СЃС‚СЂРѕРєР°
-            NULL,                        // РЈРєР°Р·Р°С‚РµР»СЊ РЅР° СЃС‚СЂСѓРєС‚СѓСЂСѓ SECURITY_ATTRIBUTES
-            NULL,                        // РЈРєР°Р·Р°С‚РµР»СЊ РЅР° СЃС‚СЂСѓРєС‚СѓСЂСѓ SECURITY_ATTRIBUTES
-            0,                           // Р¤Р»Р°Рі РЅР°СЃР»РµРґРѕРІР°РЅРёСЏ С‚РµРєСѓС‰РµРіРѕ РїСЂРѕС†РµСЃСЃР°
-            NULL,                        // Р¤Р»Р°РіРё СЃРїРѕСЃРѕР±РѕРІ СЃРѕР·РґР°РЅРёСЏ РїСЂРѕС†РµСЃСЃР°
-            NULL,                        // РЈРєР°Р·Р°С‚РµР»СЊ РЅР° Р±Р»РѕРє СЃСЂРµРґС‹
-            NULL,                        // РўРµРєСѓС‰РёР№ РґРёСЃРє РёР»Рё РєР°С‚Р°Р»РѕРі
-            &cif,                        // РЈРєР°Р·Р°С‚РµР»СЊ РЅР° СЃС‚СЂСѓРєС‚СѓСЂСѓ STARTUPINFO
-            &m_ProcInfo))                // РЈРєР°Р·Р°С‚РµР»СЊ РЅР° СЃС‚СЂСѓРєС‚СѓСЂСѓ PROCESS_INFORMATION)
-        {	// РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕС‚РѕРєР° РЅРµ РЅСѓР¶РµРЅ
+        if (FALSE != CreateProcess(trendsFullPath.GetBuffer(),  // имя исполнdяемого модуля
+            NULL,	                     // Командная строка
+            NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
+            NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
+            0,                           // Флаг наследования текущего процесса
+            NULL,                        // Флаги способов создания процесса
+            NULL,                        // Указатель на блок среды
+            NULL,                        // Текущий диск или каталог
+            &cif,                        // Указатель на структуру STARTUPINFO
+            &m_ProcInfo))                // Указатель на структуру PROCESS_INFORMATION)
+        {	// идентификатор потока не нужен
             CloseHandle(m_ProcInfo.hThread);
             CloseHandle(m_ProcInfo.hProcess);
 

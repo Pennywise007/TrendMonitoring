@@ -42,9 +42,6 @@
     <Filter Include="ext\core">
       <UniqueIdentifier>{0427dc1b-bc5e-4e5d-ac13-ad9ea4a96023}</UniqueIdentifier>
     </Filter>
-    <Filter Include="TrendMonitoring\ChannelDataGetter">
-      <UniqueIdentifier>{6d2c604d-e192-4969-9f1b-ca2e17562e9b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ext\thread">
       <UniqueIdentifier>{0fa99bed-a500-466b-826e-b807c42f86fe}</UniqueIdentifier>
     </Filter>
@@ -89,12 +86,6 @@
     <ClInclude Include="include\ITelegramBot.h">
       <Filter>TelegramBot</Filter>
     </ClInclude>
-    <ClInclude Include="src\TrendMonitoringTask.h">
-      <Filter>TrendMonitoring</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ChannelStateManager.h">
-      <Filter>TrendMonitoring</Filter>
-    </ClInclude>
     <ClInclude Include="..\packages\pugixml.1.12.0\build\native\include\pugiconfig.hpp">
       <Filter>pugixml</Filter>
     </ClInclude>
@@ -130,12 +121,6 @@
     </ClInclude>
     <ClInclude Include="src\DirServiceImpl.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\MonitoringTaskService\ChannelDataGetter\ChannelDataGetter.h">
-      <Filter>TrendMonitoring\ChannelDataGetter</Filter>
-    </ClInclude>
-    <ClInclude Include="src\MonitoringTaskService\ChannelDataGetter\ChannelsHelpHeader.h">
-      <Filter>TrendMonitoring\ChannelDataGetter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\ext\thread\event.h">
       <Filter>ext\thread</Filter>
@@ -182,6 +167,18 @@
     <ClInclude Include="..\include\ext\serialization\serializers\xml.h">
       <Filter>ext\serialization\serializers</Filter>
     </ClInclude>
+    <ClInclude Include="src\MonitoringTaskService\ChannelDataGetter\ChannelDataGetter.h">
+      <Filter>MonitoringTasksService\ChannelDataGetter</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MonitoringTaskService\ChannelDataGetter\ChannelsHelpHeader.h">
+      <Filter>MonitoringTasksService\ChannelDataGetter</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MonitoringTaskService\MonitoringTaskResultHandler.h">
+      <Filter>MonitoringTasksService</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ChannelStateManager.h">
+      <Filter>Configuration</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\TrendMonitoring.cpp">
@@ -208,23 +205,23 @@
     <ClCompile Include="src\Telegram\TelegramCallbacks.cpp">
       <Filter>TelegramBot\Callback</Filter>
     </ClCompile>
-    <ClCompile Include="src\TrendMonitoringTask.cpp">
-      <Filter>TrendMonitoring</Filter>
-    </ClCompile>
     <ClCompile Include="..\packages\pugixml.1.12.0\build\native\include\pugixml.cpp">
       <Filter>pugixml</Filter>
     </ClCompile>
     <ClCompile Include="src\DirServiceImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\MonitoringTaskService\ChannelDataGetter\ChannelDataGetter.cpp">
-      <Filter>TrendMonitoring\ChannelDataGetter</Filter>
-    </ClCompile>
     <ClCompile Include="src\Telegram\TelegramSettings.cpp">
       <Filter>Configuration</Filter>
     </ClCompile>
     <ClCompile Include="DependencyRegistration.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MonitoringTaskService\ChannelDataGetter\ChannelDataGetter.cpp">
+      <Filter>MonitoringTasksService\ChannelDataGetter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MonitoringTaskService\MonitoringTaskResultHandler.cpp">
+      <Filter>MonitoringTasksService</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

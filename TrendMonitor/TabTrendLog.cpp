@@ -1,4 +1,4 @@
-Ôªø// –°TabTrendLog.cpp : implementation file
+// CTabTrendLog.cpp : implementation file
 //
 
 #include "stdafx.h"
@@ -10,39 +10,39 @@
 #include <include/ITrendMonitoring.h>
 
 ////////////////////////////////////////////////////////////////////////////////
-IMPLEMENT_DYNAMIC(–°TabTrendLog, CDialogEx)
+IMPLEMENT_DYNAMIC(CTabTrendLog, CDialogEx)
 
 //----------------------------------------------------------------------------//
-–°TabTrendLog::–°TabTrendLog(CWnd* pParent /*=nullptr*/)
+CTabTrendLog::CTabTrendLog(CWnd* pParent /*=nullptr*/)
     : CDialogEx(IDD_TAB_EVENTS_LOG, pParent)
     , ScopeSubscription(false)
 {
 }
 
 //----------------------------------------------------------------------------//
-void –°TabTrendLog::DoDataExchange(CDataExchange* pDX)
+void CTabTrendLog::DoDataExchange(CDataExchange* pDX)
 {
     CDialogEx::DoDataExchange(pDX);
     DDX_Control(pDX, IDC_LIST_LOG, m_listLog);
 }
 
 //----------------------------------------------------------------------------//
-BEGIN_MESSAGE_MAP(–°TabTrendLog, CDialogEx)
-    ON_BN_CLICKED(IDC_BUTTON_LOG_CLEAR, &–°TabTrendLog::OnBnClickedButtonLogClear)
-    ON_BN_CLICKED(IDC_BUTTON_LOG_REMOVE_ERRORS, &–°TabTrendLog::OnBnClickedButtonLogRemoveErrors)
+BEGIN_MESSAGE_MAP(CTabTrendLog, CDialogEx)
+    ON_BN_CLICKED(IDC_BUTTON_LOG_CLEAR, &CTabTrendLog::OnBnClickedButtonLogClear)
+    ON_BN_CLICKED(IDC_BUTTON_LOG_REMOVE_ERRORS, &CTabTrendLog::OnBnClickedButtonLogRemoveErrors)
     ON_WM_CREATE()
     ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 //----------------------------------------------------------------------------//
-void –°TabTrendLog::OnBnClickedButtonLogClear()
+void CTabTrendLog::OnBnClickedButtonLogClear()
 {
     m_listLog.ResetContent();
     m_errorsInLogIndexes.clear();
 }
 
 //----------------------------------------------------------------------------//
-void –°TabTrendLog::OnBnClickedButtonLogRemoveErrors()
+void CTabTrendLog::OnBnClickedButtonLogRemoveErrors()
 {
     for (auto it = m_errorsInLogIndexes.rbegin(), end = m_errorsInLogIndexes.rend(); it != end; ++it)
     {
@@ -53,7 +53,7 @@ void –°TabTrendLog::OnBnClickedButtonLogRemoveErrors()
 }
 
 //----------------------------------------------------------------------------//
-int –°TabTrendLog::OnCreate(LPCREATESTRUCT lpCreateStruct)
+int CTabTrendLog::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
     if (__super::OnCreate(lpCreateStruct) == -1)
         return -1;
@@ -64,20 +64,20 @@ int –°TabTrendLog::OnCreate(LPCREATESTRUCT lpCreateStruct)
 }
 
 //----------------------------------------------------------------------------//
-void –°TabTrendLog::OnDestroy()
+void CTabTrendLog::OnDestroy()
 {
     __super::OnDestroy();
 
-    // –æ—Ç–ø–∏—Å—ã–≤–∞–µ–º—Å—è –æ—Ç —Å–æ–±—ã—Ç–∏–π
+    // ÓÚÔËÒ˚‚‡ÂÏÒˇ ÓÚ ÒÓ·˚ÚËÈ
     ScopeSubscription::UnsubscribeAll();
 }
 
-void –°TabTrendLog::OnNewLogMessage(const std::shared_ptr<LogMessageData>& logMessageData)
+void CTabTrendLog::OnNewLogMessage(const std::shared_ptr<LogMessageData>& logMessageData)
 {
     CString newLogMessage;
     newLogMessage.Format(L"%s    ", CTime::GetCurrentTime().Format(L"%d.%m.%Y %H:%M:%S").GetString());
 
-    // –¥–µ–ª–∞–µ–º –æ—Ç—Å—Ç—É–ø —Å–ø—Ä–∞–≤–∞ –Ω–∞ –∫–∞–∂–¥—ã–π –ø–µ—Ä–µ–Ω–æ—Å —Å—Ç—Ä–æ–∫–∏ —á—Ç–æ–±—ã –≤—ã—Ä–æ–≤–Ω—è—Ç—å –ø–æ –≥–æ—Ä–∏–∑–æ–Ω—Ç–∞–ª–∏
+    // ‰ÂÎ‡ÂÏ ÓÚÒÚÛÔ ÒÔ‡‚‡ Ì‡ Í‡Ê‰˚È ÔÂÂÌÓÒ ÒÚÓÍË ˜ÚÓ·˚ ‚˚Ó‚ÌˇÚ¸ ÔÓ „ÓËÁÓÌÚ‡ÎË
     CString message = logMessageData->logMessage.c_str();
     message.Replace(L"\n", L"\n" + CString(L' ', newLogMessage.GetLength() + 16));
 
@@ -91,14 +91,14 @@ void –°TabTrendLog::OnNewLogMessage(const std::shared_ptr<LogMessageData>& logMe
         m_errorsInLogIndexes.emplace(newItemIndex);
         break;
     default:
-        EXT_ASSERT(!"–ù–µ–∏–∑–≤–µ—Å—Ç–Ω—ã–π —Ç–∏–ø —Å–æ–æ–±—â–µ–Ω–∏—è");
+        EXT_ASSERT(!"ÕÂËÁ‚ÂÒÚÌ˚È ÚËÔ ÒÓÓ·˘ÂÌËˇ");
         [[fallthrough]];
     case LogMessageData::MessageType::eOrdinary:
         newItemIndex = m_listLog.AddString(newLogMessage);
         break;
     }
 
-    // –°–∫—Ä–æ–ª–∏—Ä—É–µ–º –∫ –¥–æ–±–∞–≤–ª–µ–Ω–Ω–æ–º—É
+    // —ÍÓÎËÛÂÏ Í ‰Ó·‡‚ÎÂÌÌÓÏÛ
     m_listLog.SetTopIndex(newItemIndex);
 }
 

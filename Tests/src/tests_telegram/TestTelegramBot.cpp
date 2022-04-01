@@ -1,4 +1,4 @@
-#include "pch.h"
+п»ї#include "pch.h"
 
 #include <fstream>
 #include <regex>
@@ -23,7 +23,7 @@
 
 namespace telegram {
 
-    // идентификатор фиктивного пользователя телеграма
+    // РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ С„РёРєС‚РёРІРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ С‚РµР»РµРіСЂР°РјР°
 const int64_t kTelegramTestChatId = 1234;
 
 namespace bot {
@@ -32,24 +32,24 @@ namespace bot {
 void TestTelegramBot::SetUp()
 {
     using namespace users;
-    // инициализируем список пользователей
+    // РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
     m_pUserList = TestTelegramUsersList::create();
 
     m_pTelegramThread = new TestTelegramThread();
 
-    // создаем фейковый поток телеграмма и запоминаем его указатель
+    // СЃРѕР·РґР°РµРј С„РµР№РєРѕРІС‹Р№ РїРѕС‚РѕРє С‚РµР»РµРіСЂР°РјРјР° Рё Р·Р°РїРѕРјРёРЅР°РµРј РµРіРѕ СѓРєР°Р·Р°С‚РµР»СЊ
     ITelegramThreadPtr pTelegramThread(m_pTelegramThread);
-    // создаем настройки бота
+    // СЃРѕР·РґР°РµРј РЅР°СЃС‚СЂРѕР№РєРё Р±РѕС‚Р°
     TelegramBotSettings botSettings;
     botSettings.bEnable = true;
     botSettings.sToken = L"Testing";
 
-    // инициализируем список пользователей и фейкового потока для имтитации работы телеграма, имитируем что у нас unique_ptr
+    // РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ Рё С„РµР№РєРѕРІРѕРіРѕ РїРѕС‚РѕРєР° РґР»СЏ РёРјС‚РёС‚Р°С†РёРё СЂР°Р±РѕС‚С‹ С‚РµР»РµРіСЂР°РјР°, РёРјРёС‚РёСЂСѓРµРј С‡С‚Рѕ Сѓ РЅР°СЃ unique_ptr
     m_testTelegramBot = std::make_unique<CTelegramBot>(m_pUserList, pTelegramThread.release());
-    // передаём настройки
+    // РїРµСЂРµРґР°С‘Рј РЅР°СЃС‚СЂРѕР№РєРё
     m_testTelegramBot->SetBotSettings(botSettings);
 
-    // заполняем перечень команд и доступность её для различных пользователей
+    // Р·Р°РїРѕР»РЅСЏРµРј РїРµСЂРµС‡РµРЅСЊ РєРѕРјР°РЅРґ Рё РґРѕСЃС‚СѓРїРЅРѕСЃС‚СЊ РµС‘ РґР»СЏ СЂР°Р·Р»РёС‡РЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
     m_commandsToUserStatus[L"info"] = { ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };
     m_commandsToUserStatus[L"report"] = { ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };
     m_commandsToUserStatus[L"restart"] = { ITelegramUsersList::eAdmin };
@@ -58,24 +58,24 @@ void TestTelegramBot::SetUp()
     m_commandsToUserStatus[L"alarmingValue"] = { ITelegramUsersList::eAdmin };
 
     static_assert(ITelegramUsersList::eLastStatus == 3,
-                  "Список пользовтеля изменился, возможно стоит пересмотреть доступность команд");
+                  "РЎРїРёСЃРѕРє РїРѕР»СЊР·РѕРІС‚РµР»СЏ РёР·РјРµРЅРёР»СЃСЏ, РІРѕР·РјРѕР¶РЅРѕ СЃС‚РѕРёС‚ РїРµСЂРµСЃРјРѕС‚СЂРµС‚СЊ РґРѕСЃС‚СѓРїРЅРѕСЃС‚СЊ РєРѕРјР°РЅРґ");
 
     TestHelper& helper = get_service<TestHelper>();
-    // сбрасываем предыдущие настройки
+    // СЃР±СЂР°СЃС‹РІР°РµРј РїСЂРµРґС‹РґСѓС‰РёРµ РЅР°СЃС‚СЂРѕР№РєРё
     helper.resetMonitoringService();
 
-    // удаляем файл рестарта системы
+    // СѓРґР°Р»СЏРµРј С„Р°Р№Р» СЂРµСЃС‚Р°СЂС‚Р° СЃРёСЃС‚РµРјС‹
     std::filesystem::remove(helper.getRestartFilePath());
 
     m_adminCommandsInfo =
-        L"Поддерживаемые команды бота:\n\n\n"
-        L"/info - Перечень команд бота.\n"
-        L"/report - Сформировать отчёт.\n"
-        L"/restart - Перезапустить систему мониторинга.\n"
-        L"/alertingOn - Включить оповещения о событиях.\n"
-        L"/alertingOff - Выключить оповещения о событиях.\n"
-        L"/alarmingValue - Изменить допустимый уровень значений у канала.\n\n\n"
-        L"Для того чтобы их использовать необходимо написать их этому боту(обязательно использовать слэш перед текстом команды(/)!). Или нажать в этом окне, они должны подсвечиваться.";
+        L"РџРѕРґРґРµСЂР¶РёРІР°РµРјС‹Рµ РєРѕРјР°РЅРґС‹ Р±РѕС‚Р°:\n\n\n"
+        L"/info - РџРµСЂРµС‡РµРЅСЊ РєРѕРјР°РЅРґ Р±РѕС‚Р°.\n"
+        L"/report - РЎС„РѕСЂРјРёСЂРѕРІР°С‚СЊ РѕС‚С‡С‘С‚.\n"
+        L"/restart - РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚СЊ СЃРёСЃС‚РµРјСѓ РјРѕРЅРёС‚РѕСЂРёРЅРіР°.\n"
+        L"/alertingOn - Р’РєР»СЋС‡РёС‚СЊ РѕРїРѕРІРµС‰РµРЅРёСЏ Рѕ СЃРѕР±С‹С‚РёСЏС….\n"
+        L"/alertingOff - Р’С‹РєР»СЋС‡РёС‚СЊ РѕРїРѕРІРµС‰РµРЅРёСЏ Рѕ СЃРѕР±С‹С‚РёСЏС….\n"
+        L"/alarmingValue - РР·РјРµРЅРёС‚СЊ РґРѕРїСѓСЃС‚РёРјС‹Р№ СѓСЂРѕРІРµРЅСЊ Р·РЅР°С‡РµРЅРёР№ Сѓ РєР°РЅР°Р»Р°.\n\n\n"
+        L"Р”Р»СЏ С‚РѕРіРѕ С‡С‚РѕР±С‹ РёС… РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РЅРµРѕР±С…РѕРґРёРјРѕ РЅР°РїРёСЃР°С‚СЊ РёС… СЌС‚РѕРјСѓ Р±РѕС‚Сѓ(РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЃР»СЌС€ РїРµСЂРµРґ С‚РµРєСЃС‚РѕРј РєРѕРјР°РЅРґС‹(/)!). РР»Рё РЅР°Р¶Р°С‚СЊ РІ СЌС‚РѕРј РѕРєРЅРµ, РѕРЅРё РґРѕР»Р¶РЅС‹ РїРѕРґСЃРІРµС‡РёРІР°С‚СЊСЃСЏ.";
 }
 
 //----------------------------------------------------------------------------//
@@ -103,7 +103,7 @@ void TestTelegramBot::emulateBroadcastCallbackQuery(LPCWSTR queryFormat, ...) co
     pUpdate->callbackQuery = std::make_shared<TgBot::CallbackQuery>();
     pUpdate->callbackQuery->from = pMessage->from;
     pUpdate->callbackQuery->message = pMessage;
-    // Надо заменить все \\' на просто '
+    // РќР°РґРѕ Р·Р°РјРµРЅРёС‚СЊ РІСЃРµ \\' РЅР° РїСЂРѕСЃС‚Рѕ '
     pUpdate->callbackQuery->data = getUtf8Str(std::regex_replace(queryText.GetString(),
                                               std::wregex(LR"(\\')"),
                                               L"'"));
@@ -144,7 +144,7 @@ TelegramUserMessagesChecker::TelegramUserMessagesChecker(bot::TestTelegramThread
                                                          std::list<int64_t>** pExpectedRecipientsChats /*= nullptr*/,
                                                          CString* pExpectedMessageToRecipients /*= nullptr*/)
 {
-    // сравнение двух ответов(клавиатур пользователя)
+    // СЃСЂР°РІРЅРµРЅРёРµ РґРІСѓС… РѕС‚РІРµС‚РѕРІ(РєР»Р°РІРёР°С‚СѓСЂ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ)
     auto compareReply = [](const TgBot::GenericReply::Ptr realReply,
                            const TgBot::GenericReply::Ptr expectedReply) -> bool
     {
@@ -159,36 +159,36 @@ TelegramUserMessagesChecker::TelegramUserMessagesChecker(bot::TestTelegramThread
         TgBot::InlineKeyboardMarkup::Ptr keyBoardMarkupExpected =
             std::dynamic_pointer_cast<TgBot::InlineKeyboardMarkup>(expectedReply);
 
-        EXPECT_EQ(!keyBoardMarkupReal, !keyBoardMarkupExpected) << "Типы ответов не соответствуют друг другу.";
+        EXPECT_EQ(!keyBoardMarkupReal, !keyBoardMarkupExpected) << "РўРёРїС‹ РѕС‚РІРµС‚РѕРІ РЅРµ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‚ РґСЂСѓРі РґСЂСѓРіСѓ.";
 
         if (keyBoardMarkupReal && keyBoardMarkupExpected)
         {
-            // сравниваем как InlineKeyboardMarkup
+            // СЃСЂР°РІРЅРёРІР°РµРј РєР°Рє InlineKeyboardMarkup
             std::vector<std::vector<TgBot::InlineKeyboardButton::Ptr>> keyboardReal =
                 keyBoardMarkupReal->inlineKeyboard;
             std::vector<std::vector<TgBot::InlineKeyboardButton::Ptr>> keyboardExpected =
                 keyBoardMarkupExpected->inlineKeyboard;
 
-            EXPECT_EQ(keyboardReal.size(), keyboardExpected.size()) << "Размер клавиатуры для ответа различается";
+            EXPECT_EQ(keyboardReal.size(), keyboardExpected.size()) << "Р Р°Р·РјРµСЂ РєР»Р°РІРёР°С‚СѓСЂС‹ РґР»СЏ РѕС‚РІРµС‚Р° СЂР°Р·Р»РёС‡Р°РµС‚СЃСЏ";
 
             for (size_t row = 0, countRows = keyboardReal.size(); row < countRows; ++row)
             {
-                EXPECT_EQ(keyboardReal[row].size(), keyboardExpected[row].size()) << "Количество кнопок в строке " << row << " различается";
+                EXPECT_EQ(keyboardReal[row].size(), keyboardExpected[row].size()) << "РљРѕР»РёС‡РµСЃС‚РІРѕ РєРЅРѕРїРѕРє РІ СЃС‚СЂРѕРєРµ " << row << " СЂР°Р·Р»РёС‡Р°РµС‚СЃСЏ";
 
                 for (size_t col = 0, countColumns = keyboardReal[row].size(); col < countColumns; ++col)
                 {
                     TgBot::InlineKeyboardButton::Ptr realKey = keyboardReal[row][col];
                     TgBot::InlineKeyboardButton::Ptr expectedKey = keyboardExpected[row][col];
 
-                    // сравниваем кнопки
-                    EXPECT_TRUE(realKey->text == expectedKey->text) << "Текст на кнопках отличается.\nПолучили :" <<
-                        CStringA(getUNICODEString(realKey->text).c_str()) << "\nОжидалось:" << CStringA(getUNICODEString(expectedKey->text).c_str());
+                    // СЃСЂР°РІРЅРёРІР°РµРј РєРЅРѕРїРєРё
+                    EXPECT_TRUE(realKey->text == expectedKey->text) << "РўРµРєСЃС‚ РЅР° РєРЅРѕРїРєР°С… РѕС‚Р»РёС‡Р°РµС‚СЃСЏ.\nРџРѕР»СѓС‡РёР»Рё :" <<
+                        CStringA(getUNICODEString(realKey->text).c_str()) << "\nРћР¶РёРґР°Р»РѕСЃСЊ:" << CStringA(getUNICODEString(expectedKey->text).c_str());
 
                     boost::trim(realKey->callbackData);
                     boost::trim(expectedKey->callbackData);
 
-                    EXPECT_TRUE(realKey->callbackData == expectedKey->callbackData) << "Колбэк у кнопок отличается.\nПолучили :" <<
-                        CStringA(getUNICODEString(realKey->callbackData).c_str()) << "\nОжидалось:" << CStringA(getUNICODEString(expectedKey->callbackData).c_str());
+                    EXPECT_TRUE(realKey->callbackData == expectedKey->callbackData) << "РљРѕР»Р±СЌРє Сѓ РєРЅРѕРїРѕРє РѕС‚Р»РёС‡Р°РµС‚СЃСЏ.\nРџРѕР»СѓС‡РёР»Рё :" <<
+                        CStringA(getUNICODEString(realKey->callbackData).c_str()) << "\nРћР¶РёРґР°Р»РѕСЃСЊ:" << CStringA(getUNICODEString(expectedKey->callbackData).c_str());
                 }
             }
         }
@@ -202,11 +202,11 @@ TelegramUserMessagesChecker::TelegramUserMessagesChecker(bot::TestTelegramThread
          int32_t replyToMessageId, TgBot::GenericReply::Ptr replyMarkup,
          const std::string& parseMode, bool disableNotification)
         {
-            ASSERT_TRUE(pExpectedMessage) << "Не передали сообщение.";
+            ASSERT_TRUE(pExpectedMessage) << "РќРµ РїРµСЂРµРґР°Р»Рё СЃРѕРѕР±С‰РµРЅРёРµ.";
 
-            EXPECT_EQ(chatId, kTelegramTestChatId) << "Идентификатор чата с получателем сообщения не корректен";
-            EXPECT_TRUE(msg == pExpectedMessage->GetString()) << "Пришло сообщение отличающееся от ожидаемого.\n\nСообщение:\n" <<
-                CStringA(msg.c_str()) << "\n\nОжидалось:\n" << CStringA(*pExpectedMessage);
+            EXPECT_EQ(chatId, kTelegramTestChatId) << "РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ С‡Р°С‚Р° СЃ РїРѕР»СѓС‡Р°С‚РµР»РµРј СЃРѕРѕР±С‰РµРЅРёСЏ РЅРµ РєРѕСЂСЂРµРєС‚РµРЅ";
+            EXPECT_TRUE(msg == pExpectedMessage->GetString()) << "РџСЂРёС€Р»Рѕ СЃРѕРѕР±С‰РµРЅРёРµ РѕС‚Р»РёС‡Р°СЋС‰РµРµСЃСЏ РѕС‚ РѕР¶РёРґР°РµРјРѕРіРѕ.\n\nРЎРѕРѕР±С‰РµРЅРёРµ:\n" <<
+                CStringA(msg.c_str()) << "\n\nРћР¶РёРґР°Р»РѕСЃСЊ:\n" << CStringA(*pExpectedMessage);
 
             if (pExpectedReply)
                 EXPECT_TRUE(compareReply(replyMarkup, *pExpectedReply));
@@ -218,20 +218,20 @@ TelegramUserMessagesChecker::TelegramUserMessagesChecker(bot::TestTelegramThread
          int32_t replyToMessageId, TgBot::GenericReply::Ptr replyMarkup,
          const std::string& parseMode, bool disableNotification)
         {
-            ASSERT_TRUE(pExpectedRecipientsChats) << "Не передали список чатов.";
-            ASSERT_TRUE(pExpectedMessageToRecipients) << "Не передали сообщение для получателей.";
+            ASSERT_TRUE(pExpectedRecipientsChats) << "РќРµ РїРµСЂРµРґР°Р»Рё СЃРїРёСЃРѕРє С‡Р°С‚РѕРІ.";
+            ASSERT_TRUE(pExpectedMessageToRecipients) << "РќРµ РїРµСЂРµРґР°Р»Рё СЃРѕРѕР±С‰РµРЅРёРµ РґР»СЏ РїРѕР»СѓС‡Р°С‚РµР»РµР№.";
 
-            EXPECT_EQ(chatIds.size(), (*pExpectedRecipientsChats)->size()) << "Ожидаемые чаты и фактические не совпали.";
+            EXPECT_EQ(chatIds.size(), (*pExpectedRecipientsChats)->size()) << "РћР¶РёРґР°РµРјС‹Рµ С‡Р°С‚С‹ Рё С„Р°РєС‚РёС‡РµСЃРєРёРµ РЅРµ СЃРѕРІРїР°Р»Рё.";
             auto chatId = chatIds.begin();
             auto expectedId = (*pExpectedRecipientsChats)->begin();
             for (size_t i = 0, count = std::min<size_t>(chatIds.size(), (*pExpectedRecipientsChats)->size());
                  i < count; ++i, ++chatId, ++expectedId)
             {
-                EXPECT_EQ(*chatId, *expectedId) << "Ожидаемые чаты и фактические не совпали.";;
+                EXPECT_EQ(*chatId, *expectedId) << "РћР¶РёРґР°РµРјС‹Рµ С‡Р°С‚С‹ Рё С„Р°РєС‚РёС‡РµСЃРєРёРµ РЅРµ СЃРѕРІРїР°Р»Рё.";;
             }
 
-            EXPECT_TRUE(msg == pExpectedMessageToRecipients->GetString()) << "Пришло сообщение отличающееся от ожидаемого.\n\nСообщение:\n" <<
-                CStringA(msg.c_str()) << "\n\nОжидалось:\n" << CStringA(*pExpectedMessageToRecipients);
+            EXPECT_TRUE(msg == pExpectedMessageToRecipients->GetString()) << "РџСЂРёС€Р»Рѕ СЃРѕРѕР±С‰РµРЅРёРµ РѕС‚Р»РёС‡Р°СЋС‰РµРµСЃСЏ РѕС‚ РѕР¶РёРґР°РµРјРѕРіРѕ.\n\nРЎРѕРѕР±С‰РµРЅРёРµ:\n" <<
+                CStringA(msg.c_str()) << "\n\nРћР¶РёРґР°Р»РѕСЃСЊ:\n" << CStringA(*pExpectedMessageToRecipients);
 
             if (pExpectedReply)
                 EXPECT_TRUE(compareReply(replyMarkup, *pExpectedReply));

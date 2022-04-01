@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <mutex>
 
@@ -7,39 +7,39 @@
 #include <include/IMonitoringTasksService.h>
 
 ////////////////////////////////////////////////////////////////////////////////
-// Проверка сервиса с получением данных через таски MonitoringTasksService
+// РџСЂРѕРІРµСЂРєР° СЃРµСЂРІРёСЃР° СЃ РїРѕР»СѓС‡РµРЅРёРµРј РґР°РЅРЅС‹С… С‡РµСЂРµР· С‚Р°СЃРєРё MonitoringTasksService
 class MonitoringTasksTestClass
     : public testing::Test
     , ext::events::ScopeAsyncSubscription<IMonitoringTaskEvent>
 {
 protected:
-    // настройка класса (инициализация)
+    // РЅР°СЃС‚СЂРѕР№РєР° РєР»Р°СЃСЃР° (РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ)
     void SetUp() override;
 
 // IMonitoringTaskEvent
 public:
-    // оповещение о произошедшем событии
+    // РѕРїРѕРІРµС‰РµРЅРёРµ Рѕ РїСЂРѕРёР·РѕС€РµРґС€РµРј СЃРѕР±С‹С‚РёРё
     void OnCompleteTask(const TaskId& taskId, IMonitoringTaskEvent::ResultsPtrList monitoringResult) override;
 
 protected:
-    // задаем параметры всех тестовых каналов мониторинга в m_taskParams
+    // Р·Р°РґР°РµРј РїР°СЂР°РјРµС‚СЂС‹ РІСЃРµС… С‚РµСЃС‚РѕРІС‹С… РєР°РЅР°Р»РѕРІ РјРѕРЅРёС‚РѕСЂРёРЅРіР° РІ m_taskParams
     void fillTaskParams();
-    // ожидать выполнения теста, возвращает истину если результат получен, ложь если был таймаут
+    // РѕР¶РёРґР°С‚СЊ РІС‹РїРѕР»РЅРµРЅРёСЏ С‚РµСЃС‚Р°, РІРѕР·РІСЂР°С‰Р°РµС‚ РёСЃС‚РёРЅСѓ РµСЃР»Рё СЂРµР·СѓР»СЊС‚Р°С‚ РїРѕР»СѓС‡РµРЅ, Р»РѕР¶СЊ РµСЃР»Рё Р±С‹Р» С‚Р°Р№РјР°СѓС‚
     bool waitForTaskResult(std::unique_lock<std::mutex>& lock, bool bNoTimeOut);
 
 protected:
-    // идентификатор текущего задания
+    // РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ С‚РµРєСѓС‰РµРіРѕ Р·Р°РґР°РЅРёСЏ
     TaskId m_currentTask = {};
-    // результат задания
+    // СЂРµР·СѓР»СЊС‚Р°С‚ Р·Р°РґР°РЅРёСЏ
     MonitoringResult::Ptr m_taskResult;
-    // Вспомогательный объект для ожидания загрузки данных
+    // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Р№ РѕР±СЉРµРєС‚ РґР»СЏ РѕР¶РёРґР°РЅРёСЏ Р·Р°РіСЂСѓР·РєРё РґР°РЅРЅС‹С…
     std::condition_variable m_resultTaskCV;
     std::mutex m_resultMutex;
 
 protected:
-    // параметры задания мониторинга
+    // РїР°СЂР°РјРµС‚СЂС‹ Р·Р°РґР°РЅРёСЏ РјРѕРЅРёС‚РѕСЂРёРЅРіР°
     std::list<TaskParameters::Ptr> m_taskParams;
-    // Тип теста
+    // РўРёРї С‚РµСЃС‚Р°
     enum class TestType
     {
         eTestAddTaskList,

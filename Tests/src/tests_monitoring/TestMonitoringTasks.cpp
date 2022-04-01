@@ -1,4 +1,4 @@
-// тестирование получение данных мониторинга
+п»ї// С‚РµСЃС‚РёСЂРѕРІР°РЅРёРµ РїРѕР»СѓС‡РµРЅРёРµ РґР°РЅРЅС‹С… РјРѕРЅРёС‚РѕСЂРёРЅРіР°
 
 #include "pch.h"
 
@@ -12,16 +12,16 @@
 
 #define GTEST_COUT(Text) std::cerr << "[          ] [ INFO ] " << Text << std::endl;
 
-// имя выдуманного канала по которому нет данных
-const CString kRandomChannelName = L"Краказябра";
+// РёРјСЏ РІС‹РґСѓРјР°РЅРЅРѕРіРѕ РєР°РЅР°Р»Р° РїРѕ РєРѕС‚РѕСЂРѕРјСѓ РЅРµС‚ РґР°РЅРЅС‹С…
+const CString kRandomChannelName = L"РљСЂР°РєР°Р·СЏР±СЂР°";
 
-// на самом деле данные только за 07.08.2020, но запросим большой инетрвал
+// РЅР° СЃР°РјРѕРј РґРµР»Рµ РґР°РЅРЅС‹Рµ С‚РѕР»СЊРєРѕ Р·Р° 07.08.2020, РЅРѕ Р·Р°РїСЂРѕСЃРёРј Р±РѕР»СЊС€РѕР№ РёРЅРµС‚СЂРІР°Р»
 const CTime kExistDataStartTime(2020, 6, 7, 0, 0, 0);
 const CTime kExistDataStopTime(2020, 10, 7, 0, 0, 0);
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// тестирование сервиса с получением и анализом данных для мониторинга
+// С‚РµСЃС‚РёСЂРѕРІР°РЅРёРµ СЃРµСЂРІРёСЃР° СЃ РїРѕР»СѓС‡РµРЅРёРµРј Рё Р°РЅР°Р»РёР·РѕРј РґР°РЅРЅС‹С… РґР»СЏ РјРѕРЅРёС‚РѕСЂРёРЅРіР°
 #ifdef DONT_TEST_MONITORING_TASKS
 TEST_F(MonitoringTasksTestClass, DISABLED_AddTaskList)
 #else
@@ -30,10 +30,10 @@ TEST_F(MonitoringTasksTestClass, AddTaskList)
 {
     m_testType = TestType::eTestAddTaskList;
 
-    // заполняем списки данных для мониторинга
+    // Р·Р°РїРѕР»РЅСЏРµРј СЃРїРёСЃРєРё РґР°РЅРЅС‹С… РґР»СЏ РјРѕРЅРёС‚РѕСЂРёРЅРіР°
     fillTaskParams();
 
-    // получаем список имён каналов
+    // РїРѕР»СѓС‡Р°РµРј СЃРїРёСЃРѕРє РёРјС‘РЅ РєР°РЅР°Р»РѕРІ
     std::list<CString> channelNames;
     for (auto& task : m_taskParams)
     {
@@ -42,16 +42,16 @@ TEST_F(MonitoringTasksTestClass, AddTaskList)
         task->endTime   = kExistDataStopTime;
     }
 
-    // получение сервиса заданий монитринга
+    // РїРѕР»СѓС‡РµРЅРёРµ СЃРµСЂРІРёСЃР° Р·Р°РґР°РЅРёР№ РјРѕРЅРёС‚СЂРёРЅРіР°
     IMonitoringTasksService* pMonitoringService = GetInterface<IMonitoringTasksService>();
 
-    // запускаем задание мониторинга
+    // Р·Р°РїСѓСЃРєР°РµРј Р·Р°РґР°РЅРёРµ РјРѕРЅРёС‚РѕСЂРёРЅРіР°
     std::unique_lock<std::mutex> lock(m_resultMutex);
     m_currentTask = pMonitoringService->AddTaskList(channelNames, kExistDataStartTime, kExistDataStopTime,
                                                     IMonitoringTasksService::eHigh);
 
-    // ждём пока придёт результат
-    ASSERT_TRUE(waitForTaskResult(lock, true)) << "Были полученны результаты задания которое было отменено";
+    // Р¶РґС‘Рј РїРѕРєР° РїСЂРёРґС‘С‚ СЂРµР·СѓР»СЊС‚Р°С‚
+    ASSERT_TRUE(waitForTaskResult(lock, true)) << "Р‘С‹Р»Рё РїРѕР»СѓС‡РµРЅРЅС‹ СЂРµР·СѓР»СЊС‚Р°С‚С‹ Р·Р°РґР°РЅРёСЏ РєРѕС‚РѕСЂРѕРµ Р±С‹Р»Рѕ РѕС‚РјРµРЅРµРЅРѕ";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,18 +63,18 @@ TEST_F(MonitoringTasksTestClass, AddTaskParams)
 {
     m_testType = TestType::eTestAddTaskParams;
 
-    // заполняем списки данных для мониторинга
+    // Р·Р°РїРѕР»РЅСЏРµРј СЃРїРёСЃРєРё РґР°РЅРЅС‹С… РґР»СЏ РјРѕРЅРёС‚РѕСЂРёРЅРіР°
     fillTaskParams();
 
-    // получение сервиса заданий монитринга
+    // РїРѕР»СѓС‡РµРЅРёРµ СЃРµСЂРІРёСЃР° Р·Р°РґР°РЅРёР№ РјРѕРЅРёС‚СЂРёРЅРіР°
     IMonitoringTasksService* pMonitoringService = GetInterface<IMonitoringTasksService>();
 
-    // запцускаем задание мониторинга
+    // Р·Р°РїС†СѓСЃРєР°РµРј Р·Р°РґР°РЅРёРµ РјРѕРЅРёС‚РѕСЂРёРЅРіР°
     std::unique_lock<std::mutex> lock(m_resultMutex);
     m_currentTask = pMonitoringService->AddTaskList(m_taskParams, IMonitoringTasksService::eHigh);
 
-    // ждём пока придёт результат
-    ASSERT_TRUE(waitForTaskResult(lock, true)) << "Не удалось получить данные мониторинга за 1 минуту";
+    // Р¶РґС‘Рј РїРѕРєР° РїСЂРёРґС‘С‚ СЂРµР·СѓР»СЊС‚Р°С‚
+    ASSERT_TRUE(waitForTaskResult(lock, true)) << "РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕР»СѓС‡РёС‚СЊ РґР°РЅРЅС‹Рµ РјРѕРЅРёС‚РѕСЂРёРЅРіР° Р·Р° 1 РјРёРЅСѓС‚Сѓ";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,19 +86,19 @@ TEST_F(MonitoringTasksTestClass, RemoveTask)
 {
     m_testType = TestType::eTestRemoveTask;
 
-    // заполняем списки данных для мониторинга
+    // Р·Р°РїРѕР»РЅСЏРµРј СЃРїРёСЃРєРё РґР°РЅРЅС‹С… РґР»СЏ РјРѕРЅРёС‚РѕСЂРёРЅРіР°
     fillTaskParams();
 
-    // получение сервиса заданий монитринга
+    // РїРѕР»СѓС‡РµРЅРёРµ СЃРµСЂРІРёСЃР° Р·Р°РґР°РЅРёР№ РјРѕРЅРёС‚СЂРёРЅРіР°
     IMonitoringTasksService* pMonitoringService = GetInterface<IMonitoringTasksService>();
 
-    // запцускаем задание мониторинга
+    // Р·Р°РїС†СѓСЃРєР°РµРј Р·Р°РґР°РЅРёРµ РјРѕРЅРёС‚РѕСЂРёРЅРіР°
     std::unique_lock<std::mutex> lock(m_resultMutex);
     m_currentTask = pMonitoringService->AddTaskList(m_taskParams, IMonitoringTasksService::eHigh);
     pMonitoringService->RemoveTask(m_currentTask);
 
-    // ждём пока придёт результат
-    ASSERT_FALSE(waitForTaskResult(lock, false)) << "Не удалось получить данные мониторинга за 1 минуту";
+    // Р¶РґС‘Рј РїРѕРєР° РїСЂРёРґС‘С‚ СЂРµР·СѓР»СЊС‚Р°С‚
+    ASSERT_FALSE(waitForTaskResult(lock, false)) << "РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕР»СѓС‡РёС‚СЊ РґР°РЅРЅС‹Рµ РјРѕРЅРёС‚РѕСЂРёРЅРіР° Р·Р° 1 РјРёРЅСѓС‚Сѓ";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,10 +117,10 @@ void MonitoringTasksTestClass::OnCompleteTask(const TaskId& taskId, IMonitoringT
         m_resultTaskCV.notify_one();
     });
 
-    ASSERT_TRUE(m_testType != TestType::eTestRemoveTask) << "Пришёл результат теста с удалением заданий мониторинга";
+    ASSERT_TRUE(m_testType != TestType::eTestRemoveTask) << "РџСЂРёС€С‘Р» СЂРµР·СѓР»СЊС‚Р°С‚ С‚РµСЃС‚Р° СЃ СѓРґР°Р»РµРЅРёРµРј Р·Р°РґР°РЅРёР№ РјРѕРЅРёС‚РѕСЂРёРЅРіР°";
 
-    // проверяем что у заданий совпадают параметры с ожидаемыми
-    ASSERT_EQ(m_taskParams.size(), monitoringResult.size()) << "Количество результатов не соответсвтует количеству параметров при запуске задания";
+    // РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ Сѓ Р·Р°РґР°РЅРёР№ СЃРѕРІРїР°РґР°СЋС‚ РїР°СЂР°РјРµС‚СЂС‹ СЃ РѕР¶РёРґР°РµРјС‹РјРё
+    ASSERT_EQ(m_taskParams.size(), monitoringResult.size()) << "РљРѕР»РёС‡РµСЃС‚РІРѕ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РЅРµ СЃРѕРѕС‚РІРµС‚СЃРІС‚СѓРµС‚ РєРѕР»РёС‡РµСЃС‚РІСѓ РїР°СЂР°РјРµС‚СЂРѕРІ РїСЂРё Р·Р°РїСѓСЃРєРµ Р·Р°РґР°РЅРёСЏ";
     auto taskParamit = m_taskParams.begin(), taskParamitEnd = m_taskParams.end();
     auto taskResultit = monitoringResult.begin(), taskResultEnd = monitoringResult.end();
     for (; taskParamit != taskParamitEnd && taskResultit != taskResultEnd; ++taskParamit, ++taskResultit)
@@ -130,31 +130,31 @@ void MonitoringTasksTestClass::OnCompleteTask(const TaskId& taskId, IMonitoringT
         EXPECT_EQ((*taskParamit)->endTime, (*taskResultit)->taskParameters->endTime);
     }
 
-    // проверяем результаты мониторинга
+    // РїСЂРѕРІРµСЂСЏРµРј СЂРµР·СѓР»СЊС‚Р°С‚С‹ РјРѕРЅРёС‚РѕСЂРёРЅРіР°
     for (auto& channelResult : monitoringResult)
     {
         if (channelResult->taskParameters->channelName == kRandomChannelName)
         {
-            EXPECT_EQ(channelResult->resultType, IMonitoringTaskEvent::Result::eErrorText) << "Получены результаты для не существующего канала";
+            EXPECT_EQ(channelResult->resultType, IMonitoringTaskEvent::Result::eErrorText) << "РџРѕР»СѓС‡РµРЅС‹ СЂРµР·СѓР»СЊС‚Р°С‚С‹ РґР»СЏ РЅРµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРіРѕ РєР°РЅР°Р»Р°";
             continue;
         }
 
-        EXPECT_EQ(channelResult->resultType, IMonitoringTaskEvent::Result::eSucceeded) << "Возникла ошибка при получении данных";
+        EXPECT_EQ(channelResult->resultType, IMonitoringTaskEvent::Result::eSucceeded) << "Р’РѕР·РЅРёРєР»Р° РѕС€РёР±РєР° РїСЂРё РїРѕР»СѓС‡РµРЅРёРё РґР°РЅРЅС‹С…";
 
-        // текущее имя проверяемого канала для вывода
+        // С‚РµРєСѓС‰РµРµ РёРјСЏ РїСЂРѕРІРµСЂСЏРµРјРѕРіРѕ РєР°РЅР°Р»Р° РґР»СЏ РІС‹РІРѕРґР°
         CStringA curChannelName = channelResult->taskParameters->channelName;
 
-        // из-за того что в данных может быть рандом надо учесть сколько времени было в рандоме
+        // РёР·-Р·Р° С‚РѕРіРѕ С‡С‚Рѕ РІ РґР°РЅРЅС‹С… РјРѕР¶РµС‚ Р±С‹С‚СЊ СЂР°РЅРґРѕРј РЅР°РґРѕ СѓС‡РµСЃС‚СЊ СЃРєРѕР»СЊРєРѕ РІСЂРµРјРµРЅРё Р±С‹Р»Рѕ РІ СЂР°РЅРґРѕРјРµ
         CTimeSpan idialEmptyDataTime(0, 23, 56, 44);
         idialEmptyDataTime += channelResult->taskParameters->endTime - channelResult->taskParameters->startTime -
             (kExistDataStopTime - kExistDataStartTime);
 
-        // у всех одинаковое время записи
+        // Сѓ РІСЃРµС… РѕРґРёРЅР°РєРѕРІРѕРµ РІСЂРµРјСЏ Р·Р°РїРёСЃРё
         EXPECT_EQ(channelResult->emptyDataTime.GetHours(),   idialEmptyDataTime.GetHours()) << curChannelName;
         EXPECT_EQ(channelResult->emptyDataTime.GetMinutes(), idialEmptyDataTime.GetMinutes()) << curChannelName;
         EXPECT_EQ(channelResult->emptyDataTime.GetSeconds(), idialEmptyDataTime.GetSeconds()) << curChannelName;
 
-        if (channelResult->taskParameters->channelName == L"Прогибометр №1")
+        if (channelResult->taskParameters->channelName == L"РџСЂРѕРіРёР±РѕРјРµС‚СЂ в„–1")
         {
             EXPECT_NEAR(channelResult->startValue, -79.19, 0.01) << curChannelName;
             EXPECT_NEAR(channelResult->currentValue, -130.95, 0.01) << curChannelName;
@@ -163,7 +163,7 @@ void MonitoringTasksTestClass::OnCompleteTask(const TaskId& taskId, IMonitoringT
 
             EXPECT_EQ(channelResult->lastDataExistTime = std::string_swprintf(L"%d.%m.%Y %H:%M:%S"), L"07.08.2020 15:56:35") << curChannelName;
         }
-        else if (channelResult->taskParameters->channelName == L"Прогибометр №2")
+        else if (channelResult->taskParameters->channelName == L"РџСЂРѕРіРёР±РѕРјРµС‚СЂ в„–2")
         {
             EXPECT_NEAR(channelResult->startValue, 10.76, 0.01) << curChannelName;
             EXPECT_NEAR(channelResult->currentValue, -8.63, 0.01) << curChannelName;
@@ -174,8 +174,8 @@ void MonitoringTasksTestClass::OnCompleteTask(const TaskId& taskId, IMonitoringT
         }
         else
         {
-            EXPECT_EQ(channelResult->taskParameters->channelName, L"Прогибометр №3") <<
-                "Неожиданное имя канала";
+            EXPECT_EQ(channelResult->taskParameters->channelName, L"РџСЂРѕРіРёР±РѕРјРµС‚СЂ в„–3") <<
+                "РќРµРѕР¶РёРґР°РЅРЅРѕРµ РёРјСЏ РєР°РЅР°Р»Р°";
 
             EXPECT_NEAR(channelResult->startValue, -0.97, 0.01) << curChannelName;
             EXPECT_NEAR(channelResult->currentValue, -0.7, 0.01) << curChannelName;
@@ -190,7 +190,7 @@ void MonitoringTasksTestClass::OnCompleteTask(const TaskId& taskId, IMonitoringT
 //----------------------------------------------------------------------------//
 void MonitoringTasksTestClass::fillTaskParams()
 {
-    ASSERT_TRUE(m_taskParams.empty()) << "Список параметров не пуст";
+    ASSERT_TRUE(m_taskParams.empty()) << "РЎРїРёСЃРѕРє РїР°СЂР°РјРµС‚СЂРѕРІ РЅРµ РїСѓСЃС‚";
 
     for (const auto& channel : GetInterface<ITrendMonitoring>()->GetNamesOfAllChannels())
     {
@@ -208,9 +208,9 @@ void MonitoringTasksTestClass::fillTaskParams()
 bool MonitoringTasksTestClass::waitForTaskResult(std::unique_lock<std::mutex>& lock,
                                                  bool bNoTimeOut)
 {
-    GTEST_COUT("Ожидание результата задания мониторинга (1 минута).");
+    GTEST_COUT("РћР¶РёРґР°РЅРёРµ СЂРµР·СѓР»СЊС‚Р°С‚Р° Р·Р°РґР°РЅРёСЏ РјРѕРЅРёС‚РѕСЂРёРЅРіР° (1 РјРёРЅСѓС‚Р°).");
 
-    // ждём пока придёт результат, не делаем через std::cv_status т.к. боремся с ложными unblocked spuriously
+    // Р¶РґС‘Рј РїРѕРєР° РїСЂРёРґС‘С‚ СЂРµР·СѓР»СЊС‚Р°С‚, РЅРµ РґРµР»Р°РµРј С‡РµСЂРµР· std::cv_status С‚.Рє. Р±РѕСЂРµРјСЃСЏ СЃ Р»РѕР¶РЅС‹РјРё unblocked spuriously
     return m_resultTaskCV.wait_for(lock, std::chrono::minutes(1),
                                    [bNoTimeOut]{ return bNoTimeOut; });
 }

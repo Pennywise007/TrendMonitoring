@@ -4,15 +4,15 @@
 
 #include <include/ITrendMonitoring.h>
 
-class СTabTrendLog
+class CTabTrendLog
     : public CDialogEx
     , ext::events::ScopeSubscription<ILogEvents>
 {
-    DECLARE_DYNAMIC(СTabTrendLog)
+    DECLARE_DYNAMIC(CTabTrendLog)
 
 public:
-    СTabTrendLog(CWnd* pParent = nullptr);   // standard constructor
-    virtual ~СTabTrendLog() = default;
+    CTabTrendLog(CWnd* pParent = nullptr);   // standard constructor
+    virtual ~CTabTrendLog() = default;
 
 // ILogEvents
 private:

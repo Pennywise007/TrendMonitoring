@@ -1,4 +1,4 @@
-#include "pch.h"
+п»ї#include "pch.h"
 
 #include <DirsService.h>
 #include <include/ITrendMonitoring.h>
@@ -12,10 +12,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 void TestHelper::resetMonitoringService()
 {
-    // сервис мониторинга
+    // СЃРµСЂРІРёСЃ РјРѕРЅРёС‚РѕСЂРёРЅРіР°
     ITrendMonitoring* monitoringService = GetInterface<ITrendMonitoring>();
 
-    // сбрасываем все каналы
+    // СЃР±СЂР°СЃС‹РІР°РµРј РІСЃРµ РєР°РЅР°Р»С‹
     for (size_t i = monitoringService->GetNumberOfMonitoringChannels(); i > 0; --i)
     {
         monitoringService->RemoveMonitoringChannelByIndex(i - 1);
@@ -28,7 +28,7 @@ void TestHelper::resetMonitoringService()
 
     monitoringService->SetBotSettings(telegram::bot::TelegramBotSettings());
 
-    // удаляем конфигурационный файл
+    // СѓРґР°Р»СЏРµРј РєРѕРЅС„РёРіСѓСЂР°С†РёРѕРЅРЅС‹Р№ С„Р°Р№Р»
     const std::filesystem::path currentConfigPath(getConfigFilePath());
     if (std::filesystem::is_regular_file(currentConfigPath))
         EXPECT_TRUE(std::filesystem::remove(currentConfigPath));
