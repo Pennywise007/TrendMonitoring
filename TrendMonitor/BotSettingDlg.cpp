@@ -7,20 +7,16 @@
 
 #include "BotSettingDlg.h"
 
-#include "include/ITrendMonitoring.h"
+#include <include/ITelegramBot.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // CBotSettingDlg dialog
 IMPLEMENT_DYNAMIC(CBotSettingDlg, CDialogEx)
 
 //----------------------------------------------------------------------------//
-CBotSettingDlg::CBotSettingDlg(CWnd* pParent /*=nullptr*/)
-    : CDialogEx(IDD_BOT_SETTINGS_DLG, pParent)
-{
-}
-
-//----------------------------------------------------------------------------//
-CBotSettingDlg::~CBotSettingDlg()
+CBotSettingDlg::CBotSettingDlg(ext::ServiceProvider::Ptr&& provider, CWnd* pParent /*=nullptr*/)
+    : ServiceProviderHolder(std::move(provider))
+    , CDialogEx(IDD_BOT_SETTINGS_DLG, pParent)
 {
 }
 
@@ -39,11 +35,13 @@ BOOL CBotSettingDlg::OnInitDialog()
 {
     CDialogEx::OnInitDialog();
 
-    m_botSettings = get_monitoring_service()->getBotSettings();
+    bool enable;
+    std::wstring token;
+    ServiceProviderHolder::ServiceProviderHolder::GetInterface<telegram::bot::ITelegramBotSettings>()->GetSettings(enable, token);
 
-    ((CWnd*)GetDlgItem(IDC_EDIT_TOKEN))->SetWindowText(m_botSettings.sToken);
+    ((CWnd*)GetDlgItem(IDC_EDIT_TOKEN))->SetWindowText(token.c_str());
 
-    int enebleButtonId = m_botSettings.bEnable ? IDC_RADIO_ENABLE_ON : IDC_RADIO_ENABLE_OFF;
+    int enebleButtonId = enable ? IDC_RADIO_ENABLE_ON : IDC_RADIO_ENABLE_OFF;
     ((CButton*)GetDlgItem(enebleButtonId))->SetCheck(BST_CHECKED);
 
     return TRUE;
@@ -52,38 +50,37 @@ BOOL CBotSettingDlg::OnInitDialog()
 //----------------------------------------------------------------------------//
 void CBotSettingDlg::OnOK()
 {
-    CString token;
-    GetDlgItem(IDC_EDIT_TOKEN)->GetWindowText(token);
+    CString newToken;
+    GetDlgItem(IDC_EDIT_TOKEN)->GetWindowText(newToken);
 
-    bool bEnableState = GetCheckedRadioButton(IDC_RADIO_ENABLE_ON, IDC_RADIO_ENABLE_OFF) == IDC_RADIO_ENABLE_ON;
+    bool newEnableState = GetCheckedRadioButton(IDC_RADIO_ENABLE_ON, IDC_RADIO_ENABLE_OFF) == IDC_RADIO_ENABLE_ON;
 
-    const bool bTokenChanged = m_botSettings.sToken != token;
-    bool bEnableChanged = m_botSettings.bEnable != bEnableState;
+    bool enable;
+    std::wstring token;
+    ServiceProviderHolder::ServiceProviderHolder::GetInterface<telegram::bot::ITelegramBotSettings>()->GetSettings(enable, token);
 
-    if (!m_botSettings.sToken.IsEmpty() && bTokenChanged)
+    const bool bTokenChanged = newToken != token.c_str();
+    bool bEnableChanged = newEnableState != enable;
+
+    if (!token.empty() && bTokenChanged)
     {
         if (MessageBox(L"Вы действительно хотите поменять токен бота?", L"Внимание", MB_OKCANCEL | MB_ICONWARNING) != IDOK)
             return;
     }
 
     // если указали токен, но не включили бота спрашиваем мб включить
-    if (bTokenChanged && m_botSettings.sToken.IsEmpty() && (!bEnableChanged && !bEnableState))
+    if (bTokenChanged && token.empty() && (!bEnableChanged && !newEnableState))
     {
         if (MessageBox(L"Вы задали токен, но не включили бота. Включить?", L"Внимание", MB_OKCANCEL | MB_ICONQUESTION) == IDOK)
         {
-            bEnableState = true;
+            newEnableState = true;
             bEnableChanged = true;
         }
     }
 
-    if (bTokenChanged)
-        m_botSettings.sToken = std::move(token);
-    if (bEnableChanged)
-        m_botSettings.bEnable = bEnableState;
-
     // оповещаем только об изменениях
     if (bTokenChanged || bEnableChanged)
-        get_monitoring_service()->setBotSettings(m_botSettings);
+        ServiceProviderHolder::ServiceProviderHolder::GetInterface<telegram::bot::ITelegramBotSettings>()->SetSettings(newEnableState, newToken.GetString());
 
     CDialogEx::OnOK();
 }

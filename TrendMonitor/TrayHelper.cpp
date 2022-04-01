@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-#include <assert.h>
+#include <ext/core/check.h>
 #include <strsafe.h>
 #include <typeinfo>
 
@@ -46,7 +46,7 @@ CTrayHelper::CTrayHelper()
                             0,
                             0, 0, 0, 0,
                             NULL, nullptr, nullptr) == FALSE)
-        assert(!"Ќе удалось создать окно управлени€ таск баром!");
+        EXT_ASSERT(!"Ќе удалось создать окно управлени€ таск баром!");
 
     // инициализируем структуру с параметрами нотификации
     ::ZeroMemory(&m_niData, sizeof(NOTIFYICONDATA));

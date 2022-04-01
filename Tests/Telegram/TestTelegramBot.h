@@ -37,34 +37,34 @@ public:
 // ITelegramUsersList
 public:
     // убедиться что пользователь существует
-    void ensureExist(const TgBot::User::Ptr& /*pUser*/, const int64_t /*chatId*/) override
+    void EnsureExist(const TgBot::User::Ptr& /*pUser*/, const int64_t /*chatId*/) override
     {
     }
 
     // получение статуса пользователя
-    UserStatus getUserStatus(const TgBot::User::Ptr& pUser) override
+    UserStatus GetUserStatus(const TgBot::User::Ptr& pUser) override
     {
         return m_curStatus;
     }
     // установка статуса пользователя
-    void setUserStatus(const TgBot::User::Ptr& pUser, const UserStatus newStatus) override
+    void SetUserStatus(const TgBot::User::Ptr& pUser, const UserStatus newStatus) override
     {
         m_curStatus = newStatus;
     }
 
     // установка последней заданной пользователем команды боту
-    void setUserLastCommand(const TgBot::User::Ptr& pUser, const std::string& lastCommand) override
+    void SetUserLastCommand(const TgBot::User::Ptr& pUser, const std::string& lastCommand) override
     {
         m_lastCommand = lastCommand;
     }
     // получение последней заданной пользователем команды боту
-    std::string getUserLastCommand(const TgBot::User::Ptr& pUser) override
+    std::string GetUserLastCommand(const TgBot::User::Ptr& pUser) override
     {
         return m_lastCommand;
     }
 
     // получить все идентификаторы чатов пользователей с определенным статусом
-    std::list<int64_t> getAllChatIdsByStatus(const UserStatus userStatus) override
+    std::list<int64_t> GetAllChatIdsByStatus(const UserStatus userStatus) override
     {
         return m_chatIdsToUserStatusMap[userStatus];
     }
@@ -163,25 +163,25 @@ public:
 // ITelegramThread
 public:
     // запуск потока
-    void startTelegramThread(const std::unordered_map<std::string, CommandFunction>& commandsList,
+    void StartTelegramThread(const std::unordered_map<std::string, CommandFunction>& commandsList,
                              const CommandFunction& onUnknownCommand = nullptr,
-                             const CommandFunction& onNonCommandMessage = nullptr) override
+                             const CommandFunction& OnNonCommandMessage = nullptr) override
     {
-        TgBot::EventBroadcaster& eventBroadCaster = getBotEvents();
+        TgBot::EventBroadcaster& eventBroadCaster = GetBotEvents();
         for (auto&&[command, function] : commandsList)
         {
             eventBroadCaster.onCommand(command, function);
         }
         eventBroadCaster.onUnknownCommand(onUnknownCommand);
-        eventBroadCaster.onNonCommandMessage(onNonCommandMessage);
+        eventBroadCaster.OnNonCommandMessage(OnNonCommandMessage);
     }
 
     // остановка потока
-    void stopTelegramThread() override
+    void StopTelegramThread() override
     {}
 
     // функция отправки сообщений в чаты
-    void sendMessage(const std::list<int64_t>& chatIds, const std::wstring& msg,
+    void SendMessage(const std::list<int64_t>& chatIds, const std::wstring& msg,
                      bool disableWebPagePreview = false, int32_t replyToMessageId = 0,
                      TgBot::GenericReply::Ptr replyMarkup = std::make_shared<TgBot::GenericReply>(),
                      const std::string& parseMode = "", bool disableNotification = false) override
@@ -193,7 +193,7 @@ public:
     }
 
     // функция отправки сообщения в чат
-    void sendMessage(int64_t chatId, const std::wstring& msg, bool disableWebPagePreview = false,
+    void SendMessage(int64_t chatId, const std::wstring& msg, bool disableWebPagePreview = false,
                      int32_t replyToMessageId = 0,
                      TgBot::GenericReply::Ptr replyMarkup = std::make_shared<TgBot::GenericReply>(),
                      const std::string& parseMode = "", bool disableNotification = false) override
@@ -205,13 +205,13 @@ public:
     }
 
     // возвращает события бота чтобы самому все обрабатывать
-    TgBot::EventBroadcaster& getBotEvents() override
+    TgBot::EventBroadcaster& GetBotEvents() override
     {
         return m_botApi->getEvents();
     }
 
     // получение апи бота
-    const TgBot::Api& getBotApi() override
+    const TgBot::Api& GetBotApi() override
     {
         return m_botApi->getApi();
     }

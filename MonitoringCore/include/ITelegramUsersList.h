@@ -1,46 +1,50 @@
 #pragma once
 
-// Список всопомогательных объектов для работы с телеграмом
+#include <ext/core/dispatcher.h>
+#include <ext/serialization/iserializable.h>
 
-#include "COM.h"
-#include "Messages.h"
-
+#pragma warning( push )
+#pragma warning( disable: 4996 ) // boost deprecated objects usage
 #include <tgbot/tgbot.h>
+#pragma warning( pop )
 
 namespace telegram::users {
 
-// оповещение об изменение в списке пользователей телеграма
-// {491F3E83-3A8B-48BF-9235-33E5CE2E9FEC}
-constexpr EventId onUsersListChangedEvent =
-{ 0x491f3e83, 0x3a8b, 0x48bf, { 0x92, 0x35, 0x33, 0xe5, 0xce, 0x2e, 0x9f, 0xec } };
-
-////////////////////////////////////////////////////////////////////////////////
-// интерфейс для управления списком пользователей телеграма
-DECLARE_COM_INTERFACE(ITelegramUsersList, "EFB00D0B-3B37-4AEC-B63A-9ECEA34C0802")
+// Notification about telegram user list changes
+struct ITelegramUserChangedEvent : ext::events::IBaseEvent
 {
-    // статус пользователя
+    virtual void OnChanged() = 0;
+};
+
+// interface for managing telegram user list
+struct ITelegramUsersList : ext::serializable::ISerializableCollection
+{
+    virtual ~ITelegramUsersList() = default;
+
     enum UserStatus
     {
-        eNotAuthorized,     // Не авторизованный
-        eOrdinaryUser,      // Обычный пользователь системы
-        eAdmin,             // Администратор системы
-        // Последний статус
+        eNotAuthorized,
+        eOrdinaryUser,
+        eAdmin,
+        // Add status before this line
         eLastStatus
     };
 
-    // убедиться что пользователь существует
-    virtual void ensureExist(const TgBot::User::Ptr& pUser, const int64_t chatId) = 0;
+    // ensure that user exists
+    virtual void EnsureExist(const TgBot::User::Ptr& pUser, const int64_t chatId) = 0;
 
-    // установка/получение статуса пользователя
-    virtual void setUserStatus(const TgBot::User::Ptr& pUser, const UserStatus newStatus) = 0;
-    virtual UserStatus getUserStatus(const TgBot::User::Ptr& pUser) = 0;
+    // set/get user status
+    virtual void SetUserStatus(const TgBot::User::Ptr& pUser, const UserStatus newStatus) = 0;
+    virtual UserStatus GetUserStatus(const TgBot::User::Ptr& pUser) = 0;
 
-    // установка/получение последней заданной пользователем команды боту
-    virtual void setUserLastCommand(const TgBot::User::Ptr& pUser, const std::string& command) = 0;
-    virtual std::string getUserLastCommand(const TgBot::User::Ptr& pUser) = 0;
+    // set/get user status last user command
+    virtual void SetUserLastCommand(const TgBot::User::Ptr& pUser, const std::string& command) = 0;
+    virtual std::string GetUserLastCommand(const TgBot::User::Ptr& pUser) = 0;
 
-    // получить все идентификаторы чатов пользователей с определенным статусом
-    virtual std::list<int64_t> getAllChatIdsByStatus(const UserStatus usertatus) = 0;
+    // gel all user chats identifiers for all users with given status
+    virtual std::list<int64_t> GetAllChatIdsByStatus(const UserStatus userStatus) = 0;
 };
+
+typedef std::shared_ptr<ITelegramUsersList> ITelegramUsersListPtr;
 
 } // namespace telegram::users

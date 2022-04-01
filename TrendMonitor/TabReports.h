@@ -2,13 +2,13 @@
 
 #include "Controls/ListBox/CListBoxEx/CListBoxEx.h"
 
-#include "Messages.h"
+#include <include/ITrendMonitoring.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Вкладка с отчётами
 class CTabReports
     : public CDialogEx
-    , public EventRecipientImpl
+    , ext::events::ScopeSubscription<IReportEvents>
 {
     DECLARE_DYNAMIC(CTabReports)
 
@@ -16,10 +16,10 @@ public:
     CTabReports(CWnd* pParent = nullptr);   // standard constructor
     virtual ~CTabReports() = default;
 
-// IEventRecipient
-public:
-    void onEvent(const EventId& code, float eventValue,
-                 const std::shared_ptr<IEventData>& eventData) override;
+// IReportEvents
+private:
+    // notification when generating a report, see Message Text Data
+    void OnReportDone(std::wstring messageText) override;
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME

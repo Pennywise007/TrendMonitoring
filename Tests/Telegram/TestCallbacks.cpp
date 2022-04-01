@@ -44,12 +44,12 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
     // задаем перечень каналов мониторинга чтобы с ними работать
-    ITrendMonitoring* trendMonitoring = get_monitoring_service();
-    const auto allChannels = trendMonitoring->getNamesOfAllChannels();
+    ITrendMonitoring* trendMonitoring = GetInterface<ITrendMonitoring>();
+    const auto allChannels = trendMonitoring->GetNamesOfAllChannels();
     for (const auto& chan : allChannels)
     {
-        const size_t chanInd = trendMonitoring->addMonitoringChannel();
-        trendMonitoring->changeMonitoringChannelName(chanInd, chan);
+        const size_t chanInd = trendMonitoring->AddMonitoringChannel();
+        trendMonitoring->ChangeMonitoringChannelNotify(chanInd, chan);
     }
 
     using namespace report;
@@ -73,7 +73,7 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
         {
             CString callBackText;
             // /report type={\\\'0\\\'} interval={\\\'i\\\'}
-            callBackText.Format(L"%hs %hs={\\\'0\\\'} %hs={\\\'%d\\\'}", kKeyWord.c_str(), kParamType.c_str(), kParamInterval.c_str(), i);
+            callBackText = std::string_swprintf(L"%hs %hs={\\\'0\\\'} %hs={\\\'%d\\\'}", kKeyWord.c_str(), kParamType.c_str(), kParamInterval.c_str(), i);
 
             expectedKeyboard->inlineKeyboard[i] = { generateKeyBoardButton(monitoring_interval_to_string(MonitoringInterval(i)).GetString(), callBackText.GetString()) };
         }
@@ -90,7 +90,7 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
         {
             CString text;
             // /report type={'0'} interval={'i'}
-            text.Format(L"%hs %hs={'0'} %hs={'%d'}", kKeyWord.c_str(), kParamType.c_str(), kParamInterval.c_str(), i);
+            text = std::string_swprintf(L"%hs %hs={'0'} %hs={'%d'}", kKeyWord.c_str(), kParamType.c_str(), kParamInterval.c_str(), i);
 
             // kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(ОПЦИОНАЛЬНО) kParamInterval={'1000000'}
             emulateBroadcastCallbackQuery(text.GetString());
@@ -106,7 +106,7 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
         {
             CString callBackText;
             // /report type={\\\'1\\\'} chan={\\\'chan\\\'}
-            callBackText.Format(L"%hs %hs={\\\'1\\\'} %hs={\\\'%s\\\'}", kKeyWord.c_str(), kParamType.c_str(), kParamChan.c_str(), chan.GetString());
+            callBackText = std::string_swprintf(L"%hs %hs={\\\'1\\\'} %hs={\\\'%s\\\'}", kKeyWord.c_str(), kParamType.c_str(), kParamChan.c_str(), chan.GetString());
 
             expectedKeyboard->inlineKeyboard.push_back({ generateKeyBoardButton(chan.GetString(), callBackText.GetString()) });
         }
@@ -126,7 +126,7 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
             {
                 CString callBackText;
                 // /report type={\\\'1\\\'} chan={\\\'chan\\\'} interval={\\\'i\\\'}
-                callBackText.Format(L"%hs %hs={\\\'1\\\'} %hs={\\\'%s\\\'} %hs={\\\'%d\\\'}",
+                callBackText = std::string_swprintf(L"%hs %hs={\\\'1\\\'} %hs={\\\'%s\\\'} %hs={\\\'%d\\\'}",
                                     kKeyWord.c_str(), kParamType.c_str(),
                                     kParamChan.c_str(), chan.GetString(),
                                     kParamInterval.c_str(), i);
@@ -136,7 +136,7 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
 
             CString text;
             // /report type={'1'} chan={'chan'}
-            text.Format(L"%hs %hs={'1'} %hs={'%s'}", kKeyWord.c_str(), kParamType.c_str(), kParamChan.c_str(), chan.GetString());
+            text = std::string_swprintf(L"%hs %hs={'1'} %hs={'%s'}", kKeyWord.c_str(), kParamType.c_str(), kParamChan.c_str(), chan.GetString());
             // запрашиваем отчёт по каналу chan, ожидаем что предложит все варианты интервалов
             emulateBroadcastCallbackQuery(text.GetString());
 
@@ -145,7 +145,7 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
             {
                 CString callBackText;
                 // /report chan={\\\'chan\\\'} interval={\\\'i\\\'}
-                callBackText.Format(L"%hs %hs={\\\'%s\\\'} %hs={\\\'%d\\\'}",
+                callBackText = std::string_swprintf(L"%hs %hs={\\\'%s\\\'} %hs={\\\'%d\\\'}",
                                     kKeyWord.c_str(), kParamChan.c_str(), chan.GetString(),
                                     kParamInterval.c_str(), i);
 
@@ -159,7 +159,7 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
             for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
             {
                 // /report type={'1'} chan={'chan'} interval={'i'}
-                text.Format(L"%hs %hs={'1'} %hs={'%s'} %hs={'%d'}",
+                text = std::string_swprintf(L"%hs %hs={'1'} %hs={'%s'} %hs={'%d'}",
                             kKeyWord.c_str(), kParamType.c_str(),
                             kParamChan.c_str(), chan.GetString(),
                             kParamInterval.c_str(), i);
@@ -170,7 +170,7 @@ TEST_F(TestTelegramBot, CheckReportCommandCallbacks)
             for (int i = (int)MonitoringInterval::eLast - 1; i >= 0; --i)
             {
                 // /report chan={'chan'} interval={'i'}
-                text.Format(L"%hs  %hs={'%s'} %hs={'%d'}",
+                text = std::string_swprintf(L"%hs  %hs={'%s'} %hs={'%d'}",
                             kKeyWord.c_str(), kParamChan.c_str(), chan.GetString(),
                             kParamInterval.c_str(), i);
                 emulateBroadcastCallbackQuery(text.GetString());
@@ -218,12 +218,12 @@ TEST_F(TestTelegramBot, CheckAlertCommandCallbacks)
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
     // задаем перечень каналов мониторинга чтобы им отключать оповещения
-    ITrendMonitoring* trendMonitoring = get_monitoring_service();
-    const auto allChannels = trendMonitoring->getNamesOfAllChannels();
+    ITrendMonitoring* trendMonitoring = GetInterface<ITrendMonitoring>();
+    const auto allChannels = trendMonitoring->GetNamesOfAllChannels();
     for (const auto& chan : allChannels)
     {
-        const size_t chanInd = trendMonitoring->addMonitoringChannel();
-        trendMonitoring->changeMonitoringChannelName(chanInd, chan);
+        const size_t chanInd = trendMonitoring->AddMonitoringChannel();
+        trendMonitoring->ChangeMonitoringChannelNotify(chanInd, chan);
     }
 
     TgBot::InlineKeyboardMarkup::Ptr expectedKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
@@ -236,18 +236,18 @@ TEST_F(TestTelegramBot, CheckAlertCommandCallbacks)
 
         // тестируем включение/выключение оповещения
         // kKeyWord kParamEnable={'true'} kParamChan={'chan1'}
-        expectedMessage.Format(L"Выберите канал для %s оповещений.", alertOn ? L"включения" : L"выключения");
+        expectedMessage = std::string_swprintf(L"Выберите канал для %s оповещений.", alertOn ? L"включения" : L"выключения");
 
         CString defCallBackText;
         // /alert enable={\\\'true\\\'}
-        defCallBackText.Format(L"%hs %hs={\\\'%s\\\'}", kKeyWord.c_str(), kParamEnable.c_str(), alertOn ? L"true" : L"false");
+        defCallBackText = std::string_swprintf(L"%hs %hs={\\\'%s\\\'}", kKeyWord.c_str(), kParamEnable.c_str(), alertOn ? L"true" : L"false");
 
         // добавляем все кнопки
         expectedKeyboard->inlineKeyboard.clear();
         for (const auto& chan : allChannels)
         {
             CString callBack;
-            callBack.Format(L"%s %hs={\\\'%s\\\'}", defCallBackText.GetString(), kParamChan.c_str(), chan.GetString());
+            callBack = std::string_swprintf(L"%s %hs={\\\'%s\\\'}", defCallBackText.GetString(), kParamChan.c_str(), chan.GetString());
             expectedKeyboard->inlineKeyboard.push_back({ generateKeyBoardButton(chan.GetString(), callBack.GetString()) });
         }
         // Добавляем кнопку всех каналов
@@ -270,32 +270,32 @@ TEST_F(TestTelegramBot, CheckAlertCommandCallbacks)
                 // делаем обратное состояние у оповещений
                 for (size_t i = 0, channelsCount = allChannels.size(); i < channelsCount; ++i)
                 {
-                    trendMonitoring->changeMonitoringChannelNotify(i, !alertOn);
+                    trendMonitoring->ChangeMonitoringChannelNotify(i, !alertOn);
                 }
 
-                expectedMessage.Format(L"Оповещения для всех каналов %s",
+                expectedMessage = std::string_swprintf(L"Оповещения для всех каналов %s",
                                        alertOn ? L"включены" : L"выключены");
                 emulateBroadcastCallbackQuery(getUNICODEString(callBackStr).c_str());
 
                 // проверяем что состояние оповещения поменялось
                 for (size_t i = 0, channelsCount = allChannels.size(); i < channelsCount; ++i)
                 {
-                    EXPECT_EQ(trendMonitoring->getMonitoringChannelData(i).bNotify, alertOn)
+                    EXPECT_EQ(trendMonitoring->GetMonitoringChannelData(i).bNotify, alertOn)
                         << "После выполнения управления мониторингов состояние оповещения отличаются!";
                 }
             }
             else
             {
                 // делаем обратное устанавливаемому состояние оповещений у канала
-                trendMonitoring->changeMonitoringChannelNotify(ind, !alertOn);
+                trendMonitoring->ChangeMonitoringChannelNotify(ind, !alertOn);
 
-                expectedMessage.Format(L"Оповещения для канала %s %s",
+                expectedMessage = std::string_swprintf(L"Оповещения для канала %s %s",
                                        std::next(allChannels.begin(), ind)->GetString(),
                                        alertOn ? L"включены" : L"выключены");
                 emulateBroadcastCallbackQuery(getUNICODEString(callBackStr).c_str());
 
                 // проверяем что состояние оповещения поменялось
-                EXPECT_EQ(trendMonitoring->getMonitoringChannelData(ind).bNotify, alertOn)
+                EXPECT_EQ(trendMonitoring->GetMonitoringChannelData(ind).bNotify, alertOn)
                     << "После выполнения управления мониторингов состояние оповещения отличаются!";
             }
         }
@@ -325,11 +325,11 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
     // задаем перечень каналов мониторинга чтобы им отключать оповещения
-    ITrendMonitoring* trendMonitoring = get_monitoring_service();
-    auto allChannels = trendMonitoring->getNamesOfAllChannels();
+    ITrendMonitoring* trendMonitoring = GetInterface<ITrendMonitoring>();
+    auto allChannels = trendMonitoring->GetNamesOfAllChannels();
     for (const auto& chan : allChannels)
     {
-        trendMonitoring->changeMonitoringChannelName(trendMonitoring->addMonitoringChannel(), chan);
+        trendMonitoring->ChangeMonitoringChannelNotify(trendMonitoring->AddMonitoringChannel(), chan);
     }
 
     using namespace alarmingValue;
@@ -341,7 +341,7 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
     {
         CString callBack;
         // /alarmV chan={\\\'chan\\\'}
-        callBack.Format(L"%hs %hs={\\\'%s\\\'}", kKeyWord.c_str(), kParamChan.c_str(), chan.GetString());
+        callBack = std::string_swprintf(L"%hs %hs={\\\'%s\\\'}", kKeyWord.c_str(), kParamChan.c_str(), chan.GetString());
         expectedKeyboard->inlineKeyboard.push_back({ generateKeyBoardButton(chan.GetString(), callBack.GetString()) });
     }
     expectedReply = expectedKeyboard;
@@ -360,7 +360,7 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
             expectedReply = std::make_shared<TgBot::GenericReply>();
             callBackData = getUNICODEString(expectedKeyboard->inlineKeyboard[ind].front()->callbackData);
 
-            expectedMessage.Format(L"Для того чтобы изменить допустимый уровень значений у канала '%s' отправьте новый уровень ответным сообщением, отправьте NAN чтобы отключить оповещения совсем.",
+            expectedMessage = std::string_swprintf(L"Для того чтобы изменить допустимый уровень значений у канала '%s' отправьте новый уровень ответным сообщением, отправьте NAN чтобы отключить оповещения совсем.",
                                    channelName.GetString());
             emulateBroadcastCallbackQuery(callBackData.c_str());
         };
@@ -375,10 +375,10 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
 
             //  val={\\'3.09\\'}
             CString appendText;
-            appendText.Format(L" %hs={\\'%s\\'}", kParamValue.c_str(), newLevelText.str().c_str());
+            appendText = std::string_swprintf(L" %hs={\\'%s\\'}", kParamValue.c_str(), newLevelText.str().c_str());
 
             callBackData += appendText;
-            expectedMessage.Format(L"Установить значение оповещений для канала '%s' как %s?", channelName.GetString(), newLevelText.str().c_str());
+            expectedMessage = std::string_swprintf(L"Установить значение оповещений для канала '%s' как %s?", channelName.GetString(), newLevelText.str().c_str());
 
             TgBot::InlineKeyboardMarkup::Ptr acceptKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
             acceptKeyboard->inlineKeyboard = { { generateKeyBoardButton(L"Установить", callBackData.c_str()) } };
@@ -387,12 +387,12 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
             emulateBroadcastMessage(newLevelText.str());
 
             expectedReply = std::make_shared<TgBot::GenericReply>();
-            expectedMessage.Format(L"Значение %s установлено для канала '%s' успешно", newLevelText.str().c_str(), channelName.GetString());
+            expectedMessage = std::string_swprintf(L"Значение %s установлено для канала '%s' успешно", newLevelText.str().c_str(), channelName.GetString());
             // Надо заменить все \\' на просто \'
             emulateBroadcastCallbackQuery(callBackData.c_str());
 
             // проверяем что число поменялось
-            EXPECT_EQ(trendMonitoring->getMonitoringChannelData(ind).alarmingValue, newValue)
+            EXPECT_EQ(trendMonitoring->GetMonitoringChannelData(ind).alarmingValue, newValue)
                 << "После изменения уровня оповещений через бота уровень не соответствует заданному!";
         }
 
@@ -408,9 +408,9 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
 
             //  val={\\'NAN\\'}
             CString appendText;
-            appendText.Format(L" %hs={\\'%s\\'}", kParamValue.c_str(), newLevelText.c_str());
+            appendText = std::string_swprintf(L" %hs={\\'%s\\'}", kParamValue.c_str(), newLevelText.c_str());
 
-            expectedMessage.Format(L"Отключить оповещения для канала '%s'?", channelName.GetString());
+            expectedMessage = std::string_swprintf(L"Отключить оповещения для канала '%s'?", channelName.GetString());
             callBackData += appendText;
 
             TgBot::InlineKeyboardMarkup::Ptr acceptKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
@@ -420,18 +420,18 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
             emulateBroadcastMessage(newLevelText);
 
             expectedReply = std::make_shared<TgBot::GenericReply>();
-            expectedMessage.Format(L"Оповещения для канала '%s' выключены", channelName.GetString());
+            expectedMessage = std::string_swprintf(L"Оповещения для канала '%s' выключены", channelName.GetString());
             // Надо заменить все \\' на просто \'
             emulateBroadcastCallbackQuery(callBackData.c_str());
 
             // проверяем что число поменялось
-            EXPECT_EQ(trendMonitoring->getMonitoringChannelData(ind).bNotify, false)
+            EXPECT_EQ(trendMonitoring->GetMonitoringChannelData(ind).bNotify, false)
                 << "После отключения оповещений они не выключены!";
 
             // повторная установка NAN
             initCommand();
 
-            expectedMessage.Format(L"Оповещения у канала '%s' уже выключены.", channelName.GetString());
+            expectedMessage = std::string_swprintf(L"Оповещения у канала '%s' уже выключены.", channelName.GetString());
             expectedReply = std::make_shared<TgBot::GenericReply>();
             emulateBroadcastMessage(newLevelText);
         }
@@ -498,7 +498,7 @@ TEST_F(TestTelegramBot, TestProcessingMonitoringError)
     errorMessage->errorTextForAllChannels = errorMsg;
     // генерим идентификатор ошибки
     if (!SUCCEEDED(CoCreateGuid(&errorMessage->errorGUID)))
-        assert(!"Не удалось создать гуид!");
+        EXT_ASSERT(!"Не удалось создать гуид!");
 
     // Клавиатура доступная пользователю
     TgBot::InlineKeyboardMarkup::Ptr expectedKeyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
@@ -510,11 +510,11 @@ TEST_F(TestTelegramBot, TestProcessingMonitoringError)
     expectedRecipientsChats = &adminChats;
 
     // эмулируем возникновение ошибки
-    get_service<CMassages>().sendMessage(onMonitoringErrorEvent, 0,
+    get_service<CMassages>().SendMessage(onMonitoringErrorEvent, 0,
                                          std::static_pointer_cast<IEventData>(errorMessage));
 
     // делаем нас админом
-    m_pUserList->setUserStatus(nullptr, ITelegramUsersList::UserStatus::eAdmin);
+    m_pUserList->SetUserStatus(nullptr, ITelegramUsersList::UserStatus::eAdmin);
 
     // проверяем рестарт
 
@@ -544,7 +544,7 @@ TEST_F(TestTelegramBot, TestProcessingMonitoringError)
 
     // /resend errorId={'errorGUID'}
     CString resendString;
-    resendString.Format(L"%hs %hs={'%s'}", resend::kKeyWord.c_str(), resend::kParamId.c_str(), CString(CComBSTR(errorMessage->errorGUID)).GetString());
+    resendString = std::string_swprintf(L"%hs %hs={'%s'}", resend::kKeyWord.c_str(), resend::kParamId.c_str(), CString(CComBSTR(errorMessage->errorGUID)).GetString());
     emulateBroadcastCallbackQuery(resendString.GetString());
 
     // проверяем на двойную пересылку
@@ -567,20 +567,20 @@ TEST_F(TestTelegramBot, TestUsingCallbacksWithoutPermission)
 
     std::list<CString> allCallbacksVariants;
     // /restart
-    allCallbacksVariants.emplace_back().Format(L"%hs", restart::kKeyWord.c_str());
+    allCallbacksVariants.emplace_back() = std::string_swprintf(L"%hs", restart::kKeyWord.c_str());
     // /resend errorId={\\\'012312312312\\\'}
-    allCallbacksVariants.emplace_back().Format(L"%hs %hs={\\\'012312312312\\\'}", resend::kKeyWord.c_str(), resend::kParamId.c_str());
+    allCallbacksVariants.emplace_back() = std::string_swprintf(L"%hs %hs={\\\'012312312312\\\'}", resend::kKeyWord.c_str(), resend::kParamId.c_str());
     // /report type={\\\'0\\\'} chan={\\\'RandomChannel\\\'}
-    allCallbacksVariants.emplace_back().Format(L"%hs %hs={\\\'0\\\'} %hs={\\\'RandomChannel\\\'}", report::kKeyWord.c_str(), report::kParamType.c_str(), report::kParamChan.c_str());
+    allCallbacksVariants.emplace_back() = std::string_swprintf(L"%hs %hs={\\\'0\\\'} %hs={\\\'RandomChannel\\\'}", report::kKeyWord.c_str(), report::kParamType.c_str(), report::kParamChan.c_str());
     // /alert enable={\\\'true\\\'} chan={\\\'allChannels\\\'}
-    allCallbacksVariants.emplace_back().Format(L"%hs %hs={\\\'true\\\'} %hs={\\\'%hs\\\'}",
+    allCallbacksVariants.emplace_back() = std::string_swprintf(L"%hs %hs={\\\'true\\\'} %hs={\\\'%hs\\\'}",
                                                alertEnabling::kKeyWord.c_str(), alertEnabling::kParamEnable.c_str(),
                                                alertEnabling::kParamChan.c_str(), alertEnabling::kValueAllChannels.c_str());
     // /alarmV chan={\\\'RandomChannel\\\'} val={\\\'0.3\\\'}
-    allCallbacksVariants.emplace_back().Format(L"%hs %hs={\\\'RandomChannel\\\'} %hs={\\\'0.3\\\'}", alarmingValue::kKeyWord.c_str(), alarmingValue::kParamChan.c_str(), alarmingValue::kParamValue.c_str());
+    allCallbacksVariants.emplace_back() = std::string_swprintf(L"%hs %hs={\\\'RandomChannel\\\'} %hs={\\\'0.3\\\'}", alarmingValue::kKeyWord.c_str(), alarmingValue::kParamChan.c_str(), alarmingValue::kParamValue.c_str());
 
     // делаем нас никем
-    m_pUserList->setUserStatus(nullptr, users::ITelegramUsersList::UserStatus::eNotAuthorized);
+    m_pUserList->SetUserStatus(nullptr, users::ITelegramUsersList::UserStatus::eNotAuthorized);
 
     expectedMessage = L"Для работы бота вам необходимо авторизоваться.";
     for (const auto& callback : allCallbacksVariants)

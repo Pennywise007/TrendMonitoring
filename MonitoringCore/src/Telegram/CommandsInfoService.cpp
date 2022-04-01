@@ -5,63 +5,62 @@
 
 #include "CommandsInfoService.h"
 
-#include <boost/scope_exit.hpp>
+#include <ext/scope/on_exit.h>
+#include <ext/std/filesystem.h>
 
-#include "DirsService.h"
 #include "../Utils.h"
 
 namespace telegram::command {
 
-////////////////////////////////////////////////////////////////////////////////
-// выполнение команды на рестарт
+// execute command to restart
 void execute_restart_command(const std::int64_t& chatId, ITelegramThread* telegramThread)
 {
-    // перезапуск системы делаем через батник так как надо много всего сделать для разных систем
-    CString batFullPath = get_service<DirsService>().getExeDir() + kRestartSystemFileName;
+    // restarting the system is done through a batch file, since there is a lot to do for different systems
+    CString batFullPath = std::filesystem::get_exe_directory().append(kRestartSystemFileName).c_str();
 
-    // сообщение пользователю
-    CString messageToUser;
+    // message to the user
+    std::wstring messageToUser;
     if (std::filesystem::is_regular_file(batFullPath.GetString()))
     {
-        telegramThread->sendMessage(chatId, L"Перезапуск системы осуществляется.");
+        telegramThread->SendMessage(chatId, L"Перезапуск системы осуществляется.");
 
-        // запускаем батник
+        // run batch file
         STARTUPINFO cif = { sizeof(STARTUPINFO) };
         PROCESS_INFORMATION m_ProcInfo = { nullptr };
 
-        BOOST_SCOPE_EXIT(&batFullPath)
+        EXT_SCOPE_ON_EXIT_F((&batFullPath),
         {
             batFullPath.ReleaseBuffer();
-        } BOOST_SCOPE_EXIT_END;
+        });
 
-        if (FALSE != CreateProcess(batFullPath.GetBuffer(),     // имя исполняемого модуля
-            nullptr,	                    // Командная строка
-            NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
-            NULL,                        // Указатель на структуру SECURITY_ATTRIBUTES
-            0,                           // Флаг наследования текущего процесса
-            NULL,                        // Флаги способов создания процесса
-            NULL,                        // Указатель на блок среды
-            NULL,                        // Текущий диск или каталог
-            &cif,                        // Указатель на структуру STARTUPINFO
-            &m_ProcInfo))                // Указатель на структуру PROCESS_INFORMATION)
+        if (FALSE != CreateProcess(batFullPath.GetBuffer(), // executable module name
+            nullptr,                                        // Command line
+            NULL,                                           // Pointer to the SECURITY_ATTRIBUTES structure
+            NULL,                                           // Pointer to the SECURITY_ATTRIBUTES structure
+            0,                                              // Current process inheritance flag
+            NULL,                                           // Flags of process creation methods
+            NULL,                                           // Pointer to environment block
+            NULL,                                           // Current drive or directory
+            &cif,                                           // Pointer to STARTUPINFO structure
+            &m_ProcInfo))                                   // Pointer to PROCESS_INFORMATION structure)
         {	// идентификатор потока не нужен
             CloseHandle(m_ProcInfo.hThread);
             CloseHandle(m_ProcInfo.hProcess);
         }
     }
     else
-        telegramThread->sendMessage(chatId, L"Файл для перезапуска не найден.");
+        telegramThread->SendMessage(chatId, L"Файл для перезапуска не найден.");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // вспомогательный клас для работы с командами телеграма
-void CommandsInfoService::addCommand(Command command, std::wstring&& commandText, std::wstring&& description,
+void CommandsInfoService::AddCommand(Command command, std::wstring&& commandText, std::wstring&& description,
                                      std::set<std::string>&& callbacksKeyWords,
                                      const std::vector<AvailableStatus>& availabilityStatuses)
 {
     const auto commandDescrIt = m_botCommands.try_emplace(command, std::move(commandText),
                                                           std::move(description), std::move(callbacksKeyWords));
-    assert(commandDescrIt.second && "Команда уже добавлена.");
+    EXT_ASSERT(commandDescrIt.second && "Команда уже добавлена.");
 
     CommandDescription& commandDescr = commandDescrIt.first->second;
     for (const auto& status : availabilityStatuses)
@@ -69,7 +68,7 @@ void CommandsInfoService::addCommand(Command command, std::wstring&& commandText
 }
 
 //----------------------------------------------------------------------------//
-std::wstring CommandsInfoService::getAvailableCommandsWithDescription(AvailableStatus userStatus) const
+std::wstring CommandsInfoService::GetAvailableCommandsWithDescription(AvailableStatus userStatus) const
 {
     std::wstring message;
     for (const auto& command : m_botCommands)
@@ -84,20 +83,20 @@ std::wstring CommandsInfoService::getAvailableCommandsWithDescription(AvailableS
 }
 
 //----------------------------------------------------------------------------//
-bool CommandsInfoService::ensureNeedAnswerOnCommand(users::ITelegramUsersList* usersList, Command command,
+bool CommandsInfoService::EnsureNeedAnswerOnCommand(users::ITelegramUsersList& usersList, Command command,
                                                     const TgBot::User::Ptr& from, const std::int64_t& chatId, std::wstring& messageToUser) const
 {
-    // убеждаемся что есть такой пользователь
-    usersList->ensureExist(from, chatId);
-    // получаем статус пользователя
-    const auto userStatus = usersList->getUserStatus(from);
-    // проверяем что пользователь может использовать команду
+    // make sure there is such a user
+    usersList.EnsureExist(from, chatId);
+    // get user status
+    const auto userStatus = usersList.GetUserStatus(from);
+    // check if the user can use the command
     const auto commandIt = m_botCommands.find(command);
     if (commandIt == m_botCommands.end() ||
         !commandIt->second.m_availabilityForUsers[userStatus])
     {
-        // формируем ответ пользователю со списком доступных ему команд
-        std::wstring availableCommands = getAvailableCommandsWithDescription(userStatus);
+        // form a response to the user with a list of commands available to him
+        std::wstring availableCommands = GetAvailableCommandsWithDescription(userStatus);
         if (availableCommands.empty())
         {
             if (userStatus == users::ITelegramUsersList::eNotAuthorized)
@@ -107,7 +106,7 @@ bool CommandsInfoService::ensureNeedAnswerOnCommand(users::ITelegramUsersList* u
         }
         else
             messageToUser = L"Неизвестная команда. " + std::move(availableCommands);
-        assert(!messageToUser.empty());
+        EXT_ASSERT(!messageToUser.empty());
 
         return false;
     }
@@ -116,11 +115,11 @@ bool CommandsInfoService::ensureNeedAnswerOnCommand(users::ITelegramUsersList* u
 }
 
 //----------------------------------------------------------------------------//
-bool CommandsInfoService::ensureNeedAnswerOnCallback(users::ITelegramUsersList* usersList,
+bool CommandsInfoService::EnsureNeedAnswerOnCallback(users::ITelegramUsersList& usersList,
                                                      const std::string& callbackKeyWord,
                                                      const TgBot::CallbackQuery::Ptr& query) const
 {
-    // пользователь отправивший сообщение
+    // user who sent the message
     const TgBot::User::Ptr& pUser = query->from;
 
     for (auto&&[command, commandInfo] : m_botCommands)
@@ -128,10 +127,10 @@ bool CommandsInfoService::ensureNeedAnswerOnCallback(users::ITelegramUsersList* 
         if (auto callbackKeywordIt = commandInfo.m_callbacksKeywords.find(callbackKeyWord);
             callbackKeywordIt != commandInfo.m_callbacksKeywords.end())
         {
-            // убеждаемся что есть такой пользователь
-            usersList->ensureExist(pUser, query->message->chat->id);
-            // убеждаемся что пользователю можно отправлять эту команду/обрабатывать колбэки
-            if (commandInfo.m_availabilityForUsers[usersList->getUserStatus(pUser)])
+            // make sure there is such a user
+            usersList.EnsureExist(pUser, query->message->chat->id);
+            // make sure the user can send this command/handle callbacks
+            if (commandInfo.m_availabilityForUsers[usersList.GetUserStatus(pUser)])
                 return true;
         }
     }
@@ -140,7 +139,7 @@ bool CommandsInfoService::ensureNeedAnswerOnCallback(users::ITelegramUsersList* 
 }
 
 //----------------------------------------------------------------------------//
-void CommandsInfoService::resetCommandList()
+void CommandsInfoService::ResetCommandList()
 {
     m_botCommands.clear();
 }

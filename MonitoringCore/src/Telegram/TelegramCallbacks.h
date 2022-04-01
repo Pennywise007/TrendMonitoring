@@ -3,136 +3,144 @@
 #include <string>
 #include <map>
 
+#include <ext/core/dependency_injection.h>
+
 #include <include/ITelegramUsersList.h>
 #include <include/IMonitoringTasksService.h>
-#include <TelegramDLL/TelegramThread.h>
+#include <TelegramThread.h>
 
 namespace telegram::callback {
 
 namespace report {
-// параметры для колбэка отчёта
+// Report callback parameters
 // kKeyWord kParamType={'ReportType'} kParamChan={'chan1'}(ОПЦИОНАЛЬНО) kParamInterval={'1000000'}
-// тип формируемого отчёта
 enum class ReportType : unsigned long
 {
-    eAllChannels,       // все каналы для мониторинга
-    eSpecialChannel     // выбранный канал
+    eAllChannels,
+    eSpecialChannel
 };
 
-const std::string kKeyWord              = R"(/report)";     // ключевое слово
-    // параметры
-    const std::string kParamType        = "type";           // тип отчёта, может быть не задан если есть kParamChan
-    const std::string kParamChan        = "chan";           // если не задан - запрашивается у пользователя
-    const std::string kParamInterval    = "interval";       // интервал
+const std::string kKeyWord              = R"(/report)";
+    // Params
+    const std::string kParamType        = "type";           // report type, may not be set if kParamChan is present
+    const std::string kParamChan        = "chan";           // if not set - requested from the user
+    const std::string kParamInterval    = "interval";
 };
 
-// параметры для колбэка рестарта системы
+// Restart system callback parameters
 namespace restart
 {
-    const std::string kKeyWord          = R"(/restart)";    // ключевое словоа
+    const std::string kKeyWord          = R"(/restart)";
 };
 
-// параметры для колбэка пересылки сообщенияы
+// Resending massage callback parameters
 // kKeyWord kParamid={'GUID'}
 namespace resend
 {
-    const std::string kKeyWord          = R"(/resend)";     // ключевое слово
-    // параметры
-    const std::string kParamId          = "errorId";        // идентификатор ошибки в списке ошибок(m_monitoringErrors)
+    const std::string kKeyWord          = R"(/resend)";
+    // Params
+    const std::string kParamId          = "errorId";        // error identifier in the error list (m_monitoringErrors)
 };
 
-// параметры для колбэка оповещения
+// Notification callback parameters
 // kKeyWord kParamEnable={'true'} kParamChan={'chan1'}
 namespace alertEnabling
 {
-    const std::string kKeyWord          = R"(/alert)";      // ключевое слово
-    // параметры
-    const std::string kParamEnable      = "enable";         // состояние включаемости/выключаемости
-    const std::string kParamChan        = "chan";           // канал по которому нужно настроить нотификацию
-    // значения
-    const std::string kValueAllChannels = "allChannels";    // значение которое соответствует выключению оповещений по всем каналам
+    const std::string kKeyWord          = R"(/alert)";
+    // Params
+    const std::string kParamEnable      = "enable";         // eneble/disable notifications
+    const std::string kParamChan        = "chan";           // channel name
+    // Values
+    const std::string kValueAllChannels = "allChannels";    // value that corresponds to turning off/on notifications on all channels
 };
 
-// параметры для колбэка изменения уровня оповещений
+// Changing alarming value callback parameters
 // kKeyWord kParamChan={'chan1'} kParamValue={'0.2'}
 namespace alarmingValue
 {
-    const std::string kKeyWord          = R"(/alarmV)";     // ключевое слово
-    // параметры
-    const std::string kParamChan        = "chan";           // канал по которому нужно настроить уровень оповещений
-    const std::string kParamValue       = "val";            // OPTIONAL новое значение уровня оповещений
+    const std::string kKeyWord          = R"(/alarmV)";
+    // Params
+    const std::string kParamChan        = "chan";           // the channel on which you want to set the alert level
+    const std::string kParamValue       = "val";            // OPTIONAL new alert level value
 }
 
 class TelegramCallbacks
-    : private EventRecipientImpl
+    : ext::events::ScopeSubscription<IMonitoringTaskEvent, IMonitoringErrorEvents>
+    , ext::ServiceProviderHolder
 {
 public:
-    explicit TelegramCallbacks(ITelegramThreadPtr& telegramThread, users::ITelegramUsersListPtr& userList);
+    explicit TelegramCallbacks(ext::ServiceProvider::Ptr provider,
+                               std::shared_ptr<ITelegramThread>&& telegramThread,
+                               std::shared_ptr<users::ITelegramUsersList>&& userList);
 
-    // Параметры формирования отчёта
+    // Report generation parameters
     using CallBackParams = std::map<std::string, std::string>;
-// парсинг колбэков
+// parsing callbacks
 public:
-    // отработка колбека
-    void onCallbackQuery(const TgBot::CallbackQuery::Ptr& query);
-    // получили сообщение как ответ на предыдущую команду боту
-    bool gotResponseToPreviousCallback(const TgBot::Message::Ptr& commandMessage);
+    // callback processing
+    void OnCallbackQuery(const TgBot::CallbackQuery::Ptr& query);
+    // received a message as a response to the previous command to the bot
+    bool GotResponseToPreviousCallback(const TgBot::Message::Ptr& commandMessage);
 
-// IEventRecipient
+// IMonitoringTaskEvent
+public:
+    // Event about finishing monitoring task
+    void OnCompleteTask(const TaskId& taskId, IMonitoringTaskEvent::ResultsPtrList monitoringResult) override;
+
+// IMonitoringErrorEvents
 private:
-    // оповещение о произошедшем событии
-    void onEvent(const EventId& code, float eventValue, const std::shared_ptr<IEventData>& eventData) override;
+    void OnError(const std::shared_ptr<IMonitoringErrorEvents::EventData>& errorData) override;
+
+// Processing callbacks for bot commands
+private:
+    void ExecuteCallbackReport      (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void ExecuteCallbackRestart     (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void ExecuteCallbackResend      (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void ExecuteCallbackAlert       (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
+    void ExecuteCallbackAlarmValue  (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
 
 private:
-    // Отрабатывание колбэков на команды бота
-    void executeCallbackReport      (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
-    void executeCallbackRestart     (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
-    void executeCallbackResend      (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
-    void executeCallbackAlert       (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
-    void executeCallbackAlarmValue  (const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams& params, bool gotAnswer);
-
-private:
-    // Мапа с ключевыми словами колбэков и их выполняемыми функциями
+    // Map with callback keywords and their functions
     typedef void (TelegramCallbacks::*CommandCallback)(const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams&, bool);
     std::map<std::string, CommandCallback> m_commandCallbacks;
-    // поток работающего телеграма
-    ITelegramThreadPtr& m_telegramThread;
-    // данные о пользователях телеграмма
-    users::ITelegramUsersListPtr& m_telegramUsers;
+    // running telegram stream
+    std::shared_ptr<ITelegramThread> m_telegramThread;
+    // telegram user data
+    std::shared_ptr<users::ITelegramUsersList> m_telegramUsers;
 
-// задания которые запускал бот
+// tasks that the bot started
 private:
-    // структура с дополнительной информацией по заданию
+    // structure with additional information on the task
     struct TaskInfo
     {
-        // идентификатор чата из которого было получено задание
+        // identifier of the chat from which the task was received
         int64_t chatId;
-        // статус пользователя начавшего задание
+        // status of the user who started the task
         users::ITelegramUsersList::UserStatus userStatus;
     };
-    // задания которые запускал телеграм бот
-    std::map<TaskId, TaskInfo, TaskComparer> m_monitoringTasksInfo;
+    // tasks that were launched by the telegram bot
+    std::map<TaskId, TaskInfo, ext::task::TaskIdHelper> m_monitoringTasksInfo;
 
-// список ошибок о которых оповещал бот
+// list of errors reported by the bot
 private:
-    // структура с информацией об ошибках
+    // structure with error information
     struct ErrorInfo
     {
-        explicit ErrorInfo(const MonitoringErrorEventData* errorData) noexcept
+        explicit ErrorInfo(const IMonitoringErrorEvents::EventData* errorData) noexcept
             : errorText(errorData->errorTextForAllChannels)
             , errorGUID(errorData->errorGUID)
         {}
 
-        // текст ошибки
-        const CString errorText;
-        // флаг отправки ошибки обычным пользователям
+        // error text
+        const std::wstring errorText;
+        // flag for sending an error to ordinary users
         bool bResendToOrdinaryUsers = false;
-        // время возникновения ошибки
+        // error time
         const std::chrono::steady_clock::time_point timeOccurred = std::chrono::steady_clock::now();
-        // идентификатор ошибки
+        // error ID
         const GUID errorGUID;
     };
-    // ошибки которые возникали в мониторинге
+    // errors that occurred in monitoring
     std::list<ErrorInfo> m_monitoringErrors;
 };
 

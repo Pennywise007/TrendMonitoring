@@ -2,103 +2,100 @@
 
 #include <ctime>
 
-#include <myInclude/ChannelDataCorrector/ChannelDataGetter.h>
+#include <ext/thread/invoker.h>
 
-#include <DirsService.h>
-
-#include "Serialization/SerializatorFabric.h"
+#include "include/IDirService.h"
+#include "MonitoringTaskService/ChannelDataGetter/ChannelDataGetter.h"
 #include "TrendMonitoring.h"
-#include "Telegram/TelegramBot.h"
+
+#include <chrono>
+
 #include "Utils.h"
 
 // время в которое будет отсылаться отчёт каждый день часы + минуты (20:00)
 const std::pair<int, int> kReportDataTime = std::make_pair(20, 00);
 
-////////////////////////////////////////////////////////////////////////////////
-ITrendMonitoring* get_monitoring_service()
-{
-    return &get_service<TrendMonitoring>();
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // Реализация сервиса для мониторинга каналов
-TrendMonitoring::TrendMonitoring()
+TrendMonitoring::TrendMonitoring(ext::ServiceProvider::Ptr&& serviceProvider)
+    : ServiceProviderHolder(std::move(serviceProvider))
+    , m_appConfig(CreateObject<ApplicationConfiguration>())
 {
-    // подписываемся на события о завершении мониторинга
-    EventRecipientImpl::subscribe(onCompletingMonitoringTask);
-    // подписываемся на событие изменения в списке пользователей телеграмма
-    EventRecipientImpl::subscribe(telegram::users::onUsersListChangedEvent);
+    auto tt = std::make_shared<ApplicationConfiguration>(m_serviceProvider);
+    tt;
+    // load configuration from file
+    LoadConfiguration();
 
-    // загружаем конфигурацию из файла
-    loadConfiguration();
+    SaveConfiguration();
 
-    // инициализируем бота после загрузки конфигурации
-    m_telegramBot = std::make_unique<telegram::bot::CTelegramBot>(m_appConfig->getTelegramUsers());
-    // передаем боту настройки из конфигов
-    m_telegramBot->setBotSettings(getBotSettings());
+    // initialize the bot after loading the configuration
+    m_telegramBot = GetInterface<telegram::bot::ITelegramBot>();
 
-    // запускам задания для мониторинга, делаем отдельными заданиями ибо могут
-    // долго грузиться данные для интервалов
+    // launch tasks for monitoring, make them separate tasks because they can
+    // long time to load data for intervals
     for (auto& channel : m_appConfig->m_chanelParameters)
-        addMonitoringTaskForChannel(channel, MonitoringTaskInfo::TaskType::eIntervalInfo);
+        AddMonitoringTaskForChannel(channel, MonitoringTaskInfo::TaskType::eIntervalInfo);
 
-    // подключаем таймер обновления данных
-    CTickHandlerImpl::subscribeTimer(getUpdateDataInterval(), TimerType::eUpdatingData);
+    // connect the data update timer
+    TickSubscriber::SubscribeInvokedTimer(UpdateDataInterval, TimerType::eUpdatingData);
 
-    // подключаем таймер отчета
+    // connect the report timer
     {
-        // рассчитываем время следущего отчета
+        // calculate next report time
         time_t nextReportTime_t = time(NULL);
 
         tm nextReportTm;
         localtime_s(&nextReportTm, &nextReportTime_t);
 
-        // проверяем что в этот день ещё не настало время для отчёта
+        // check that this day is not yet the time for the report
         bool needReportToday = false;
         if (nextReportTm.tm_hour < kReportDataTime.first ||
             (nextReportTm.tm_hour == kReportDataTime.first &&
-             nextReportTm.tm_min < kReportDataTime.second))
+            nextReportTm.tm_min < kReportDataTime.second))
             needReportToday = true;
 
-        // рассчитываем время след отчёта
+        // calculate the next report time
         nextReportTm.tm_hour = kReportDataTime.first;
-        nextReportTm.tm_min  = kReportDataTime.second;
-        nextReportTm.tm_sec  = 0;
+        nextReportTm.tm_min = kReportDataTime.second;
+        nextReportTm.tm_sec = 0;
 
-        // если не сегодня - значит след отчёт нужен уже завтра
+        // if not today, then the next report is needed tomorrow
         if (!needReportToday)
             ++nextReportTm.tm_mday;
 
-        // конвертируем в std::chrono
+        // convert to std::chrono
         std::chrono::system_clock::time_point nextReportTime =
             std::chrono::system_clock::from_time_t(mktime(&nextReportTm));
 
-        // Подключаем таймер с интервалом до след отчёта
-        CTickHandlerImpl::subscribeTimer(nextReportTime - std::chrono::system_clock::now(),
-                                         TimerType::eEveryDayReporting);
+        // Connect the timer with an interval until the countdown trace
+        EXT_UNUSED(m_everyDayReportScheduler.SubscribeTaskAtTime([&]()
+        {
+            GenerateEveryDayReport();
+        }, nextReportTime));
     }
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-std::list<CString> TrendMonitoring::getNamesOfAllChannels() const
+std::list<std::wstring> TrendMonitoring::GetNamesOfAllChannels() const
 {
-    OUTPUT_LOG_FUNC_ENTER;
+    EXT_TRACE_SCOPE() << EXT_TRACE_FUNCTION;
 
     // заполняем сортированный список каналов
     std::list<CString> allChannelsNames;
     // ищем именно в директории с сжатыми сигналами ибо там меньше вложенность и поиск идёт быстрее
     ChannelDataGetter::FillChannelList(allChannelsNames, false);
 
-    return allChannelsNames;
+    std::list<std::wstring> result;
+    std::transform(allChannelsNames.begin(), allChannelsNames.end(), std::back_inserter(result), [](const auto& name) { return name.GetString(); });
+    return result;
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-std::list<CString> TrendMonitoring::getNamesOfMonitoringChannels() const
+std::list<std::wstring> TrendMonitoring::GetNamesOfMonitoringChannels() const
 {
     // заполняем сортированный список каналов
-    std::list<CString> allChannelsNames;
+    std::list<std::wstring> allChannelsNames;
     for (const auto& channel :  m_appConfig->m_chanelParameters)
         allChannelsNames.emplace_back(channel->channelName);
 
@@ -107,45 +104,45 @@ std::list<CString> TrendMonitoring::getNamesOfMonitoringChannels() const
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-void TrendMonitoring::updateDataForAllChannels()
+void TrendMonitoring::UpdateDataForAllChannels()
 {
     // очищаем данные для всех каналов и добавляем задания на мониторинг
     for (auto& channel : m_appConfig->m_chanelParameters)
     {
         // удаляем задания мониторинга для канала
-        delMonitoringTaskForChannel(channel);
+        DelMonitoringTaskForChannel(channel);
         // очищаем данные
-        channel->resetChannelData();
+        channel->ResetChannelData();
         // добавляем новое задание, делаем по одному чтобы мочь прервать конкретное
-        addMonitoringTaskForChannel(channel, MonitoringTaskInfo::TaskType::eIntervalInfo);
+        AddMonitoringTaskForChannel(channel, MonitoringTaskInfo::TaskType::eIntervalInfo);
     }
 
     // сообщаем об изменении в списке каналов
-    onMonitoringChannelsListChanged();
+    OnMonitoringChannelsListChanged();
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-size_t TrendMonitoring::getNumberOfMonitoringChannels() const
+size_t TrendMonitoring::GetNumberOfMonitoringChannels() const
 {
     return m_appConfig->m_chanelParameters.size();
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-const MonitoringChannelData& TrendMonitoring::getMonitoringChannelData(const size_t channelIndex)  const
+const MonitoringChannelData& TrendMonitoring::GetMonitoringChannelData(const size_t channelIndex)  const
 {
-    assert(channelIndex < m_appConfig->m_chanelParameters.size() && "Количество каналов меньше чем индекс канала");
-    return (*std::next(m_appConfig->m_chanelParameters.begin(), channelIndex))->getMonitoringData();
+    EXT_ASSERT(channelIndex < m_appConfig->m_chanelParameters.size()) << "Количество каналов меньше чем индекс канала";
+    return (*std::next(m_appConfig->m_chanelParameters.begin(), channelIndex))->GetMonitoringData();
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-size_t TrendMonitoring::addMonitoringChannel()
+size_t TrendMonitoring::AddMonitoringChannel()
 {
-    OUTPUT_LOG_FUNC_ENTER;
+    EXT_TRACE_SCOPE() << EXT_TRACE_FUNCTION;
 
-    const auto& channelsList = getNamesOfAllChannels();
+    const auto& channelsList = GetNamesOfAllChannels();
 
     if (channelsList.empty())
     {
@@ -153,27 +150,27 @@ size_t TrendMonitoring::addMonitoringChannel()
         return 0;
     }
 
-    m_appConfig->m_chanelParameters.push_back(ChannelParameters::make(*channelsList.begin()));
+    m_appConfig->m_chanelParameters.push_back(std::make_shared<ChannelParameters>(*channelsList.begin()));
 
     // начинаем грузить данные
-    addMonitoringTaskForChannel(m_appConfig->m_chanelParameters.back(),
+    AddMonitoringTaskForChannel(m_appConfig->m_chanelParameters.back(),
                                 MonitoringTaskInfo::TaskType::eIntervalInfo);
 
     // сообщаем об изменении в списке каналов синхронно, чтобы в списке каналов успел появиться новый
-    onMonitoringChannelsListChanged(false);
+    OnMonitoringChannelsListChanged(false);
 
     return m_appConfig->m_chanelParameters.size() - 1;
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-size_t TrendMonitoring::removeMonitoringChannelByIndex(const size_t channelIndex)
+size_t TrendMonitoring::RemoveMonitoringChannelByIndex(const size_t channelIndex)
 {
     auto& channelsList = m_appConfig->m_chanelParameters;
 
     if (channelIndex >= channelsList.size())
     {
-        assert(!"Количество каналов меньше чем индекс удаляемого канала");
+        EXT_ASSERT(!"Количество каналов меньше чем индекс удаляемого канала");
         return channelIndex;
     }
 
@@ -181,7 +178,7 @@ size_t TrendMonitoring::removeMonitoringChannelByIndex(const size_t channelIndex
     ChannelIt channelIt = std::next(channelsList.begin(), channelIndex);
 
     // прерывааем задание мониторинга для канала
-    delMonitoringTaskForChannel(*channelIt);
+    DelMonitoringTaskForChannel(*channelIt);
 
     // удаляем из спика каналов
     channelIt = channelsList.erase(channelIt);
@@ -191,14 +188,14 @@ size_t TrendMonitoring::removeMonitoringChannelByIndex(const size_t channelIndex
     size_t result = std::distance(channelsList.begin(), channelIt);
 
     // сообщаем об изменении в списке каналов
-    onMonitoringChannelsListChanged();
+    OnMonitoringChannelsListChanged();
 
     return result;
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-void TrendMonitoring::changeMonitoringChannelNotify(const size_t channelIndex,
+void TrendMonitoring::ChangeMonitoringChannelNotify(const size_t channelIndex,
                                                     const bool newNotifyState)
 {
     if (channelIndex >= m_appConfig->m_chanelParameters.size())
@@ -210,17 +207,17 @@ void TrendMonitoring::changeMonitoringChannelNotify(const size_t channelIndex,
     // получаем параметры канала по которому меняем имя
     ChannelParameters::Ptr channelParams = *std::next(m_appConfig->m_chanelParameters.begin(),
                                                       channelIndex);
-    if (!channelParams->changeNotification(newNotifyState))
+    if (!channelParams->ChangeNotification(newNotifyState))
         return;
 
     // сообщаем об изменении в списке каналов
-    onMonitoringChannelsListChanged(true);
+    OnMonitoringChannelsListChanged(true);
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-void TrendMonitoring::changeMonitoringChannelName(const size_t channelIndex,
-                                                  const CString& newChannelName)
+void TrendMonitoring::ChangeMonitoringChannelNotify(const size_t channelIndex,
+                                                  const std::wstring& newChannelName)
 {
     if (channelIndex >= m_appConfig->m_chanelParameters.size())
     {
@@ -230,21 +227,21 @@ void TrendMonitoring::changeMonitoringChannelName(const size_t channelIndex,
 
     // получаем параметры канала по которому меняем имя
     ChannelParameters::Ptr channelParams = *std::next(m_appConfig->m_chanelParameters.begin(), channelIndex);
-    if (!channelParams->changeName(newChannelName))
+    if (!channelParams->ChangeName(newChannelName))
         return;
 
     // если имя изменилось успешно прерываем возможное задание по каналу
-    delMonitoringTaskForChannel(channelParams);
+    DelMonitoringTaskForChannel(channelParams);
     // добавляем новое задание для мониторинга
-    addMonitoringTaskForChannel(channelParams, MonitoringTaskInfo::TaskType::eIntervalInfo);
+    AddMonitoringTaskForChannel(channelParams, MonitoringTaskInfo::TaskType::eIntervalInfo);
 
     // сообщаем об изменении в списке каналов
-    onMonitoringChannelsListChanged();
+    OnMonitoringChannelsListChanged();
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-void TrendMonitoring::changeMonitoringChannelInterval(const size_t channelIndex,
+void TrendMonitoring::ChangeMonitoringChannelInterval(const size_t channelIndex,
                                                      const MonitoringInterval newInterval)
 {
     if (channelIndex >= m_appConfig->m_chanelParameters.size())
@@ -254,21 +251,21 @@ void TrendMonitoring::changeMonitoringChannelInterval(const size_t channelIndex,
     }
 
     ChannelParameters::Ptr channelParams = *std::next(m_appConfig->m_chanelParameters.begin(), channelIndex);
-    if (!channelParams->changeInterval(newInterval))
+    if (!channelParams->ChangeInterval(newInterval))
         return;
 
     // если имя изменилось успешно прерываем возможное задание по каналу
-    delMonitoringTaskForChannel(channelParams);
+    DelMonitoringTaskForChannel(channelParams);
     // добавляем новое задание для мониторинга
-    addMonitoringTaskForChannel(channelParams, MonitoringTaskInfo::TaskType::eIntervalInfo);
+    AddMonitoringTaskForChannel(channelParams, MonitoringTaskInfo::TaskType::eIntervalInfo);
 
     // сообщаем об изменении в списке каналов
-    onMonitoringChannelsListChanged();
+    OnMonitoringChannelsListChanged();
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-void TrendMonitoring::changeMonitoringChannelAlarmingValue(const size_t channelIndex,
+void TrendMonitoring::ChangeMonitoringChannelAlarmingValue(const size_t channelIndex,
                                                            const float newValue)
 {
     if (channelIndex >= m_appConfig->m_chanelParameters.size())
@@ -278,16 +275,16 @@ void TrendMonitoring::changeMonitoringChannelAlarmingValue(const size_t channelI
     }
 
     ChannelParameters::Ptr channelParams = *std::next(m_appConfig->m_chanelParameters.begin(), channelIndex);
-    if (!channelParams->changeAlarmingValue(newValue))
+    if (!channelParams->ChangeAlarmingValue(newValue))
         return;
 
     // сообщаем об изменении в списке каналов
-    onMonitoringChannelsListChanged();
+    OnMonitoringChannelsListChanged();
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-size_t TrendMonitoring::moveUpMonitoringChannelByIndex(const size_t channelIndex)
+size_t TrendMonitoring::MoveUpMonitoringChannelByIndex(const size_t channelIndex)
 {
     auto& channelsList = m_appConfig->m_chanelParameters;
 
@@ -313,14 +310,14 @@ size_t TrendMonitoring::moveUpMonitoringChannelByIndex(const size_t channelIndex
     }
 
     // сообщаем об изменении в списке каналов
-    onMonitoringChannelsListChanged();
+    OnMonitoringChannelsListChanged();
 
     return resultIndex;
 }
 
 //----------------------------------------------------------------------------//
 // ITrendMonitoring
-size_t TrendMonitoring::moveDownMonitoringChannelByIndex(const size_t channelIndex)
+size_t TrendMonitoring::MoveDownMonitoringChannelByIndex(const size_t channelIndex)
 {
     auto& channelsList = m_appConfig->m_chanelParameters;
 
@@ -346,146 +343,119 @@ size_t TrendMonitoring::moveDownMonitoringChannelByIndex(const size_t channelInd
     }
 
     // сообщаем об изменении в списке каналов
-    onMonitoringChannelsListChanged();
+    OnMonitoringChannelsListChanged();
 
     return resultIndex;
 }
 
-//----------------------------------------------------------------------------//
-const telegram::bot::TelegramBotSettings& TrendMonitoring::getBotSettings() const
+void TrendMonitoring::OnChanged()
 {
-    return m_appConfig->getTelegramSettings();
+    // сохраняем изменения в конфиг
+    SaveConfiguration();
 }
 
-//----------------------------------------------------------------------------//
-void TrendMonitoring::setBotSettings(const telegram::bot::TelegramBotSettings& newSettings)
+void TrendMonitoring::OnBotSettingsChanged(const bool, const std::wstring&)
 {
-    // применяем настройки
-    m_appConfig->setTelegramSettings(newSettings);
-
-    // сохраняем настройки
-    saveConfiguration();
-
-    // инициализируем бота новым токеном
-    m_telegramBot->setBotSettings(getBotSettings());
+    // сохраняем изменения в конфиг
+    SaveConfiguration();
 }
 
-//----------------------------------------------------------------------------//
-// IEventRecipient
-void TrendMonitoring::onEvent(const EventId& code, float /*eventValue*/,
-                              const std::shared_ptr<IEventData>& eventData)
+void TrendMonitoring::OnCompleteTask(const TaskId& taskId, ResultsPtrList monitoringResult)
 {
-    if (code == onCompletingMonitoringTask)
+    auto it = m_monitoringTasksInfo.find(taskId);
+    if (it == m_monitoringTasksInfo.end())
+        // выполнено не наше задание
+        return;
+
+    EXT_ASSERT(!monitoringResult.empty() && !it->second.channelParameters.empty());
+
+    // итераторы по параметрам каналов
+    ChannelIt channelIt  = it->second.channelParameters.begin();
+    const ChannelIt channelEnd = it->second.channelParameters.end();
+
+    // итераторы по результатам задания
+    auto resultIt  = monitoringResult.begin();
+    const auto resultEnd = monitoringResult.end();
+
+    // флаг что в списке мониторинга были изменения
+    bool bMonitoringListChanged = false;
+
+    std::vector<std::wstring> listOfProblemChannels;
+    listOfProblemChannels.reserve(monitoringResult.size());
+
+    std::wstring reportTextForAllChannels;
+    // для каждого канала анализируем его результат задания
+    for (; channelIt != channelEnd && resultIt != resultEnd; ++channelIt, ++resultIt)
     {
-        MonitoringResult::Ptr monitoringResult = std::static_pointer_cast<MonitoringResult>(eventData);
+        EXT_ASSERT((*channelIt)->channelName == (*resultIt)->taskParameters->channelName) << "Wrong channel name data received!";
 
-        auto it = m_monitoringTasksInfo.find(monitoringResult->m_taskId);
-        if (it == m_monitoringTasksInfo.end())
-            // выполнено не наше задание
-            return;
+        std::wstring channelError;
+        bMonitoringListChanged |= MonitoringTaskResultHandler::HandleIntervalInfoResult(it->second.taskType, *resultIt,
+                                                                                        channelIt->get(), channelError);
 
-        assert(!monitoringResult->m_taskResults.empty() && !it->second.channelParameters.empty());
-
-        // итераторы по параметрам каналов
-        ChannelIt channelIt  = it->second.channelParameters.begin();
-        const ChannelIt channelEnd = it->second.channelParameters.end();
-
-        // итераторы по результатам задания
-        MonitoringResult::ResultIt resultIt  = monitoringResult->m_taskResults.begin();
-        const MonitoringResult::ResultIt resultEnd = monitoringResult->m_taskResults.end();
-
-        // флаг что в списке мониторинга были изменения
-        bool bMonitoringListChanged = false;
-
-        std::vector<CString> listOfProblemChannels;
-        listOfProblemChannels.reserve(monitoringResult->m_taskResults.size());
-
-        CString reportTextForAllChannels;
-        // для каждого канала анализируем его результат задания
-        for (; channelIt != channelEnd && resultIt != resultEnd; ++channelIt, ++resultIt)
+        // если возникла ошибка при получении данных и можно о ней оповещать
+        if (!channelError.empty() && (*channelIt)->bNotify)
         {
-            assert((*channelIt)->channelName == resultIt->pTaskParameters->channelName &&
-                   "Получены результаты для другого канала!");
+            reportTextForAllChannels += std::string_swprintf(L"Канал \"%s\": %s\n",
+                (*channelIt)->channelName.c_str(),
+                channelError.c_str());
 
-            CString channelError;
-            bMonitoringListChanged |= MonitoringTaskResultHandler::HandleIntervalInfoResult(it->second.taskType, *resultIt,
-                                                                                            *channelIt, channelError);
-
-            // если возникла ошибка при получении данных и можно о ней оповещать
-            if (!channelError.IsEmpty() && (*channelIt)->bNotify)
-            {
-                reportTextForAllChannels.AppendFormat(L"Канал \"%s\": %s\n",
-                                                      (*channelIt)->channelName.GetString(),
-                                                      channelError.GetString());
-
-                listOfProblemChannels.emplace_back((*channelIt)->channelName);
-            }
+            listOfProblemChannels.emplace_back((*channelIt)->channelName);
         }
-
-        reportTextForAllChannels = reportTextForAllChannels.Trim();
-
-        // если возникли ошибки отрабатываем их по разному для каждого типа задания
-        if (it->second.taskType == MonitoringTaskInfo::TaskType::eEveryDayReport)
-        {
-            // если не о чем сообщать говорим что все ок
-            if (reportTextForAllChannels.IsEmpty())
-                reportTextForAllChannels = L"Данные в порядке.";
-
-            const CString reportDelimer(L'*', 25);
-
-            // создаем сообщение об отчёте
-            auto reportMessage = std::make_shared<MessageTextData>();
-            reportMessage->messageText.Format(L"%s\n\nЕжедневный отчёт за %s\n\n%s\n%s",
-                                              reportDelimer.GetString(),
-                                              CTime::GetCurrentTime().Format(L"%d.%m.%Y").GetString(),
-                                              reportTextForAllChannels.GetString(),
-                                              reportDelimer.GetString());
-
-            // оповещаем о готовом отчёте
-            get_service<CMassages>().postMessage(onReportPreparedEvent, 0,
-                                                 std::static_pointer_cast<IEventData>(reportMessage));
-
-            // сообщаем пользователям телеграма
-            m_telegramBot->sendMessageToAdmins(reportMessage->messageText);
-        }
-        else if (!reportTextForAllChannels.IsEmpty())
-        {
-            assert(it->second.taskType == MonitoringTaskInfo::TaskType::eIntervalInfo ||
-                   it->second.taskType == MonitoringTaskInfo::TaskType::eUpdatingInfo);
-
-            // сообщаем в лог что возникли проблемы
-            send_message_to_log(LogMessageData::MessageType::eError, reportTextForAllChannels.GetString());
-
-            // оповещаем о возникшей ошибке
-            auto errorMessage = std::make_shared<MonitoringErrorEventData>();
-            errorMessage->errorTextForAllChannels = std::move(reportTextForAllChannels);
-            errorMessage->problemChannelNames = std::move(listOfProblemChannels);
-
-            // генерим идентификатор ошибки
-            if (!SUCCEEDED(CoCreateGuid(&errorMessage->errorGUID)))
-                assert(!"Не удалось создать гуид!");
-            get_service<CMassages>().postMessage(onMonitoringErrorEvent, 0,
-                                                 std::static_pointer_cast<IEventData>(errorMessage));
-        }
-
-        if (bMonitoringListChanged)
-            // оповещаем об изменении в списке для мониторинга
-            get_service<CMassages>().postMessage(onMonitoringListChanged);
-
-        // удаляем задание из списка
-        m_monitoringTasksInfo.erase(it);
     }
-    else if (code == telegram::users::onUsersListChangedEvent)
+
+    std::string_trim_all(reportTextForAllChannels);
+
+    // если возникли ошибки отрабатываем их по разному для каждого типа задания
+    if (it->second.taskType == MonitoringTaskInfo::TaskType::eEveryDayReport)
     {
-        // сохраняем изменения в конфиг
-        saveConfiguration();
+        // если не о чем сообщать говорим что все ок
+        if (reportTextForAllChannels.empty())
+            reportTextForAllChannels = L"Данные в порядке.";
+
+        const std::wstring reportDelimer(L'*', 25);
+
+        // создаем сообщение об отчёте
+        std::wstring reportMessage;
+        reportMessage = std::string_swprintf(L"%s\n\nЕжедневный отчёт за %s\n\n%s\n%s",
+                             reportDelimer.c_str(),
+                             CTime::GetCurrentTime().Format(L"%d.%m.%Y").GetString(),
+                             reportTextForAllChannels.c_str(),
+                             reportDelimer.c_str());
+
+        // оповещаем о готовом отчёте
+        ext::send_event_async(&IReportEvents::OnReportDone, reportMessage);
+
+        // сообщаем пользователям телеграма
+        m_telegramBot->SendMessageToAdmins(reportMessage);
     }
-    else
-        assert(!"Неизвестное событие");
+    else if (!reportTextForAllChannels.empty())
+    {
+        EXT_ASSERT(it->second.taskType == MonitoringTaskInfo::TaskType::eIntervalInfo ||
+               it->second.taskType == MonitoringTaskInfo::TaskType::eUpdatingInfo);
+
+        // сообщаем в лог что возникли проблемы
+        send_message_to_log(ILogEvents::LogMessageData::MessageType::eError, reportTextForAllChannels);
+
+        // оповещаем о возникшей ошибке
+        auto errorMessage = std::make_shared<IMonitoringErrorEvents::EventData>();
+        errorMessage->errorTextForAllChannels = std::move(reportTextForAllChannels);
+        errorMessage->problemChannelNames = std::move(listOfProblemChannels);
+
+        // генерим идентификатор ошибки
+        EXT_DUMP_IF(FAILED(CoCreateGuid(&errorMessage->errorGUID)));
+        ext::send_event(&IMonitoringErrorEvents::OnError, errorMessage);
+    }
+
+    if (bMonitoringListChanged)
+        ext::send_event_async(&IMonitoringListEvents::OnChanged);
+
+    // удаляем задание из списка
+    m_monitoringTasksInfo.erase(it);
 }
 
 //----------------------------------------------------------------------------//
-bool TrendMonitoring::onTick(TickParam tickParam)
+void TrendMonitoring::OnTick(ext::tick::TickParam tickParam) EXT_NOEXCEPT
 {
     switch (TimerType(tickParam))
     {
@@ -509,20 +479,20 @@ bool TrendMonitoring::onTick(TickParam tickParam)
                     // проверяем как долго их нет
                     if (channelParameters->m_loadingParametersIntervalEnd.has_value() &&
                         (currentTime - *channelParameters->m_loadingParametersIntervalEnd).GetTotalMinutes() > 10)
-                        send_message_to_log(LogMessageData::MessageType::eError,
+                        send_message_to_log(ILogEvents::LogMessageData::MessageType::eError,
                                             L"Данные по каналу %s грузятся больше 10 минут",
-                                            channelParameters->channelName.GetString());
+                                            channelParameters->channelName);
 
                     continue;
                 }
 
                 // уже должны были грузить данные и заполнить
-                assert(channelParameters->m_loadingParametersIntervalEnd.has_value());
+                EXT_ASSERT(channelParameters->m_loadingParametersIntervalEnd.has_value());
 
                 // если с момента загрузки прошло не достаточно времени(только поставили на загрузку)
                 if (!channelParameters->m_loadingParametersIntervalEnd.has_value() ||
                     (currentTime - *channelParameters->m_loadingParametersIntervalEnd).GetTotalMinutes() <
-                    getUpdateDataInterval().count() - 1)
+                    UpdateDataInterval.count() - 1)
                     continue;
 
                 // добавляем канал в список обновляемых
@@ -533,102 +503,109 @@ bool TrendMonitoring::onTick(TickParam tickParam)
             }
 
             if (!listTaskParams.empty())
-                addMonitoringTaskForChannels(updatingDataChannels, listTaskParams,
+                AddMonitoringTaskForChannels(updatingDataChannels, listTaskParams,
                                              MonitoringTaskInfo::TaskType::eUpdatingInfo);
         }
         break;
-    case TimerType::eEveryDayReporting:
-        {
-            // Подключаем таймер с интервалом до след отчёта
-            CTickHandlerImpl::subscribeTimer(std::chrono::hours(24), TimerType::eEveryDayReporting);
-
-            if (!m_appConfig->m_chanelParameters.empty())
-            {
-                // копия текущих каналов по которым запускаем мониторинг
-                ChannelParametersList channelsCopy;
-                for (const auto& currentChannel : m_appConfig->m_chanelParameters)
-                {
-                    channelsCopy.push_back(ChannelParameters::make(currentChannel->channelName));
-                    channelsCopy.back()->alarmingValue = currentChannel->alarmingValue;
-                }
-
-                // запускаем задание формирования отчёта за последний день
-                addMonitoringTaskForChannels(channelsCopy,
-                                             MonitoringTaskInfo::TaskType::eEveryDayReport,
-                                             CTimeSpan(1, 0, 0, 0));
-            }
-        }
-        // исполняемый один раз таймер т.к. мы запустили новый
-        return false;
     default:
-        assert(!"Неизвестный таймер!");
+        EXT_UNREACHABLE("Неизвестный таймер!");
         break;
     }
-
-    return true;
 }
 
 //----------------------------------------------------------------------------//
-void TrendMonitoring::installTelegramBot(const std::shared_ptr<telegram::bot::ITelegramBot>& telegramBot)
+void TrendMonitoring::SaveConfiguration() EXT_NOEXCEPT
 {
-    if (telegramBot)
-        m_telegramBot = telegramBot;
-    else
-        m_telegramBot = std::make_unique<telegram::bot::CTelegramBot>(m_appConfig->getTelegramUsers());;
+    try
+    {
+        ext::serializable::serializer::Executor::SerializeObject(
+            ext::serializable::serializer::Fabric::XMLSerializer(GetConfigurationXMLFilePath()),
+            m_appConfig.get());
+    }
+    catch (...)
+    { }
 }
 
 //----------------------------------------------------------------------------//
-void TrendMonitoring::saveConfiguration()
+void TrendMonitoring::LoadConfiguration() EXT_NOEXCEPT
 {
-    SerializationExecutor::serializeObject(SerializationFabric::createXMLSerializator(getConfigurationXMLFilePath()),
-                                           m_appConfig);
+    try
+    {
+        ext::serializable::serializer::Executor::DeserializeObject(
+            ext::serializable::serializer::Fabric::XMLDeserializer(GetConfigurationXMLFilePath()),
+            m_appConfig.get());
+    }
+    catch (...)
+    { }
 }
 
 //----------------------------------------------------------------------------//
-void TrendMonitoring::loadConfiguration()
+std::wstring TrendMonitoring::GetConfigurationXMLFilePath() const
 {
-    SerializationExecutor::deserializeObject(SerializationFabric::createXMLDeserializator(getConfigurationXMLFilePath()),
-                                             m_appConfig);
+    return std::filesystem::get_exe_directory().append(kConfigFileName);
 }
 
 //----------------------------------------------------------------------------//
-CString TrendMonitoring::getConfigurationXMLFilePath() const
+void TrendMonitoring::OnMonitoringChannelsListChanged(bool bAsynchNotify /*= true*/)
 {
-    return get_service<DirsService>().getExeDir() + kConfigFileName;
-}
-
-//----------------------------------------------------------------------------//
-void TrendMonitoring::onMonitoringChannelsListChanged(bool bAsynchNotify /*= true*/)
-{
-    OUTPUT_LOG_FUNC_ENTER;
+    EXT_TRACE_SCOPE() << EXT_TRACE_FUNCTION;
 
     // сохраняем новый список мониторинга
-    saveConfiguration();
+    SaveConfiguration();
 
     // оповещаем об изменении в списке для мониторинга
     if (bAsynchNotify)
-        get_service<CMassages>().postMessage(onMonitoringListChanged);
+        ext::send_event_async(&IMonitoringListEvents::OnChanged);
     else
-        get_service<CMassages>().sendMessage(onMonitoringListChanged);
+        ext::send_event(&IMonitoringListEvents::OnChanged);
+}
+
+void TrendMonitoring::GenerateEveryDayReport()
+{
+    // Подключаем таймер с интервалом до след отчёта
+    if (!m_everyDayReportScheduler.IsTaskExists(TimerType::eEveryDayReporting))
+    {
+        EXT_EXPECT(m_everyDayReportScheduler.SubscribeTaskByPeriod([&]()
+        {
+            GenerateEveryDayReport();
+        }, std::chrono::hours(24), TimerType::eEveryDayReporting) == TimerType::eEveryDayReporting);
+    }
+
+    ext::get_service<ext::invoke::MethodInvoker>().CallSync([&]()
+    {
+        if (!m_appConfig->m_chanelParameters.empty())
+        {
+            // копия текущих каналов по которым запускаем мониторинг
+            ChannelParametersList channelsCopy;
+            for (const auto& currentChannel : m_appConfig->m_chanelParameters)
+            {
+                channelsCopy.push_back(std::make_shared<ChannelParameters>(currentChannel->channelName));
+                channelsCopy.back()->alarmingValue = currentChannel->alarmingValue;
+            }
+
+            // запускаем задание формирования отчёта за последний день
+            AddMonitoringTaskForChannels(channelsCopy,
+                                         MonitoringTaskInfo::TaskType::eEveryDayReport,
+                                         CTimeSpan(1, 0, 0, 0));
+        }
+    });
 }
 
 //----------------------------------------------------------------------------//
-void TrendMonitoring::addMonitoringTaskForChannel(ChannelParameters::Ptr& channelParams,
+void TrendMonitoring::AddMonitoringTaskForChannel(ChannelParameters::Ptr& channelParams,
                                                   const MonitoringTaskInfo::TaskType taskType,
                                                   CTimeSpan monitoringInterval /* = -1*/)
 {
-    OUTPUT_LOG_FUNC;
-    OUTPUT_LOG_ADD_COMMENT("channel name = %s", channelParams->channelName.GetString());
-    OUTPUT_LOG_DO;
+    EXT_TRACE() << EXT_TRACE_FUNCTION << std::string_sprintf("channel name = %s", channelParams->channelName.c_str()).c_str();
 
     if (monitoringInterval == -1)
         monitoringInterval = monitoring_interval_to_timespan(channelParams->monitoringInterval);
 
-    addMonitoringTaskForChannels({ channelParams }, taskType, monitoringInterval);
+    AddMonitoringTaskForChannels({ channelParams }, taskType, monitoringInterval);
 }
 
 //----------------------------------------------------------------------------//
-void TrendMonitoring::addMonitoringTaskForChannels(const ChannelParametersList& channelList,
+void TrendMonitoring::AddMonitoringTaskForChannels(const ChannelParametersList& channelList,
                                                    const MonitoringTaskInfo::TaskType taskType,
                                                    CTimeSpan monitoringInterval)
 {
@@ -644,23 +621,23 @@ void TrendMonitoring::addMonitoringTaskForChannels(const ChannelParametersList& 
                                                        startTime, stopTime));
     }
 
-    addMonitoringTaskForChannels(channelList, listTaskParams, taskType);
+    AddMonitoringTaskForChannels(channelList, listTaskParams, taskType);
 }
 
 //----------------------------------------------------------------------------//
-void TrendMonitoring::addMonitoringTaskForChannels(const ChannelParametersList& channelList,
+void TrendMonitoring::AddMonitoringTaskForChannels(const ChannelParametersList& channelList,
                                                    const std::list<TaskParameters::Ptr>& taskParams,
                                                    const MonitoringTaskInfo::TaskType taskType)
 {
     if (channelList.size() != taskParams.size())
     {
-        assert(!"Различается список каналов и заданий!");
+        EXT_ASSERT(!"Различается список каналов и заданий!");
         return;
     }
 
     if (taskParams.empty())
     {
-        assert(!"Передали пустой список заданий!");
+        EXT_ASSERT(!"Передали пустой список заданий!");
         return;
     }
 
@@ -682,13 +659,15 @@ void TrendMonitoring::addMonitoringTaskForChannels(const ChannelParametersList& 
 
     // запускаем задание обновления данных
     m_monitoringTasksInfo.try_emplace(
-        get_monitoring_tasks_service()->addTaskList(taskParams, IMonitoringTasksService::eNormal),
+        GetInterface<IMonitoringTasksService>()->AddTaskList(taskParams, IMonitoringTasksService::TaskPriority::eNormal),
         taskInfo);
 }
 
 //----------------------------------------------------------------------------//
-void TrendMonitoring::delMonitoringTaskForChannel(const ChannelParameters::Ptr& channelParams)
+void TrendMonitoring::DelMonitoringTaskForChannel(const ChannelParameters::Ptr& channelParams)
 {
+    auto monitoring = GetInterface<IMonitoringTasksService>();
+
     // Проходим по всем заданиям
     for (auto monitoringTaskIt = m_monitoringTasksInfo.begin(), end = m_monitoringTasksInfo.end();
          monitoringTaskIt != end;)
@@ -713,7 +692,7 @@ void TrendMonitoring::delMonitoringTaskForChannel(const ChannelParameters::Ptr& 
                     {
                         // не пустых каналов не осталось - будем удалять задание
 
-                        get_monitoring_tasks_service()->removeTask(monitoringTaskIt->first);
+                        monitoring->RemoveTask(monitoringTaskIt->first);
                         monitoringTaskIt = m_monitoringTasksInfo.erase(monitoringTaskIt);
 
                         break;

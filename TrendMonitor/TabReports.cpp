@@ -15,6 +15,7 @@ IMPLEMENT_DYNAMIC(CTabReports, CDialogEx)
 //----------------------------------------------------------------------------//
 CTabReports::CTabReports(CWnd* pParent /*=nullptr*/)
     : CDialogEx(IDD_TAB_REPORTS, pParent)
+    , ScopeSubscription(false)
 {
 }
 
@@ -53,8 +54,7 @@ int CTabReports::OnCreate(LPCREATESTRUCT lpCreateStruct)
     if (__super::OnCreate(lpCreateStruct) == -1)
         return -1;
 
-    // подписываемся на событие готовности отчёта
-    EventRecipientImpl::subscribe(onReportPreparedEvent);
+    ScopeSubscription::SubscribeAll();
 
     return 0;
 }
@@ -65,28 +65,20 @@ void CTabReports::OnDestroy()
     __super::OnDestroy();
 
     // отписываемся от событий
-    EventRecipientImpl::unsubscribe(onReportPreparedEvent);
+    ScopeSubscription::UnsubscribeAll();
 }
 
-//----------------------------------------------------------------------------//
-// IEventRecipient
-void CTabReports::onEvent(const EventId& code, float /*eventValue*/, const std::shared_ptr<IEventData>& eventData)
+void CTabReports::OnReportDone(std::wstring messageText)
 {
-    if (code == onReportPreparedEvent)
-    {
-        std::shared_ptr<MessageTextData> reportMessageData = std::static_pointer_cast<MessageTextData>(eventData);
+    CString newReportMessage;
+    newReportMessage.Format(L"%s    ", CTime::GetCurrentTime().Format(L"%d.%m.%Y %H:%M:%S").GetString());
 
-        CString newReportMessage;
-        newReportMessage.Format(L"%s    ", CTime::GetCurrentTime().Format(L"%d.%m.%Y %H:%M:%S").GetString());
+    // делаем отступ справа на каждый перенос строки чтобы выровнять по горизонтали
+    CString message = messageText.c_str();
+    message.Replace(L"\n", L"\n" + CString(L' ', newReportMessage.GetLength() + 16));
 
-        // делаем отступ справа на каждый перенос строки чтобы выровнять по горизонтали
-        reportMessageData->messageText.Replace(L"\n",  L"\n" + CString(L' ', newReportMessage.GetLength() + 16));
+    newReportMessage += std::move(message);
 
-        newReportMessage += reportMessageData->messageText;
-
-        // Скролируем к добавленному
-        m_listReports.SetTopIndex(m_listReports.AddString(newReportMessage));
-    }
-    else
-        assert(!"Возникло не обработанное событие на которое подписались");
+    // Скролируем к добавленному
+    m_listReports.SetTopIndex(m_listReports.AddString(newReportMessage));
 }

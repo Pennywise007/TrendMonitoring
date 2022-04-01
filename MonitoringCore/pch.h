@@ -12,8 +12,6 @@
 // fix class declaration for afxrendertarget.h
 class CRenderTarget;
 
-// включаем логирование
-#define OUTPUT_LOGGING
-#include <CommonFiles/Logger.h>
+#include "afx.h"
 
 #endif //PCH_H

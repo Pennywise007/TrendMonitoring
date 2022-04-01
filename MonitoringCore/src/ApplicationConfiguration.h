@@ -1,243 +1,82 @@
 #pragma once
 
+#include <afx.h>
 #include <list>
 #include <memory>
+#include <optional>
 
-#include <COM.h>
-#include <Serialization/ISerializable.h>
+#include <ext/core/dependency_injection.h>
+#include <ext/core/noncopyable.h>
+
+#include <ext/serialization/iserializable.h>
 
 #include <include/ITrendMonitoring.h>
+
 #include <include/ITelegramUsersList.h>
 #include <include/ITelegramBot.h>
 
-////////////////////////////////////////////////////////////////////////////////
-// Класс с настройками канала для мониторинга
-class ATL_NO_VTABLE ChannelParameters
-    : public COMInternalClass<ChannelParameters>
-    , public SerializableObjectsCollection
+// Monitoring channel parameters
+class ChannelParameters
+    : public ext::serializable::SerializableObject<ChannelParameters>
     , public MonitoringChannelData
 {
 public:
-    ChannelParameters() = default;
-    ChannelParameters(const CString& initChannelName);
+    typedef std::shared_ptr<ChannelParameters> Ptr;
 
-    // Объявляем сериализуемую коллекцию и свойства
-    BEGIN_SERIALIZABLE_PROPERTIES(ChannelParameters)
-        ADD_PROPERTY(channelName)
-        ADD_PROPERTY(bNotify)
-        ADD_PROPERTY(monitoringInterval)
-        ADD_PROPERTY(alarmingValue)
-    END_SERIALIZABLE_PROPERTIES();
+    ChannelParameters();
+    ChannelParameters(const std::wstring& initChannelName);
 
 public:
-    /// <summary>Получить данные по каналу.</summary>
-    const MonitoringChannelData& getMonitoringData() const;
-    /// <summary>Получить данные по каналу.</summary>
-    void setTrendChannelData(const TrendChannelData& data);
-    /// <summary>Изменить имя канала.</summary>
-    /// <param name="newName">Новое название.</param>
-    /// <returns>Истину в случае изменения значения.</returns>
-    bool changeName(const CString& newName);
-    /// <summary>Изменить флаг нотификации о проблемаз канала.</summary>
-    /// <param name="state">Новое состояние.</param>
-    /// <returns>Истину в случае изменения значения.</returns>
-    bool changeNotification(const bool state);
-    /// <summary>Изменить интервал по каналу.</summary>
-    /// <param name="newInterval">Новое значение интервала.</param>
-    /// <returns>Истину в случае изменения значения.</returns>
-    bool changeInterval(const MonitoringInterval newInterval);
-    /// <summary>Изменить оповащаемое значение по каналу.</summary>
-    /// <param name="newvalue">Новое значение.</param>
-    /// <returns>Истину в случае изменения значения.</returns>
-    bool changeAlarmingValue(const float newvalue);
-    /// <summary>Сбросить запомненные данные по каналу.</summary>
-    void resetChannelData();
+    /// <summary>Get data from channel.</summary>
+    EXT_NODISCARD const MonitoringChannelData& GetMonitoringData() const;
+    /// <summary>Set data for channel.</summary>
+    void SetTrendChannelData(const TrendChannelData& data);
+    /// <summary>Change channel name.</summary>
+    /// <param name="newName">New channel name.</param>
+    /// <returns>True if value changed.</returns>
+    bool ChangeName(const std::wstring& newName);
+    /// <summary>Change the notification flag about channel problems.</summary>
+    /// <param name="state">New state.</param>
+    /// <returns>True if value changed.</returns>
+    bool ChangeNotification(const bool state);
+    /// <summary>Change monitoring interval for channel.</summary>
+    /// <param name="newInterval">new interval value.</param>
+    /// <returns>True if value changed.</returns>
+    bool ChangeInterval(const MonitoringInterval newInterval);
+    /// <summary>Change notification value.</summary>
+    /// <param name="newvalue">new value.</param>
+    /// <returns>True if value changed.</returns>
+    bool ChangeAlarmingValue(const float newValue);
+    /// <summary>Reset memorized data by channel.</summary>
+    void ResetChannelData();
 
 public:
-    // конец врменного интервала по которому были загружены параметры
+    // end of the time interval for which the parameters were loaded, if empty - data not loaded yet
     std::optional<CTime> m_loadingParametersIntervalEnd;
 };
 
-// Список каналов и с параметрами
+// List of channels and their parameters
 typedef std::list<ChannelParameters::Ptr> ChannelParametersList;
-// Итератор на канал
-typedef std::list<ChannelParameters::Ptr>::iterator ChannelIt;
+typedef ChannelParametersList::iterator ChannelIt;
 
-namespace telegram {
-namespace users {
-
-////////////////////////////////////////////////////////////////////////////////
-// Класс с данными пользователя телеграма
-class ATL_NO_VTABLE TelegramUser
-    : public COMInternalClass<TelegramUser>
-    , public SerializableObjectsCollection
-    , public TgBot::User
-{
-public:
-    // нужно переопределить ибо Ptr уже есть в TgBot::User и COMInternalClass
-    typedef ComPtr<TelegramUser> Ptr;
-
-    TelegramUser() = default;
-    TelegramUser(const TgBot::User& pUser);
-
-    // Объявляем сериализуемую коллекцию и свойства
-    BEGIN_SERIALIZABLE_PROPERTIES(TelegramUser)
-        ADD_PROPERTY(m_chatId)
-        ADD_PROPERTY(m_userStatus)
-        ADD_PROPERTY(m_userLastCommand)
-        ADD_PROPERTY(m_userNote)
-        // Параметры из TgBot::User
-        ADD_PROPERTY(id)                // идентификатор пользователя
-        ADD_PROPERTY(isBot)
-        ADD_PROPERTY(firstName)
-        ADD_PROPERTY(lastName)
-        ADD_PROPERTY(username)
-        ADD_PROPERTY(languageCode)
-    END_SERIALIZABLE_PROPERTIES();
-
-    TelegramUser& operator=(const TgBot::User& pUser);
-    bool operator!=(const TgBot::User& pUser) const;
-    // TODO C++20
-    //auto operator<=>(const TgBot::User::Ptr&) const = default;
-
-public:
-    // идентификатор чата с пользователем
-    int64_t m_chatId = 0;
-    // статус пользователя
-    ITelegramUsersList::UserStatus m_userStatus = ITelegramUsersList::UserStatus::eNotAuthorized;
-    // последняя отправленная пользователем боту команда
-    std::string m_userLastCommand;
-    // заметка о пользователе, пока не используется
-    // в конфигурационном файле имеет место быть для заметок
-    CString m_userNote;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Класс хранящий список пользователей телеграма
-// позволяет работать со списком пользователей из нескольких потоков
-class ATL_NO_VTABLE TelegramUsersList
-    : public COMInternalClass<TelegramUsersList>
-    , public SerializableObjectsCollection
-    , public ITelegramUsersList
-{
-public:
-    TelegramUsersList() = default;
-
-    BEGIN_COM_MAP(TelegramUsersList)
-        COM_INTERFACE_ENTRY(ITelegramUsersList)
-        COM_INTERFACE_ENTRY_CHAIN(SerializableObjectsCollection)
-    END_COM_MAP()
-
-// ISerializableCollection
-public:
-    /// <summary>Оповещает о начале сериализации коллекции.</summary>
-    /// <returns>true если коллекцию можно сериализовать.</returns>
-    bool onStartSerializing() override;
-    /// <summary>Оповещает об окончании сериализации коллекции.</summary>
-    void onEndSerializing() override;
-
-    /// <summary>Оповещает о начале десериализации, передает список сохраненных при сериализации имен объектов.</summary>
-    /// <param name="objNames">Имена объектов которые были сохранены при сериализации.</param>
-    /// <returns>true если коллекцию можно десериализовать.</returns>
-    bool onStartDeserializing(const std::list<CString>& objNames) override;
-    /// <summary>Оповещает о конце десериализации коллекции.</summary>
-    void onEndDeserializing() override;
-
-// ITelegramUsersList
-public:
-    // убедиться что пользователь существует
-    void ensureExist(const TgBot::User::Ptr& pUser, const int64_t chatId) override;
-    // установка/получение статуса пользователя
-    void setUserStatus(const TgBot::User::Ptr& pUser, const UserStatus newStatus) override;
-    UserStatus getUserStatus(const TgBot::User::Ptr& pUser) override;
-    // установка/получение последней заданной пользователем команды боту
-    void setUserLastCommand(const TgBot::User::Ptr& pUser, const std::string& command) override;
-    std::string getUserLastCommand(const TgBot::User::Ptr& pUser) override;
-    // получить все идентификаторы чатов пользователей с определенным статусом
-    std::list<int64_t> getAllChatIdsByStatus(const UserStatus userStatus) override;
-
-private:
-    // позволяет получить итератор на пользователя
-    std::list<TelegramUser::Ptr>::iterator getUserIterator(const TgBot::User::Ptr& pUser);
-    // получает итератор на пользователя или создает, если его нет
-    std::list<TelegramUser::Ptr>::iterator getOrCreateUsertIterator(const TgBot::User::Ptr& pUser);
-    // вызывается при изменении данных в списке пользователей
-    void onUsersListChanged() const;
-
-private:
-    DECLARE_COLLECTION(TelegramUsersList);
-    // список пользователей телеграма
-    DECLARE_CONTAINER((std::list<TelegramUser::Ptr>) m_telegramUsers);
-
-    // мьютекс на коллекцию, позволяет обращаться к ней из разных потоков
-    std::mutex m_usersMutex;
-};
-
-} // namespace users
-
-namespace bot {
-
-////////////////////////////////////////////////////////////////////////////////
-// Класс с настройками канала для мониторинга
-class ATL_NO_VTABLE TelegramParameters
-    : public COMInternalClass<TelegramParameters>
-    , public SerializableObjectsCollection
-    , public TelegramBotSettings
-{
-public:
-    TelegramParameters() = default;
-
-    // Объявляем сериализуемую коллекцию и свойства
-    BEGIN_SERIALIZABLE_PROPERTIES(TelegramParameters)
-        ADD_PROPERTY(bEnable)
-        ADD_PROPERTY(sToken)
-        ADD_SERIALIZABLE(m_telegramUsers)
-    END_SERIALIZABLE_PROPERTIES();
-
-    TelegramParameters& operator=(const TelegramBotSettings& botSettings);
-
-public:
-    // список пользователей телеграма
-    users::TelegramUsersList::Ptr m_telegramUsers = users::TelegramUsersList::create();
-};
-
-} // namespace bot
-} // namespace telegram
-
-////////////////////////////////////////////////////////////////////////////////
-/*
-    Класс, хранящий в себе настройки приложения
-
-    Хранит:
-
-    1. Информацию о каналах
-        - выбранные каналы для мониторинга и выбранные интервалы мониторинга
-
-    2. Информацию о пользователях телеграм бота
-        - статус пользователя и его данные
-*/
+// All application settings
 class ATL_NO_VTABLE ApplicationConfiguration
-    : public COMInternalClass<ApplicationConfiguration>
-    , public SerializableObjectsCollection
+    : public ext::serializable::SerializableObject<ApplicationConfiguration>
+    , ext::NonCopyable
 {
 public:
-    ApplicationConfiguration() = default;
+    explicit ApplicationConfiguration(ext::ServiceProvider::Ptr serviceProvider)
+        : m_telegramParameters(ext::GetInterface<telegram::bot::ITelegramBotSettings>(serviceProvider))
+    {
+        REGISTER_SERIALIZABLE_OBJECT(m_telegramParameters);
+    }
 
-    // Получение списка пользователей телеграма
-    telegram::users::ITelegramUsersListPtr getTelegramUsers() const;
-    // Получение настроек телеграм бота
-    const telegram::bot::TelegramBotSettings& getTelegramSettings() const;
-    // Получение настроек телеграм бота
-    void setTelegramSettings(const telegram::bot::TelegramBotSettings& newSettings);
+    typedef std::shared_ptr<ApplicationConfiguration> Ptr;
 
 public:
-    // Объявляем сериализуемую коллекцию
-    DECLARE_COLLECTION(ApplicationConfiguration);
+    // list of settings for each channel
+    DECLARE_SERIALIZABLE((ChannelParametersList) m_chanelParameters);
 
-    // список настроек для каждого канала
-    DECLARE_CONTAINER((ChannelParametersList) m_chanelParameters);
-
-    // настройки телеграм бота
-    DECLARE_SERIALIZABLE((telegram::bot::TelegramParameters::Ptr) m_telegramParameters,
-                         telegram::bot::TelegramParameters::create());
+    // telegram bot settings
+    std::shared_ptr<telegram::bot::ITelegramBotSettings> m_telegramParameters;
 };

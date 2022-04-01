@@ -8,23 +8,34 @@
 #include "Controls/Tables/ListEditSubItems/ListEditSubItems.h"
 #include "Controls/TabControl/TabControl.h"
 
-#include "Messages.h"
+#include <include/ITrendMonitoring.h>
+
+#include <ext/core/dependency_injection.h>
+
 #include "TrayHelper.h"
 
 // CTrendMonitorDlg dialog
 class CTrendMonitorDlg
     : public CDialogEx
-    , public EventRecipientImpl
+    , ext::ServiceProviderHolder
+    , ext::events::ScopeSubscription<IMonitoringListEvents, ILogEvents, IReportEvents>
 {
 // Construction
 public:
-    CTrendMonitorDlg(CWnd* pParent = nullptr);	// standard constructor
+    CTrendMonitorDlg(ext::ServiceProvider::Ptr serviceProvider, CWnd* pParent = nullptr);	// standard constructor
 
-// IEventRecipient
-public:
-    // оповещение о произошедшем событии
-    void onEvent(const EventId& code, float eventValue,
-                 const std::shared_ptr<IEventData>& eventData) override;
+// IMonitoringListEvents
+private:
+    void OnChanged() override;
+
+// ILogEvents
+private:
+    void OnNewLogMessage(const std::shared_ptr<LogMessageData>& logMessage) override;
+
+// IReportEvents
+private:
+    // notification when generating a report, see Message Text Data
+    void OnReportDone(std::wstring messageText) override;
 
 // Dialog Data
 protected:

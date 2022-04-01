@@ -42,16 +42,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="$(UtilsDir)CommonFiles\Serialization\ISerializable.h">
-      <Filter>Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="$(UtilsDir)CommonFiles\Serialization\SerializationUtils.h">
-      <Filter>Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="$(UtilsDir)CommonFiles\Serialization\SerializatorFabric.h">
-      <Filter>Serialization</Filter>
-    </ClInclude>
     <ClInclude Include="TestSerialization.h">
       <Filter>TestSources</Filter>
     </ClInclude>
@@ -76,6 +66,7 @@
     <ClInclude Include="TelegamBotMock.h">
       <Filter>TestSources\Telegram</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="TestSources">

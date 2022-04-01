@@ -13,12 +13,12 @@
 void TestHelper::resetMonitoringService()
 {
     // сервис мониторинга
-    ITrendMonitoring* monitoringService = get_monitoring_service();
+    ITrendMonitoring* monitoringService = GetInterface<ITrendMonitoring>();
 
     // сбрасываем все каналы
-    for (size_t i = monitoringService->getNumberOfMonitoringChannels(); i > 0; --i)
+    for (size_t i = monitoringService->GetNumberOfMonitoringChannels(); i > 0; --i)
     {
-        monitoringService->removeMonitoringChannelByIndex(i - 1);
+        monitoringService->RemoveMonitoringChannelByIndex(i - 1);
     }
 
     // reset mock
@@ -26,7 +26,7 @@ void TestHelper::resetMonitoringService()
     ASSERT_TRUE(!!monitoring);
     monitoring->installTelegramBot(nullptr);
 
-    monitoringService->setBotSettings(telegram::bot::TelegramBotSettings());
+    monitoringService->SetBotSettings(telegram::bot::TelegramBotSettings());
 
     // удаляем конфигурационный файл
     const std::filesystem::path currentConfigPath(getConfigFilePath());

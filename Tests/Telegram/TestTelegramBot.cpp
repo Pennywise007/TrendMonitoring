@@ -5,7 +5,10 @@
 
 #include <boost/algorithm/string.hpp>
 
+#pragma warning( push )
+#pragma warning( disable: 4996 ) // boost deprecated objects usage
 #include <tgbot/tgbot.h>
+#pragma warning( pop )
 
 #include <TelegramDLL/TelegramThread.h>
 
@@ -44,7 +47,7 @@ void TestTelegramBot::SetUp()
     // инициализируем список пользователей и фейкового потока для имтитации работы телеграма, имитируем что у нас unique_ptr
     m_testTelegramBot = std::make_unique<CTelegramBot>(m_pUserList, pTelegramThread.release());
     // передаём настройки
-    m_testTelegramBot->setBotSettings(botSettings);
+    m_testTelegramBot->SetBotSettings(botSettings);
 
     // заполняем перечень команд и доступность её для различных пользователей
     m_commandsToUserStatus[L"info"] = { ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };

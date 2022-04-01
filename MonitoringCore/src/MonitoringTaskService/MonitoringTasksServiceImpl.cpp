@@ -3,416 +3,323 @@
 #include <cassert>
 #include <memory>
 
-#include "Logger.h"
+#include <ext/trace/tracer.h>
+
 #include "MonitoringTasksServiceImpl.h"
 
-#include <ext/utils/string.h>
+#include "ChannelDataGetter/ChannelDataGetter.h"
 
-// включение подробного логирования
+#include <mutex>
+#include <ext/core/dependency_injection.h>
+#include <ext/std/string.h>
+
+// enable verbose logging
 #define DETAILED_LOGGING
 
-std::shared_ptr<IMonitoringTasksService> g_mockTaskService = nullptr;
-
-////////////////////////////////////////////////////////////////////////////////
-IMonitoringTasksService* get_monitoring_tasks_service()
-{
-    if (g_mockTaskService)
-        return g_mockTaskService.get();
-
-    return &get_service<MonitoringTasksServiceImpl>();
-}
-
-void set_monitoring_tasks_service_mock(std::shared_ptr<IMonitoringTasksService> mockForService)
-{
-    // проверяем на двойную устанвоку сервиса
-    assert(!g_mockTaskService != !mockForService);
-    g_mockTaskService = mockForService;
-}
-
-//----------------------------------------------------------------------------//
 MonitoringTasksServiceImpl::MonitoringTasksServiceImpl()
-{
-    // делаем не через конструктор чтобы все переменные инициализировались
-    m_monitoringTasksExecutorThread = std::thread(std::bind(&MonitoringTasksServiceImpl::tasksExecutorThread, this));
-}
+    : m_threadPool(nullptr, 1)
+{}
 
-//----------------------------------------------------------------------------//
-MonitoringTasksServiceImpl::~MonitoringTasksServiceImpl()
-{
-    // взводим флаг прерывания потока
-    m_interruptThread = true;
-    // оповещаем о новом событии
-    m_cvTasks.notify_all();
-    // ждем пока поток прервется
-    m_monitoringTasksExecutorThread.join();
-}
-
-//----------------------------------------------------------------------------//
-// IMonitoringTasksService
-TaskId MonitoringTasksServiceImpl::addTaskList(const std::list<CString>& channelNames,
+TaskId MonitoringTasksServiceImpl::AddTaskList(const std::list<std::wstring>& channelNames,
                                                const CTime& intervalStart,
                                                const CTime& intervalEnd,
                                                const TaskPriority priority)
 {
-    // список параметров заданий
+    // list of job parameters
     std::list<TaskParameters::Ptr> listTaskParams;
 
-    // запоминаем конец интервала по которому были загружены данные
+    // remember the end of the interval for which the data was loaded
     for (const auto& channelName : channelNames)
     {
         listTaskParams.emplace_back(new TaskParameters(channelName, intervalStart, intervalEnd));
     }
 
-    return addTaskList(listTaskParams, priority);
+    return AddTaskList(listTaskParams, priority);
 }
 
-//----------------------------------------------------------------------------//
-// IMonitoringTasksService
-TaskId MonitoringTasksServiceImpl::addTaskList(const std::list<TaskParameters::Ptr>& listTaskParams,
+TaskId MonitoringTasksServiceImpl::AddTaskList(const std::list<TaskParameters::Ptr>& listTaskParams,
                                                const TaskPriority priority)
 {
 #ifdef DETAILED_LOGGING
-    OUTPUT_LOG_FUNC_ENTER;
+    EXT_TRACE_SCOPE() << EXT_TRACE_FUNCTION;
 #endif // DETAILED_LOGGING
 
-    // генерим идентификатор задания
-    TaskId newTaskId;
-    if (!SUCCEEDED(CoCreateGuid(&newTaskId)))
-        assert(!"Не удалось создать гуид!");
+    EXT_EXPECT(!listTaskParams.empty()) << EXT_TRACE_FUNCTION << "Empty parameters list";
 
-    // инициализируем в списке результатов
+    const auto taskId = TaskIdHelper::Create();
+
     {
         std::lock_guard<std::mutex> lock(m_resultsMutex);
-        m_resultsList.try_emplace(newTaskId, listTaskParams.size(), newTaskId);
+        EXT_EXPECT(m_resultsList.try_emplace(taskId, listTaskParams.size()).second) << EXT_TRACE_FUNCTION "Failed to emplace task id";
     }
 
+    for (auto taskParams : listTaskParams)
     {
-        // вставляем в очередь заданий
-        std::lock_guard<std::mutex> lock(m_queueMutex);
-
-        // итератор куда будем вставлять
-        decltype(m_queueTasks)::iterator insertIter =
-            std::find_if(m_queueTasks.begin(), m_queueTasks.end(),
-                         [priority](const MonitoringTaskPtr& task)
-                         {
-                             return task->m_priority > priority;
-                         });
-
-        for (const auto& taskParams : listTaskParams)
+        m_threadPool.add_task_by_id(taskId, [&, taskId, taskParams]()
         {
-            insertIter = ++m_queueTasks.emplace(insertIter, new MonitoringTask(taskParams,
-                                                                               priority,
-                                                                               newTaskId));
-        }
+            IMonitoringTaskEvent::ResultDataPtr result = ExecuteTask(taskParams);
+            if (!result) // interruption
+            {
+                EXT_EXPECT(ext::this_thread::interruption_requested()) << EXT_TRACE_FUNCTION << "Result empty but thread not interrupted";
+                return;
+            }
+            EXT_ASSERT(taskParams->channelName == result->taskParameters->channelName) << "Get data for wrong channel name!";
+
+            // collect all results for task
+            std::lock_guard<std::mutex> lock(m_resultsMutex);
+            auto it = m_resultsList.find(taskId);
+            EXT_ASSERT(it != m_resultsList.end());
+
+            auto& taskResults = it->second.results;
+            taskResults.emplace_back(std::move(result));
+
+            // if we have completed all the tasks - notify about it
+            if (taskResults.size() == it->second.taskCount)
+            {
+                // notification of the completion of the task
+                ext::send_event_async(&IMonitoringTaskEvent::OnCompleteTask, taskId, std::move(taskResults));
+                // remove a task from the local list of tasks
+                m_resultsList.erase(it);
+            }
+        }, priority);
+    }
 
 #ifdef DETAILED_LOGGING
-        // собираем информацию для логирования
-        CString channelsInfo;
+    {
+        // collect information for logging
+        std::wstring channelsInfo;
         for (const auto& taskParams : listTaskParams)
         {
-            channelsInfo.AppendFormat(L" канал %s, интервал %s - %s;",
-                                      taskParams->channelName.GetString(),
-                                      taskParams->startTime.Format(L"%d.%m.%Y  %H:%M:%S").GetString(),
-                                      taskParams->endTime.Format(L"%d.%m.%Y  %H:%M:%S").GetString());
+            channelsInfo = std::string_swprintf(L" channel %s, interval %s - %s;",
+                                                taskParams->channelName.c_str(),
+                                                taskParams->startTime.Format(L"%d.%m.%Y  %H:%M:%S").GetString(),
+                                                taskParams->endTime.Format(L"%d.%m.%Y  %H:%M:%S").GetString());
         }
 
-        OUTPUT_LOG_SET_TEXT(L"Загрузка данных%s. TaskId = %s",
-                            channelsInfo.GetString(),
-                            CString(CComBSTR(newTaskId)).GetString());
+        EXT_TRACE() << EXT_TRACE_FUNCTION << std::string_swprintf(L"Loading data %s. TaskId = %s",
+            channelsInfo.c_str(),
+            std::wstring(CComBSTR(taskId)).c_str()).c_str();
+    }
 #endif // DETAILED_LOGGING
 
-    }
-
-    m_cvTasks.notify_one();
-
-    return newTaskId;
+    return taskId;
 }
 
-//----------------------------------------------------------------------------//
-// IMonitoringTasksService
-void MonitoringTasksServiceImpl::removeTask(const TaskId& taskId)
+void MonitoringTasksServiceImpl::RemoveTask(const TaskId& taskId)
 {
 #ifdef DETAILED_LOGGING
-
-    OUTPUT_LOG_FUNC_ENTER;
-    OUTPUT_LOG_SET_TEXT(L"TaskId = %s", CString(CComBSTR(taskId)).GetString());
-
+    EXT_TRACE() << EXT_TRACE_FUNCTION << std::string_swprintf(L"TaskId = %s", std::wstring(CComBSTR(taskId)).c_str()).c_str();
 #endif // DETAILED_LOGGING
 
-    // удаляем из списка результатов
+    m_threadPool.erase_task(taskId);
+
+    // removing from results list
     {
         std::lock_guard<std::mutex> lock(m_resultsMutex);
         m_resultsList.erase(taskId);
     }
-
-    // удаляем все задания мониторинга с таким идентификатором
-    {
-        std::lock_guard<std::mutex> lock(m_queueMutex);
-        m_queueTasks.erase(std::remove_if(m_queueTasks.begin(), m_queueTasks.end(),
-                                          [&taskId](const MonitoringTaskPtr& task)
-                                          {
-                                              return task->m_taskId == taskId;
-                                          }),
-                           m_queueTasks.end());
-    }
 }
 
-//----------------------------------------------------------------------------//
-void MonitoringTasksServiceImpl::tasksExecutorThread()
-{
-    for (; !m_interruptThread; )
-    {
-        MonitoringTaskPtr pMonitoringTask = nullptr;
-        {
-            // ждем пока будет добавлено сообщение в очередь
-            std::unique_lock<std::mutex> lk(m_queueMutex);
-
-            // ждем пока не появится хоть одно задание
-            while (m_queueTasks.empty())
-            {
-                m_cvTasks.wait(lk);
-
-                // если нас пробудили для прерывания - прерываемся
-                if (m_interruptThread)
-                    return;
-            }
-
-            // получаем след задание для выполенения из очереди
-            pMonitoringTask = std::move(m_queueTasks.front());
-            // удаляем его из очереди заданий
-            m_queueTasks.pop_front();
-        }
-
-        // выполняем задание
-        executeTask(pMonitoringTask);
-    }
-}
-
-//----------------------------------------------------------------------------//
-void MonitoringTasksServiceImpl::executeTask(MonitoringTaskPtr pMonitoringTask)
+IMonitoringTaskEvent::ResultDataPtr MonitoringTasksServiceImpl::ExecuteTask(const TaskParameters::Ptr& taskParams)
 {
 #ifdef DETAILED_LOGGING
-    OUTPUT_LOG_FUNC_ENTER;
+    EXT_TRACE_SCOPE() << EXT_TRACE_FUNCTION;
 #endif // DETAILED_LOGGING
 
-    assert(pMonitoringTask);
-    if (!pMonitoringTask)
-        return;
+    EXT_ASSERT(!!taskParams);
+    if (!taskParams)
+        return nullptr;
 
-    MonitoringResult::ResultData taskResult(pMonitoringTask->m_pTaskParams);
+    IMonitoringTaskEvent::ResultDataPtr taskResult = std::make_shared<IMonitoringTaskEvent::ResultData>(taskParams);
 
     // параметры задания
-    const CString& channelName = pMonitoringTask->m_pTaskParams->channelName;
-    const CTime& startTime  = pMonitoringTask->m_pTaskParams->startTime;
-    const CTime& endTime    = pMonitoringTask->m_pTaskParams->endTime;
+    const std::wstring& channelName = taskParams->channelName;
+    const CTime& startTime  = taskParams->startTime;
+    const CTime& endTime    = taskParams->endTime;
 
 #ifdef DETAILED_LOGGING
-    OUTPUT_LOG_CALCTIME_ENABLE(true);
-    OUTPUT_LOG_TEXT(L"Загрузка данных по каналу %s, интервал %s - %s.",
-                    channelName.GetString(),
+    EXT_TRACE() << EXT_TRACE_FUNCTION << std::string_swprintf(L"Загрузка данных по каналу %s, интервал %s - %s.",
+                    channelName.c_str(),
                     startTime.Format(L"%d.%m.%Y  %H:%M:%S").GetString(),
-                    endTime.Format(L"%d.%m.%Y  %H:%M:%S").GetString());
+                    endTime.Format(L"%d.%m.%Y  %H:%M:%S").GetString()).c_str();
 #endif // DETAILED_LOGGING
 
-    // сообщение об ошибке
-    CString exceptionMessage;
+    // error message
+    std::wstring exceptionMessage;
     try
     {
-        // создаем класс для получения данных по каналу
-        ChannelDataGetter channelDataGetter(channelName, startTime, endTime);
-        // частота канала, считаем что она постоянная
+        // create a class to receive data on the channel
+        ChannelDataGetter channelDataGetter(channelName.c_str(), startTime, endTime);
+        // channel frequency, we assume that it is constant
         double frequency = channelDataGetter.getChannelInfo()->GetFrequency();
 
-        // будем грузить порциями, максимум по 10 000 000 точек
-        // для канала с частотой 10 это 11,5 дней, или ~40 мб памяти
+        // we will load in portions, a maximum of 10,000,000 points
+        // for a channel with a frequency of 10, this is 11.5 days, or ~40 MB of memory
         const double maxPartSize = 1e7;
 
         bool bDataLoaded = false;
 
-        // данные по каналу
+        // channel data
         std::vector<float> channelData;
 
-        // последнее загруженное время по каналу
+        // last loaded time per channel
         CTime lastLoadedTime = startTime;
-        while (lastLoadedTime != endTime && !m_interruptThread)
+        while (lastLoadedTime != endTime && !ext::this_thread::interruption_requested())
         {
-            // временной промежуток который осталось загрузить
+            // time period left to load
             CTimeSpan allTimeSpan = endTime - lastLoadedTime;
 
-            // рассчитываем количество секунд которые можем загрузить
+            // count the number of seconds we can load
             const LONGLONG loadingSeconds = std::min<LONGLONG>(allTimeSpan.GetTotalSeconds(), LONGLONG(maxPartSize / frequency));
 
             try
             {
-                // загружаем данные текущией порции
+                // load the data of the current portion
                 channelDataGetter.getSourceChannelData(lastLoadedTime, lastLoadedTime + loadingSeconds, channelData);
 
-                // количество пустых значений
+                // number of empty values
                 LONGLONG emptyValuesCount = 0;
 
-                // Индекс в данных и индекс последних не нулевых данных
+                // Index in data and index of last non-null data
                 LONGLONG index = 0, lastNotEmptyValueIndex = -1;
 
-                // анализируем данные
-                // делаем через : потому что данных много и доступ к ним через [] будет занимать много времени
+                // parse the data
+                // do it via : because there is a lot of data and accessing it via [] will take a lot of time
                 for (const auto& value : channelData)
                 {
-                    // прерываемся если поток прервали
-                    if (m_interruptThread)
-                        return;
+                    // break if the thread is interrupted
+                    if (ext::this_thread::interruption_requested())
+                        return nullptr;
 
-                    // абсолютный ноль считаем пропуском данных
+                    // absolute zero is considered a data gap
                     if (abs(value) > FLT_MIN)
                     {
                         if (!bDataLoaded)
                         {
-                            // инициализируем значениями
-                            taskResult.startValue = value;
-                            taskResult.minValue = value;
-                            taskResult.maxValue = value;
+                            // initialize with values
+                            taskResult->startValue = value;
+                            taskResult->minValue = value;
+                            taskResult->maxValue = value;
 
                             bDataLoaded = true;
                         }
                         else
                         {
-                            if (taskResult.minValue > value)
-                                taskResult.minValue = value;
-                            if (taskResult.maxValue < value)
-                                taskResult.maxValue = value;
+                            if (taskResult->minValue > value)
+                                taskResult->minValue = value;
+                            if (taskResult->maxValue < value)
+                                taskResult->maxValue = value;
                         }
 
-                        // запоминаем индекс последних не нулевых данных
+                        // remember the index of the last non-null data
                         lastNotEmptyValueIndex = index;
                     }
                     else
                         emptyValuesCount += 1;
 
-                    ++index; // отдельно считаем текущий индекс в данных
+                    ++index; // separately calculate the current index in the data
                 }
 
 #ifdef DETAILED_LOGGING
-                OUTPUT_LOG_TEXT(L"Данные канала %s(частота %.02lf) загружены в промежутке %s - %s. Текущее количество пропусков %lld - новое  %lld. Всего данных %u, пустых %u.",
-                                channelName.GetString(), frequency,
-                                lastLoadedTime.Format(L"%d.%m.%Y").GetString(),
-                                (lastLoadedTime + loadingSeconds).Format(L"%d.%m.%Y").GetString(),
-                                taskResult.emptyDataTime,
-                                emptyValuesCount,
-                                channelData.size(),
-                                std::count_if(channelData.begin(), channelData.end(),
-                                              [](const auto& val)
-                                              {
-                                                  return abs(val) <= FLT_MIN;
-                                              }));
-#endif // DETAILED_LOGGING
+                EXT_TRACE() << EXT_TRACE_FUNCTION << std::string_swprintf(
+                    L"Данные канала %s(частота %.02lf) загружены в промежутке %s - %s. Текущее количество пропусков %lld - новое  %lld. Всего данных %u, пустых %u.",
+                    channelName.c_str(), frequency,
+                    lastLoadedTime.Format(L"%d.%m.%Y").GetString(),
+                    (lastLoadedTime + loadingSeconds).Format(L"%d.%m.%Y").GetString(),
+                    taskResult->emptyDataTime,
+                    emptyValuesCount,
+                    channelData.size(),
+                    std::count_if(channelData.begin(), channelData.end(),
+                        [](const auto& val)
+                        {
+                            return abs(val) <= FLT_MIN;
+                        })).c_str();
+        #endif // DETAILED_LOGGING
 
-                // если были не пустые данные
+                // if there was non-empty data
                 if (lastNotEmptyValueIndex != -1)
                 {
-                    // запоминаем последнее не пустое значение
-                    taskResult.currentValue = channelData[(UINT)lastNotEmptyValueIndex];
+                    // remember the last non-empty value
+                    taskResult->currentValue = channelData[(UINT)lastNotEmptyValueIndex];
 
-                    // находим время последнего не пустого значения
-                    taskResult.lastDataExistTime =
+                    // find the time of the last non-empty value
+                    taskResult->lastDataExistTime =
                         lastLoadedTime + CTimeSpan(__time64_t(lastNotEmptyValueIndex / frequency));
                 }
 
-                // рассчитываем количество секунд без данных
-                taskResult.emptyDataTime += LONGLONG(emptyValuesCount / frequency);
+                // calculate the number of seconds without data
+                taskResult->emptyDataTime += LONGLONG(emptyValuesCount / frequency);
             }
             catch (const std::exception& exception)
             {
-                // в каком-то промежутке данных может вообще не быть, помечаем их пустыми
-                taskResult.emptyDataTime += loadingSeconds;
+                // in some interval there may be no data at all, mark them empty
+                taskResult->emptyDataTime += loadingSeconds;
 
 #ifdef DETAILED_LOGGING
-                OUTPUT_LOG_TEXT(L"Возникла ошибка при получении данных. Текущее количество пропусков %lld. Ошибка: %s",
-                                taskResult.emptyDataTime,
-                                std::widen(exception.what()).c_str());
+                EXT_TRACE() << EXT_TRACE_FUNCTION << std::string_swprintf(L"Возникла ошибка при получении данных. Текущее количество пропусков %lld. Ошибка: %s",
+                                taskResult->emptyDataTime,
+                                std::widen(exception.what()).c_str()).c_str();
 #endif // DETAILED_LOGGING
             }
 
-            // обновляем последнее загруженное время
+            // update last loaded time
             lastLoadedTime += loadingSeconds;
         }
 
-        // если не было загружено данных - сообщаем об этом
+        // if no data was loaded - report it
         if (!bDataLoaded)
-            taskResult.resultType = MonitoringResult::Result::eNoData;
+            taskResult->resultType = IMonitoringTaskEvent::Result::eNoData;
     }
-    catch (CException* e)
+    catch (CException*)
     {
-        TCHAR logMessage[MAX_PATH];
-        e->GetErrorMessage(logMessage, MAX_PATH);
-        exceptionMessage = logMessage;
+        exceptionMessage = ext::ManageExceptionText(L"Failed to load data");
     }
-    catch (const std::exception& exception)
+    catch (const std::exception&)
     {
-        exceptionMessage = std::widen(exception.what()).c_str();
+        exceptionMessage = ext::ManageExceptionText(L"Failed to load data");
     }
 
-    // Если было сообщение об ошибке - показываем его
-    if (!exceptionMessage.IsEmpty())
+    // If there was an error message, show it
+    if (!exceptionMessage.empty())
     {
-        taskResult.errorText.
-            Format(L"Возникла ошибка при получении данных канала \"%s\" в промежутке %s - %s.\n%s",
-                   channelName.GetString(),
-                   startTime.Format(L"%d.%m.%Y").GetString(),
-                   endTime.Format(L"%d.%m.%Y").GetString(),
-                   exceptionMessage.GetString());
+        taskResult->errorText = std::string_swprintf(
+            L"Возникла ошибка при получении данных канала \"%s\" в промежутке %s - %s.\n%s",
+            channelName.c_str(),
+            startTime.Format(L"%d.%m.%Y").GetString(),
+            endTime.Format(L"%d.%m.%Y").GetString(),
+            exceptionMessage.c_str());
 
-        // сообщаем что есть текст ошибки
-        taskResult.resultType = MonitoringResult::Result::eErrorText;
+        // report that there is an error text
+        taskResult->resultType = IMonitoringTaskEvent::Result::eErrorText;
 
-        // если возникло исключени данным верить нельзя - считаем что весь интервал пустой
-        taskResult.emptyDataTime = endTime - startTime;
+        // if an exception occurs, the data cannot be trusted - we consider that the entire interval is empty
+        taskResult->emptyDataTime = endTime - startTime;
     }
 
 #ifdef DETAILED_LOGGING
-    CString loadingResult;
-    switch (taskResult.resultType)
+    std::wstring loadingResult;
+    switch (taskResult->resultType)
     {
-    case MonitoringResult::Result::eSucceeded:
-        loadingResult.Format(L"Данные получены, curVal = %.02f minVal = %.02f maxVal = %.02f, emptyDataSeconds = %lld",
-                             taskResult.currentValue, taskResult.minValue, taskResult.maxValue,
-                             taskResult.emptyDataTime.GetTotalSeconds());
+    case IMonitoringTaskEvent::Result::eSucceeded:
+        loadingResult = std::string_swprintf(L"Данные получены, curVal = %.02f minVal = %.02f maxVal = %.02f, emptyDataSeconds = %lld",
+                             taskResult->currentValue, taskResult->minValue, taskResult->maxValue,
+                             taskResult->emptyDataTime.GetTotalSeconds());
         break;
-    case MonitoringResult::Result::eErrorText:
-        loadingResult = taskResult.errorText;
+    case IMonitoringTaskEvent::Result::eErrorText:
+        loadingResult = taskResult->errorText;
         break;
-    case MonitoringResult::Result::eNoData:
+    case IMonitoringTaskEvent::Result::eNoData:
         loadingResult = L"Данных нет";
         break;
     default:
         loadingResult = L"Не известный тип резултата!";
-        assert(false);
+        EXT_ASSERT(false);
         break;
     }
 
-    OUTPUT_LOG_ADD_COMMENT(L"Загрузка данных по каналу %s завершена. Результат : %s",
-                           channelName.GetString(), loadingResult.GetString());
+    EXT_TRACE() << EXT_TRACE_FUNCTION << std::string_swprintf(L"Загрузка данных по каналу %s завершена. Результат : %s",
+                           channelName.c_str(), loadingResult.c_str()).c_str();
 #endif // DETAILED_LOGGING
 
-    // заносим результат задания в список результатов
-    {
-        std::lock_guard<std::mutex> lock(m_resultsMutex);
-
-        auto resultIt = m_resultsList.find(pMonitoringTask->m_taskId);
-        // проверяем что задание не удалили пока мы его выполняли
-        if (resultIt != m_resultsList.end())
-        {
-            MonitoringResult::ResultsList& resultsList = resultIt->second.m_pMonitoringResult->m_taskResults;
-            // вставляем результат
-            resultsList.emplace_back(std::move(taskResult));
-            // если выполнили все задания которые должны оповещаем об этом
-            if (resultsList.size() == resultIt->second.m_taskCount)
-            {
-                // оповещаем о выполнении задания
-                get_service<CMassages>().postMessage(onCompletingMonitoringTask, 0.f,
-                                                     std::static_pointer_cast<IEventData>(resultIt->second.m_pMonitoringResult));
-
-                // удаляем задание из локального списка заданий
-                m_resultsList.erase(resultIt);
-            }
-        }
-    }
+    return taskResult;
 }

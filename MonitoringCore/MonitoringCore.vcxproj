@@ -23,20 +23,20 @@
     <ProjectGuid>{C9F032DD-2B15-4AAA-BD44-3EB960C834E9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>MonitoringCore</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>false</UseOfMfc>
@@ -44,14 +44,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>false</UseOfMfc>
@@ -92,34 +92,29 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PUGIXML_WCHAR_MODE;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_PUGI_XML;PUGIXML_WCHAR_MODE;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ShowIncludes>false</ShowIncludes>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(UtilsDir);$(CommonHeadersDir);$(MyIncludeDir);$(BoostIncludeDir);$(ProjectDir);$(MyIncludeDir)TelegramDLL\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(ProjectDir);%(AdditionalIncludeDirectories);$(OutputPath)include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>TelegramDLLD.lib;</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MyLibDir)TelegramDLL\;D:\Program Files (x86)\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>echo copy "$(MyDLLDir)TelegramDLL\TelegramDLLD.dll" "$(OutputPath)"
-xcopy /y /d "$(MyDLLDir)TelegramDLL\TelegramDLLD.dll" "$(OutputPath)"
+      <Command>echo copy "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
 
-echo copy "$(MyDLLDir)TelegramDLL\TelegramDLLD.pdb" "$(OutputPath)"
-xcopy /y /d "$(MyDLLDir)TelegramDLL\TelegramDLLD.pdb" "$(OutputPath)"
-
-echo copy "$(MyDLLDir)LoadFromInetDll\OpenSSL\libeay32.dll" "$(OutputPath)"
-xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\libeay32.dll" "$(OutputPath)"
-
-echo copy "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"
-xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+echo copy "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -128,13 +123,13 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PUGIXML_WCHAR_MODE;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_PUGI_XML;PUGIXML_WCHAR_MODE;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ShowIncludes>false</ShowIncludes>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(UtilsDir);$(CommonHeadersDir);$(MyIncludeDir);$(BoostIncludeDir);$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(ProjectDir);%(AdditionalIncludeDirectories);$(OutputPath)include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -142,8 +137,15 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     </Link>
     <Lib>
       <AdditionalDependencies>TelegramDLLD.lib;</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MyLibDir)TelegramDLL\;D:\Program Files (x86)\Visual Leak Detector\lib\Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
+    <PostBuildEvent>
+      <Command>echo copy "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
+
+echo copy "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -153,13 +155,13 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PUGIXML_WCHAR_MODE;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_PUGI_XML;PUGIXML_WCHAR_MODE;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ShowIncludes>false</ShowIncludes>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(UtilsDir);$(CommonHeadersDir);$(MyIncludeDir);$(BoostIncludeDir);$(ProjectDir);$(MyIncludeDir)TelegramDLL\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(ProjectDir);%(AdditionalIncludeDirectories);$(OutputPath)include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -169,20 +171,14 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     </Link>
     <Lib>
       <AdditionalDependencies>TelegramDLL.lib;</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MyLibDir)TelegramDLL\;D:\Program Files (x86)\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>echo copy "$(MyDLLDir)TelegramDLL\TelegramDLL.dll" "$(OutputPath)"
-xcopy /y /d "$(MyDLLDir)TelegramDLL\TelegramDLL.dll" "$(OutputPath)"
+      <Command>echo copy "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
 
-echo copy "$(MyDLLDir)TelegramDLL\TelegramDLL.pdb" "$(OutputPath)"
-xcopy /y /d "$(MyDLLDir)TelegramDLL\TelegramDLL.pdb" "$(OutputPath)"
-
-echo copy "$(MyDLLDir)LoadFromInetDll\OpenSSL\libeay32.dll" "$(OutputPath)"
-xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\libeay32.dll" "$(OutputPath)"
-
-echo copy "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"
-xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+echo copy "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -193,13 +189,13 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PUGIXML_WCHAR_MODE;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_PUGI_XML;PUGIXML_WCHAR_MODE;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ShowIncludes>false</ShowIncludes>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(UtilsDir);$(CommonHeadersDir);$(MyIncludeDir);$(BoostIncludeDir);$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(ProjectDir);%(AdditionalIncludeDirectories);$(OutputPath)include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -209,27 +205,49 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     </Link>
     <Lib>
       <AdditionalDependencies>TelegramDLL.lib;</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MyLibDir)TelegramDLL\;D:\Program Files (x86)\Visual Leak Detector\lib\Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
+    <PostBuildEvent>
+      <Command>echo copy "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)External\OpenSSL\libeay32.dll" "$(OutputPath)"
+
+echo copy "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"
+xcopy /y /d "$(ProjectDIr)External\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="$(CommonHeadersDir)COM.h" />
-    <ClInclude Include="$(CommonHeadersDir)Messages.h" />
-    <ClInclude Include="$(CommonHeadersDir)Serialization\ISerializable.h" />
-    <ClInclude Include="$(CommonHeadersDir)Serialization\SerializationUtils.h" />
-    <ClInclude Include="$(CommonHeadersDir)Serialization\SerializatorFabric.h" />
-    <ClInclude Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.h" />
-    <ClInclude Include="$(CommonHeadersDir)Singleton.h" />
-    <ClInclude Include="$(CommonHeadersDir)TickService.h" />
-    <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelDataGetter.h" />
-    <ClInclude Include="$(MyIncludeDir)ChannelDataCorrector\ChannelsHelpHeader.h" />
-    <ClInclude Include="$(CommonHeadersDir)DirsService.h" />
-    <ClInclude Include="$(CommonHeadersDir)Logger.h" />
+    <ClInclude Include="..\include\ext\core\check.h" />
+    <ClInclude Include="..\include\ext\core\COM.h" />
+    <ClInclude Include="..\include\ext\core\defines.h" />
+    <ClInclude Include="..\include\ext\core\dependency_injection.h" />
+    <ClInclude Include="..\include\ext\core\dispatcher.h" />
+    <ClInclude Include="..\include\ext\core\mpl.h" />
+    <ClInclude Include="..\include\ext\core\noncopyable.h" />
+    <ClInclude Include="..\include\ext\core\singleton.h" />
+    <ClInclude Include="..\include\ext\serialization\iserializable.h" />
+    <ClInclude Include="..\include\ext\serialization\serializable_impl.h" />
+    <ClInclude Include="..\include\ext\serialization\serializable_value.h" />
+    <ClInclude Include="..\include\ext\serialization\serializer.h" />
+    <ClInclude Include="..\include\ext\serialization\serializers\text.h" />
+    <ClInclude Include="..\include\ext\serialization\serializers\xml.h" />
+    <ClInclude Include="..\include\ext\serialization\serializer_impl.h" />
+    <ClInclude Include="..\include\ext\thread\event.h" />
+    <ClInclude Include="..\include\ext\thread\invoker.h" />
+    <ClInclude Include="..\include\ext\thread\scheduler.h" />
+    <ClInclude Include="..\include\ext\thread\thread.h" />
+    <ClInclude Include="..\include\ext\thread\thread_pool.h" />
+    <ClInclude Include="..\include\ext\thread\tick.h" />
     <ClInclude Include="..\packages\pugixml.1.12.0\build\native\include\pugiconfig.hpp" />
     <ClInclude Include="..\packages\pugixml.1.12.0\build\native\include\pugixml.hpp" />
+    <ClInclude Include="DependencyRegistration.h" />
     <ClInclude Include="include\ChannelStateManager.h" />
+    <ClInclude Include="include\IDirService.h" />
     <ClInclude Include="include\ITelegramBot.h" />
     <ClInclude Include="include\ITrendMonitoring.h" />
+    <ClInclude Include="src\DirServiceImpl.h" />
+    <ClInclude Include="src\MonitoringTaskService\ChannelDataGetter\ChannelDataGetter.h" />
+    <ClInclude Include="src\MonitoringTaskService\ChannelDataGetter\ChannelsHelpHeader.h" />
+    <ClInclude Include="src\Telegram\TelegramThreadImpl.h" />
     <ClInclude Include="src\TrendMonitoringTask.h" />
     <ClInclude Include="src\Telegram\CommandsInfoService.h" />
     <ClInclude Include="src\Telegram\KeyboardCallback.h" />
@@ -244,42 +262,16 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     <ClInclude Include="src\Telegram\TelegramCallbacks.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(CommonHeadersDir)Serialization\SerializatorFabric.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
-    </ClCompile>
-    <ClCompile Include="$(CommonHeadersDir)Serialization\Serializators\SerializatorXML.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
-    </ClCompile>
-    <ClCompile Include="$(MyIncludeDir)ChannelDataCorrector\ChannelDataGetter.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
-    </ClCompile>
     <ClCompile Include="..\packages\pugixml.1.12.0\build\native\include\pugixml.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Telegram\TelegramSettings.cpp" />
+    <ClCompile Include="DependencyRegistration.cpp" />
+    <ClCompile Include="src\DirServiceImpl.cpp" />
+    <ClCompile Include="src\MonitoringTaskService\ChannelDataGetter\ChannelDataGetter.cpp" />
     <ClCompile Include="src\Telegram\CommandsInfoService.cpp" />
     <ClCompile Include="src\Telegram\KeyboardCallback.cpp" />
     <ClCompile Include="pch.cpp">
@@ -315,16 +307,25 @@ xcopy /y /d "$(MyDLLDir)LoadFromInetDll\OpenSSL\ssleay32.dll" "$(OutputPath)"</C
     <ClCompile Include="src\TrendMonitoringTask.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\include\ext\serialization\README.md" />
+    <None Include="..\include\ext\thread\README.md" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TelegramDLL\TelegramDLL\TelegramDLL.vcxproj">
+      <Project>{09a510b3-8932-45b1-9a40-84b6f49f81c4}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\pugixml.1.12.0\build\native\pugixml.targets" Condition="Exists('..\packages\pugixml.1.12.0\build\native\pugixml.targets')" />
+    <Import Project="..\packages\boost.1.78.0\build\boost.targets" Condition="Exists('..\packages\boost.1.78.0\build\boost.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\pugixml.1.12.0\build\native\pugixml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\pugixml.1.12.0\build\native\pugixml.targets'))" />
+    <Error Condition="!Exists('..\packages\boost.1.78.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost.1.78.0\build\boost.targets'))" />
   </Target>
 </Project>

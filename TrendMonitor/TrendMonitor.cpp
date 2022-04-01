@@ -10,6 +10,9 @@
 #include "TrendMonitor.h"
 #include "TrendMonitorDlg.h"
 
+#include <ext/core.h>
+#include <DependencyRegistration.h>
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -152,6 +155,9 @@ BOOL CTrendMonitorApp::InitInstance()
         return FALSE;
     }
 
+    ext::core::Init();
+    DependencyRegistration::RegisterServices();
+
     // Create the shell manager, in case the dialog contains
     // any shell tree view or shell list view controls.
     CShellManager *pShellManager = new CShellManager;
@@ -168,7 +174,7 @@ BOOL CTrendMonitorApp::InitInstance()
     // such as the name of your company or organization
     SetRegistryKey(_T("Local AppWizard-Generated Applications"));
 
-    CTrendMonitorDlg dlg;
+    CTrendMonitorDlg dlg(ext::get_service<ext::ServiceCollection>().BuildServiceProvider());
     m_pMainWnd = &dlg;
     INT_PTR nResponse = dlg.DoModal();
     if (nResponse == IDOK)

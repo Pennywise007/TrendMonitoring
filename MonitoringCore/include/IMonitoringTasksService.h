@@ -3,127 +3,84 @@
 #include <afx.h>
 #include <list>
 
-#include "Messages.h"
+#include <ext/core/dispatcher.h>
+#include <ext/thread/thread_pool.h>
 
 #include <include/ITrendMonitoring.h>
 
-// идентификатор события окончания загрузки данных для канала с мониторингом
-// {C6C55763-BC3F-41B0-95D0-D1BC52A149AE}
-static const EventId onCompletingMonitoringTask =
-{ 0xc6c55763, 0xbc3f, 0x41b0, { 0x95, 0xd0, 0xd1, 0xbc, 0x52, 0xa1, 0x49, 0xae } };
+using namespace ext::task;
 
-////////////////////////////////////////////////////////////////////////////////
-// Идентификатор задания
-typedef GUID TaskId;
-// Структура для сравнения идентификаторов заданий
-struct TaskComparer
-{
-    bool operator()(const TaskId& Left, const TaskId& Right) const
-    {
-        // comparison logic goes here
-        return memcmp(&Left, &Right, sizeof(Right)) < 0;
-    }
-
-    static bool Compare(const TaskId& Left, const TaskId& Right)
-    {
-        return memcmp(&Left, &Right, sizeof(Right)) == 0;
-    }
-};
-
-// Параметры запускаемого задания
 struct TaskParameters
 {
     typedef std::shared_ptr<TaskParameters> Ptr;
 
-    TaskParameters(const CString& chanName, const CTime& start, const CTime& end)
+    TaskParameters(const std::wstring& chanName, const CTime& start, const CTime& end)
         : channelName(chanName), startTime(start), endTime(end)
     {}
 
-    CString channelName;        // имя канала по которому нужно запустить мониторинг
-    CTime startTime;            // начало интервала мониторинга данных канала
-    CTime endTime;              // конец  интервала мониторинга данных каналов
+    std::wstring channelName;        // the name of the channel on which you want to start monitoring
+    CTime startTime;            // start of channel data monitoring interval
+    CTime endTime;              // end   of channel data monitoring interval
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// интерфейс сервиса для управления потоком получения данных используется для
-// управления заданиями монитроинга которые выполняются в отдельном потоке
-// результаты выполнения заданий получаются через onCompletingMonitoringTask
-interface IMonitoringTasksService
+// service interface to control the flow of receiving data is used to
+// control monitoring jobs that run in a separate thread
+// task execution results are obtained via IMonitoringTaskEvent
+struct IMonitoringTasksService
 {
     virtual ~IMonitoringTasksService() = default;
 
-    // приоритетность заданий, должны быть отсортированы в порядке важности
-    enum TaskPriority : unsigned
-    {
-        eHigh,     // высокая
-        eNormal    // обычная
-    };
+    using TaskPriority = ext::thread_pool::TaskPriority;
 
-    // добавляем список заданий для мониторинга, результат по ним должен быть получен единовременно
-    // @param channelNames - список имен каналов для которых нужно произвести мониторинг
-    // @param intervalStart - начало интервала по которому надо произвести мониторинг
-    // @param intervalEnd - конец интервала по которому надо произвести мониторинг
-    // @param priority - приоритет задания, определяет в какой очередности будут выполняться задания
-    // @return идентификатор задания
-    virtual TaskId addTaskList(const std::list<CString>& channelNames,
-                               const CTime& intervalStart,
-                               const CTime& intervalEnd,
-                               const TaskPriority priority) = 0;
+    // add a list of tasks for monitoring, the result for them should be received at a time
+    // @param channelNames - list of channel names for which you want to monitor
+    // @param intervalStart - start of channel data monitoring interval
+    // @param intervalEnd - end   of channel data monitoring interval
+    // @param priority - task priority determines the order in which jobs will be executed
+    // @return task ID
+    EXT_NODISCARD virtual TaskId AddTaskList(const std::list<std::wstring>& channelNames,
+                                             const CTime& intervalStart,
+                                             const CTime& intervalEnd,
+                                             const TaskPriority priority) = 0;
 
-    // добавляем список заданий для мониторинга, результат по ним должен быть получен единовременно
-    // @param listTaskParams - список параметров для задания
-    // @param priority - приоритет задания, определяет в какой очередности будут выполняться задания
-    // @return идентификатор задания
-    virtual TaskId addTaskList(const std::list<TaskParameters::Ptr>& listTaskParams,
-                               const TaskPriority priority) = 0;
+    // add a list of tasks for monitoring, the result for them should be received at a time
+    // @param listTaskParams - list of parameters for the task
+    // @param priority - task priority determines the order in which jobs will be executed
+    // @return task id
+    EXT_NODISCARD virtual TaskId AddTaskList(const std::list<TaskParameters::Ptr>& listTaskParams,
+                                             const TaskPriority  priority) = 0;
 
-    // прервать выполнение задания и удалить его из очереди
-    virtual void removeTask(const TaskId& taskId) = 0;
+    // abort the task and remove it from the queue
+    virtual void RemoveTask(const TaskId& taskId) = 0;
 };
 
-// получение сервиса заданий монитринга
-IMonitoringTasksService* get_monitoring_tasks_service();
-void set_monitoring_tasks_service_mock(std::shared_ptr<IMonitoringTasksService> mockForService);
-
-////////////////////////////////////////////////////////////////////////////////
-// результат задания мониторинга
-class MonitoringResult
-    : public IEventData
+// Monitoring task notification
+struct IMonitoringTaskEvent : ext::events::IBaseEvent
 {
-public:
-    typedef std::shared_ptr<MonitoringResult> Ptr;
-
-    MonitoringResult(const TaskId& taskId)
-        : m_taskId(taskId) {}
-
-public:
-    // Идентификатор задания, по которому получен результат
-    TaskId m_taskId;
-
-    // результат запроса данных
+    // data query result
     enum class Result
     {
-        eSucceeded = 0, // Успешная загрузка
-        eErrorText,     // Возникла ошибка, в m_errorText есть её текст
-        eNoData         // Нет данных в запрошенном интервале
+        eSucceeded = 0, // Successful upload
+        eErrorText,     // An error occurred, m_errorText has its text
+        eNoData         // No data in the requested interval
     };
 
-    // структура с результатом мониторинга
+    // structure with monitoring result
     struct ResultData : public TrendChannelData
     {
-        ResultData(const TaskParameters::Ptr& params) : pTaskParameters(params) {}
+        explicit ResultData(const TaskParameters::Ptr& params) EXT_NOEXCEPT : taskParameters(params) {}
 
-        // результат выполнения задания
+        // Task result
         Result resultType = Result::eSucceeded;
-        // текст возникшей ошибки
-        CString errorText;
-        // параметры задания по которым получен результат
-        TaskParameters::Ptr pTaskParameters;
+        // Error text(if Result == eErrorText)
+        std::wstring errorText;
+        // task parameters for which the result was obtained
+        const TaskParameters::Ptr taskParameters;
     };
 
-    typedef std::list<ResultData> ResultsList;
-    typedef std::list<ResultData>::const_iterator ResultIt;
+    typedef std::shared_ptr<ResultData> ResultDataPtr;
+    typedef std::list<ResultDataPtr> ResultsPtrList;
 
-    // список результатов мониторинга для каждого канала из задания
-    ResultsList m_taskResults;
+    // Event about finishing monitoring task
+    virtual void OnCompleteTask(const TaskId& taskId, ResultsPtrList monitoringResult) = 0;
 };

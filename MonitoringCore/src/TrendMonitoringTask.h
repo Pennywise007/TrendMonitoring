@@ -27,7 +27,7 @@ struct MonitoringTaskResultHandler
     // @param alertText - текст о котором нужно сообщить
     // @return true - в случае необходимости обновить данные по каналам
     static bool HandleIntervalInfoResult(const MonitoringTaskInfo::TaskType taskType,
-                                         const MonitoringResult::ResultData& monitoringResult,
+                                         const IMonitoringTaskEvent::ResultDataPtr& monitoringResult,
                                          ChannelParameters* channelParameters,
-                                         CString& alertText);
+                                         std::wstring& alertText);
 };

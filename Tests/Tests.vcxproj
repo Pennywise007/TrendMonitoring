@@ -21,9 +21,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9a4eccf4-aff1-4729-b0f3-2facf0a08e29}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -45,9 +45,6 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClInclude Include="$(UtilsDir)CommonFiles\Serialization\ISerializable.h" />
-    <ClInclude Include="$(UtilsDir)CommonFiles\Serialization\SerializationUtils.h" />
-    <ClInclude Include="$(UtilsDir)CommonFiles\Serialization\SerializatorFabric.h" />
     <ClInclude Include="MonitoringTaskServiceMock.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
@@ -115,12 +112,13 @@
       <WarningLevel>Level3</WarningLevel>
       <ShowIncludes>false</ShowIncludes>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\UtilsProgrammerDir\boost\include\;$(CommonHeadersDir);$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);D:\UtilsProgrammerDir;D:\UtilsProgrammerDir\CommonFiles;D:\UtilsProgrammerDir\myInclude\;$(ProjectDir);$(SolutionDir)MonitoringCore\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)MonitoringCore\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>D:\UtilsProgrammerDir\boost\lib\;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>echo copy signals "$(ProjectDir)Signals" "$(OutputPath)Signals"
@@ -139,12 +137,13 @@ xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
       <WarningLevel>Level3</WarningLevel>
       <ShowIncludes>false</ShowIncludes>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\UtilsProgrammerDir\boost\include\;$(CommonHeadersDir);$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);D:\UtilsProgrammerDir;D:\UtilsProgrammerDir\CommonFiles;D:\UtilsProgrammerDir\myInclude\;$(ProjectDir);$(SolutionDir)MonitoringCore\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)MonitoringCore\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>D:\UtilsProgrammerDir\boost\lib\;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>echo copy signals "$(ProjectDir)Signals" "$(OutputPath)Signals"
@@ -161,14 +160,15 @@ xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ShowIncludes>false</ShowIncludes>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\UtilsProgrammerDir\boost\include\;$(CommonHeadersDir);$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);D:\UtilsProgrammerDir;D:\UtilsProgrammerDir\CommonFiles;D:\UtilsProgrammerDir\myInclude\;$(ProjectDir);$(SolutionDir)MonitoringCore\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)MonitoringCore\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalLibraryDirectories>D:\UtilsProgrammerDir\boost\lib\;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>echo copy signals "$(ProjectDir)Signals" "$(OutputPath)Signals"
@@ -185,14 +185,15 @@ xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ShowIncludes>false</ShowIncludes>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\UtilsProgrammerDir\boost\include\;$(CommonHeadersDir);$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);D:\UtilsProgrammerDir;D:\UtilsProgrammerDir\CommonFiles;D:\UtilsProgrammerDir\myInclude\;$(ProjectDir);$(SolutionDir)MonitoringCore\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)MonitoringCore\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalLibraryDirectories>D:\UtilsProgrammerDir\boost\lib\;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>echo copy signals "$(ProjectDir)Signals" "$(OutputPath)Signals"

@@ -1,43 +1,45 @@
 #include "pch.h"
 
+#include <ext/core/check.h>
+
 #include "TrendMonitoringTask.h"
 #include "TrendMonitoring.h"
 
 namespace {
 
-bool handle_interval_info_result(const MonitoringResult::ResultData& monitoringResult,
+bool handle_interval_info_result(const IMonitoringTaskEvent::ResultDataPtr& monitoringResult,
                                  ChannelParameters* channelParameters,
-                                 CString& alertText)
+                                 std::wstring& alertText)
 {
-    switch (monitoringResult.resultType)
+    switch (monitoringResult->resultType)
     {
-    case MonitoringResult::Result::eSucceeded:  // данные успешно получены
+    case IMonitoringTaskEvent::Result::eSucceeded:  // данные успешно получены
     {
         // проставляем новые данные из задания
-        channelParameters->setTrendChannelData(monitoringResult);
+        channelParameters->SetTrendChannelData(*monitoringResult);
 
         channelParameters->channelState.dataLoaded = true;
         channelParameters->channelState.loadingDataError = false;
     }
     break;
-    case MonitoringResult::Result::eNoData:     // в переданном интервале нет данных
-    case MonitoringResult::Result::eErrorText:  // возникла ошибка
+    case IMonitoringTaskEvent::Result::eNoData:     // в переданном интервале нет данных
+    case IMonitoringTaskEvent::Result::eErrorText:  // возникла ошибка
     {
         // оповещаем о возникшей ошибке
-        if (monitoringResult.resultType == MonitoringResult::Result::eErrorText &&
-            !monitoringResult.errorText.IsEmpty())
-            alertText = monitoringResult.errorText;
+        if (monitoringResult->resultType == IMonitoringTaskEvent::Result::eErrorText &&
+            !monitoringResult->errorText.empty())
+            alertText = monitoringResult->errorText;
         else
             alertText = L"Нет данных в запрошенном интервале.";
 
         // обновляем время без данных
-        channelParameters->trendData.emptyDataTime = monitoringResult.emptyDataTime;
+        channelParameters->trendData.emptyDataTime = monitoringResult->emptyDataTime;
         // сообщаем что возникла ошибка загрузки
         channelParameters->channelState.loadingDataError = true;
     }
     break;
     default:
-        assert(!"Не известный тип результата");
+        EXT_UNREACHABLE("Не известный тип результата");
         break;
     }
 
@@ -45,14 +47,14 @@ bool handle_interval_info_result(const MonitoringResult::ResultData& monitoringR
     return true;
 }
 
-bool handle_updating_result(const MonitoringResult::ResultData& monitoringResult,
+bool handle_updating_result(const IMonitoringTaskEvent::ResultDataPtr& monitoringResult,
                             ChannelParameters* channelParameters,
-                            CString& alertText)
+                            std::wstring& alertText)
 {
     bool bDataChanged = false;
-    switch (monitoringResult.resultType)
+    switch (monitoringResult->resultType)
     {
-    case MonitoringResult::Result::eSucceeded:  // данные успешно получены
+    case IMonitoringTaskEvent::Result::eSucceeded:  // данные успешно получены
     {
         if (channelParameters->channelState.loadingDataError)
         {
@@ -60,30 +62,30 @@ bool handle_updating_result(const MonitoringResult::ResultData& monitoringResult
             channelParameters->channelState.loadingDataError = false;
 
             // т.к. писали о том что данные не удалось обновить - напишем что данные получены
-            send_message_to_log(LogMessageData::MessageType::eOrdinary,
+            send_message_to_log(ILogEvents::LogMessageData::MessageType::eOrdinary,
                                 L"Канал \"%s\": Данные получены.",
-                                channelParameters->channelName.GetString());
+                                channelParameters->channelName.c_str());
         }
 
         // если данные ещё не были получены
         if (!channelParameters->channelState.dataLoaded)
         {
             // проставляем новые данные из задания
-            channelParameters->setTrendChannelData(monitoringResult);
+            channelParameters->SetTrendChannelData(*monitoringResult);
             channelParameters->channelState.dataLoaded = true;
         }
         else
         {
             // мержим старые и новые данные
-            channelParameters->trendData.currentValue = monitoringResult.currentValue;
+            channelParameters->trendData.currentValue = monitoringResult->currentValue;
 
-            if (channelParameters->trendData.maxValue < monitoringResult.maxValue)
-                channelParameters->trendData.maxValue = monitoringResult.maxValue;
-            if (channelParameters->trendData.minValue > monitoringResult.minValue)
-                channelParameters->trendData.minValue = monitoringResult.minValue;
+            if (channelParameters->trendData.maxValue < monitoringResult->maxValue)
+                channelParameters->trendData.maxValue = monitoringResult->maxValue;
+            if (channelParameters->trendData.minValue > monitoringResult->minValue)
+                channelParameters->trendData.minValue = monitoringResult->minValue;
 
-            channelParameters->trendData.emptyDataTime += monitoringResult.emptyDataTime;
-            channelParameters->trendData.lastDataExistTime = monitoringResult.lastDataExistTime;
+            channelParameters->trendData.emptyDataTime += monitoringResult->emptyDataTime;
+            channelParameters->trendData.lastDataExistTime = monitoringResult->lastDataExistTime;
         }
 
         // анализируем новые данные TODO TESTS
@@ -93,24 +95,24 @@ bool handle_updating_result(const MonitoringResult::ResultData& monitoringResult
             {
                 // если за интервал все значения вышли за допустимое
                 if ((channelParameters->alarmingValue >= 0 &&
-                    monitoringResult.minValue >= channelParameters->alarmingValue) ||
+                    monitoringResult->minValue >= channelParameters->alarmingValue) ||
                     (channelParameters->alarmingValue < 0 &&
-                    monitoringResult.maxValue <= channelParameters->alarmingValue))
+                    monitoringResult->maxValue <= channelParameters->alarmingValue))
                 {
                     channelParameters->channelState.OnAddChannelErrorReport(ChannelStateManager::eExcessOfValue, alertText,
                                                                             L"Превышение допустимых значений. Допустимое значение %.02f, значения [%.02f..%.02f].",
-                                                                            channelParameters->alarmingValue, monitoringResult.minValue, monitoringResult.maxValue);
+                                                                            channelParameters->alarmingValue, monitoringResult->minValue, monitoringResult->maxValue);
                 }
                 else
                 {
                     channelParameters->channelState.OnRemoveChannelErrorReport(ChannelStateManager::eExcessOfValue, alertText,
-                                                                               L"Данные вернулись в норму, текущие значения [%.02f..%.02f].", monitoringResult.minValue, monitoringResult.maxValue);
+                                                                               L"Данные вернулись в норму, текущие значения [%.02f..%.02f].", monitoringResult->minValue, monitoringResult->maxValue);
                 }
             }
 
             // проверяем количество пропусков, оповещаем если секунд без данных больше чем половина времени обновления интервала
-            if (const auto emptySeconds = monitoringResult.emptyDataTime.GetTotalMinutes();
-                emptySeconds > TrendMonitoring::getUpdateDataInterval().count() / 2)
+            if (const auto emptySeconds = monitoringResult->emptyDataTime.GetTotalMinutes();
+                emptySeconds > TrendMonitoring::UpdateDataInterval.count() / 2)
             {
                 channelParameters->channelState.OnAddChannelErrorReport(ChannelStateManager::eLotOfEmptyData, alertText,
                                                                         L"Много пропусков данных.");
@@ -126,20 +128,20 @@ bool handle_updating_result(const MonitoringResult::ResultData& monitoringResult
         bDataChanged = true;
     }
     break;
-    case MonitoringResult::Result::eNoData:     // в переданном интервале нет данных
-    case MonitoringResult::Result::eErrorText:  // возникла ошибка
+    case IMonitoringTaskEvent::Result::eNoData:     // в переданном интервале нет данных
+    case IMonitoringTaskEvent::Result::eErrorText:  // возникла ошибка
     {
         // обновляем время без данных
-        channelParameters->trendData.emptyDataTime += monitoringResult.emptyDataTime;
+        channelParameters->trendData.emptyDataTime += monitoringResult->emptyDataTime;
 
         // сообщаем что возникла ошибка загрузки
         if (!channelParameters->channelState.loadingDataError)
         {
             channelParameters->channelState.loadingDataError = true;
 
-            send_message_to_log(LogMessageData::MessageType::eOrdinary,
+            send_message_to_log(ILogEvents::LogMessageData::MessageType::eOrdinary,
                                 L"Канал \"%s\": не удалось обновить данные.",
-                                channelParameters->channelName.GetString());
+                                channelParameters->channelName.c_str());
         }
 
         // Если по каналу были загружены данные, а сейчас загрузить не получилось значит произошло отключение
@@ -152,52 +154,51 @@ bool handle_updating_result(const MonitoringResult::ResultData& monitoringResult
     }
     break;
     default:
-        assert(!"Не известный тип результата");
+        EXT_UNREACHABLE("Не известный тип результата");
         break;
     }
 
     return bDataChanged;
 }
 
-bool handle_every_day_report_result(const MonitoringResult::ResultData& monitoringResult,
+bool handle_every_day_report_result(const IMonitoringTaskEvent::ResultDataPtr& monitoringResult,
                                     ChannelParameters* channelParameters,
-                                    CString& alertText)
+                                    std::wstring& alertText)
 {
     // данные мониторинга
-    const MonitoringChannelData& monitoringData = channelParameters->getMonitoringData();
+    const MonitoringChannelData& monitoringData = channelParameters->GetMonitoringData();
 
-    switch (monitoringResult.resultType)
+    switch (monitoringResult->resultType)
     {
-    case MonitoringResult::Result::eSucceeded:  // данные успешно получены
+    case IMonitoringTaskEvent::Result::eSucceeded:  // данные успешно получены
     {
         // если установлено оповещение при превышении значения
         if (_finite(monitoringData.alarmingValue) != 0)
         {
             // если за интервал одно из значений вышло за допустимые
             if ((monitoringData.alarmingValue >= 0 &&
-                monitoringResult.maxValue >= monitoringData.alarmingValue) ||
+                monitoringResult->maxValue >= monitoringData.alarmingValue) ||
                 (monitoringData.alarmingValue < 0 &&
-                monitoringResult.minValue <= monitoringData.alarmingValue))
+                monitoringResult->minValue <= monitoringData.alarmingValue))
             {
-                alertText.AppendFormat(L"Допустимый уровень был превышен. Допустимое значение %.02f, значения за день [%.02f..%.02f]. ",
+                alertText += std::string_swprintf(L"Допустимый уровень был превышен. Допустимое значение %.02f, значения за день [%.02f..%.02f]. ",
                                        monitoringData.alarmingValue,
-                                       monitoringResult.minValue, monitoringResult.maxValue);
+                                       monitoringResult->minValue, monitoringResult->maxValue);
             }
         }
 
         // если много пропусков данных
-        if (monitoringResult.emptyDataTime.GetTotalHours() > 2)
-            alertText.AppendFormat(L"Много пропусков данных (%lld ч).",
-                                   monitoringResult.emptyDataTime.GetTotalHours());
+        if (monitoringResult->emptyDataTime.GetTotalHours() > 2)
+            alertText += std::string_swprintf(L"Много пропусков данных (%lld ч).", monitoringResult->emptyDataTime.GetTotalHours());
     }
     break;
-    case MonitoringResult::Result::eNoData:     // в переданном интервале нет данных
-    case MonitoringResult::Result::eErrorText:  // возникла ошибка
+    case IMonitoringTaskEvent::Result::eNoData:     // в переданном интервале нет данных
+    case IMonitoringTaskEvent::Result::eErrorText:  // возникла ошибка
                                                 // сообщаем что данных нет
         alertText = L"Нет данных.";
         break;
     default:
-        assert(!"Не известный тип результата");
+        EXT_ASSERT(!"Не известный тип результата");
         break;
     }
 
@@ -207,9 +208,9 @@ bool handle_every_day_report_result(const MonitoringResult::ResultData& monitori
 } // namespace
 
 bool MonitoringTaskResultHandler::HandleIntervalInfoResult(const MonitoringTaskInfo::TaskType taskType,
-                                                           const MonitoringResult::ResultData& monitoringResult,
+                                                           const IMonitoringTaskEvent::ResultDataPtr& monitoringResult,
                                                            ChannelParameters* channelParameters,
-                                                           CString& alertText)
+                                                           std::wstring& alertText)
 {
     switch (taskType)
     {
@@ -220,7 +221,7 @@ bool MonitoringTaskResultHandler::HandleIntervalInfoResult(const MonitoringTaskI
     case MonitoringTaskInfo::TaskType::eEveryDayReport:
         return handle_every_day_report_result(monitoringResult, channelParameters, alertText);
     default:
-        assert(false);
+        EXT_ASSERT(false);
         return false;
     }
 }

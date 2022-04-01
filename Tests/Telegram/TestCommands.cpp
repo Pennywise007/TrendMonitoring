@@ -30,13 +30,13 @@ TEST_F(TestTelegramBot, CheckCommandsAvailability)
         // авторизуем пользователя как обычного eOrdinaryUser
         expectedMessage = L"Пользователь успешно авторизован.";
         emulateBroadcastMessage(L"MonitoringAuth");
-        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eOrdinaryUser)
+        EXPECT_EQ(m_pUserList->GetUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eOrdinaryUser)
             << "У пользователя не соответствует статус после авторизации";
 
         // повторно отправляем сообщение авторизации
         expectedMessage = L"Пользователь уже авторизован.";
         emulateBroadcastMessage(L"MonitoringAuth");
-        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eOrdinaryUser)
+        EXPECT_EQ(m_pUserList->GetUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eOrdinaryUser)
             << "У пользователя не соответствует статус после авторизации";
 
         CString unknownMessageText = L"Неизвестная команда. Поддерживаемые команды бота:\n\n\n/info - Перечень команд бота.\n/report - Сформировать отчёт.\n\n\nДля того чтобы их использовать необходимо написать их этому боту(обязательно использовать слэш перед текстом команды(/)!). Или нажать в этом окне, они должны подсвечиваться.";
@@ -74,19 +74,19 @@ TEST_F(TestTelegramBot, CheckCommandsAvailability)
         // авторизуем пользователя как админа eAdmin
         expectedMessage = L"Пользователь успешно авторизован как администратор.";
         emulateBroadcastMessage(L"MonitoringAuthAdmin");
-        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eAdmin)
+        EXPECT_EQ(m_pUserList->GetUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eAdmin)
             << "У пользователя не соответствует статус после авторизации";
 
         // повторно отправляем сообщение авторизации обычного пользователя
         expectedMessage = L"Пользователь является администратором системы. Авторизация не требуется.";
         emulateBroadcastMessage(L"MonitoringAuth");
-        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eAdmin)
+        EXPECT_EQ(m_pUserList->GetUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eAdmin)
             << "У пользователя не соответствует статус после авторизации";
 
         // повторно отправляем сообщение авторизации админа
         expectedMessage = L"Пользователь уже авторизован как администратор.";
         emulateBroadcastMessage(L"MonitoringAuthAdmin");
-        EXPECT_EQ(m_pUserList->getUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eAdmin)
+        EXPECT_EQ(m_pUserList->GetUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eAdmin)
             << "У пользователя не соответствует статус после авторизации";
 
         // проверяем доступные обычному пользователю команды
@@ -138,18 +138,13 @@ TEST_F(TestTelegramBot, CheckUnauthorizedUser)
     emulateBroadcastMessage(L"/22");
 
     // check no sending error text
-    m_testTelegramBot->sendMessageToUsers(L"Random message");
-    m_testTelegramBot->sendMessageToAdmins(L"Random message");
+    m_testTelegramBot->SendMessageToUsers(L"Random message");
+    m_testTelegramBot->SendMessageToAdmins(L"Random message");
 
-    auto errorMessage = std::make_shared<MonitoringErrorEventData>();
+    auto errorMessage = std::make_shared<IMonitoringErrorEvents::EventData>();
     errorMessage->errorTextForAllChannels = L"Error";
-    get_service<CMassages>().sendMessage(onMonitoringErrorEvent, 0,
-                                         std::static_pointer_cast<IEventData>(errorMessage));
+    ext::send_event(&IMonitoringErrorEvents::OnError, errorMessage);
 
-    auto reportMessage = std::make_shared<MessageTextData>();
-    reportMessage->messageText = L"Test report";
-    get_service<CMassages>().postMessage(onReportPreparedEvent, 0,
-                                         std::static_pointer_cast<IEventData>(reportMessage));
-
+    ext::send_event_async(&IMonitoringErrorEvents::OnError, L"Test report");
 }
 } // namespace telegram::bot

@@ -1,200 +1,170 @@
 #pragma once
 
+#include <afx.h>
 #include <list>
 #include <memory>
-#include <set>
+
+#include <ext/core/dispatcher.h>
 
 #include "ChannelStateManager.h"
 #include "ITelegramBot.h"
-#include "Messages.h"
 
-// оповещение об изменении в списке наблюдаемых каналов
-// {BFE83474-9AC0-49CE-B26E-752657C366F3}
-constexpr EventId onMonitoringListChanged =
-{ 0xbfe83474, 0x9ac0, 0x49ce, { 0xb2, 0x6e, 0x75, 0x26, 0x57, 0xc3, 0x66, 0xf3 } };
+struct IMonitoringListEvents : ext::events::IBaseEvent
+{
+    // notification of a change in the list of watched channels
+    virtual void OnChanged() = 0;
+};
 
-// оповещение в случае необходимости добавить сообщение в лог, см LogMessageData и send_message_to_log
-// {5B436604-D55E-4112-AC8C-B0521314BA25}
-constexpr EventId onNewLogMessageEvent =
-{ 0x5b436604, 0xd55e, 0x4112, { 0xac, 0x8c, 0xb0, 0x52, 0x13, 0x14, 0xba, 0x25 } };
+struct ILogEvents : ext::events::IBaseEvent
+{
+    struct LogMessageData
+    {
+        enum class MessageType
+        {
+            eError,         // error message, marked in red in the log
+            eOrdinary,
+        };
+        MessageType messageType = MessageType::eOrdinary;
+        std::wstring logMessage;
+    };
 
-// оповещение в случае возникшей ошибки в мониторинге, см MonitoringErrorEventData
-// {FB0BF8DC-0AA5-41AC-B018-4CFE11CF14BE}
-constexpr EventId onMonitoringErrorEvent =
-{ 0xfb0bf8dc, 0xaa5, 0x41ac, { 0xb0, 0x18, 0x4c, 0xfe, 0x11, 0xcf, 0x14, 0xbe } };
+    // notification if it is necessary to add a message to the log, see LogMessageData and send_message_to_log
+    virtual void OnNewLogMessage(const std::shared_ptr<LogMessageData>& logMessage) = 0;
+};
 
-// оповещение при формировании отчёта, см MessageTextData
-// {39A54983-53D5-4D2B-9290-23E2D85ABA5F}
-constexpr EventId onReportPreparedEvent =
-{ 0x39a54983, 0x53d5, 0x4d2b, { 0x92, 0x90, 0x23, 0xe2, 0xd8, 0x5a, 0xba, 0x5f } };
+struct IMonitoringErrorEvents : ext::events::IBaseEvent
+{
+    struct EventData
+    {
+        std::wstring errorTextForAllChannels;
+        std::vector<std::wstring> problemChannelNames;
+        GUID errorGUID;
+    };
 
-////////////////////////////////////////////////////////////////////////////////
-// Данные тренда
+    // notification in case of an error in monitoring, see MonitoringErrorEventData
+    virtual void OnError(const std::shared_ptr<EventData>& errorData) = 0;
+};
+
+struct IReportEvents : ext::events::IBaseEvent
+{
+    // notification when generating a report, see Message Text Data
+    virtual void OnReportDone(std::wstring messageText) = 0;
+};
+
+// Trend data
 struct TrendChannelData
 {
-    // начальное значение в начале интервала
+    // initial value at the beginning of the interval
     float startValue = 0.f;
-    // текущее значение
+    // current value
     float currentValue = 0.f;
-    // максимальное значение за наблюдаемый интервал
+    // maximum value for the observed interval
     float maxValue = 0.f;
-    // минимальное значение за наблюдаемый интервал
+    // minimum value for the observed interval
     float minValue = 0.f;
-    // время без данных(пропуски данных) за наблюдаемый интервал
+    // time without data (data gaps) for the observed interval
     CTimeSpan emptyDataTime = 0;
-    // время последних "существующих" данных по каналу
+    // time of the last "existing" data on the channel
     CTime lastDataExistTime;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// интервалы для мониторинга данных
 enum class MonitoringInterval
 {
-    eOneDay,            // один день
-    eOneWeek,           // одна неделя
-    eTwoWeeks,          // две недели
-    eOneMonth,          // один месяц
-    eThreeMonths,       // три месяца
-    eHalfYear,          // пол года
-    eOneYear,           // один год
+    eOneDay,
+    eOneWeek,
+    eTwoWeeks,
+    eOneMonth,
+    eThreeMonths,
+    eHalfYear,
+    eOneYear,
     eLast
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// Структура с данными о канале
+// Structure with channel data
 struct MonitoringChannelData
 {
-    // Название канала
-    CString channelName;
-    // Оповещать об изменениях пользователей
+    std::wstring channelName;
+    // Notify users of changes
     bool bNotify = true;
-    // наблюдаемый интервал
     MonitoringInterval monitoringInterval = MonitoringInterval::eOneMonth;
-    // значение, достугнув которое необходимо оповестить. Не оповещать - NAN
+    // value to be notified when reached. Do Not Notify - NAN
     float alarmingValue = NAN;
-    // данные по наблюдаемому каналу, пока не channelState.dataLoaded - не валидные/пустые
+    // data on the observed channel, not yet channelState.dataLoaded - not valid/empty
     TrendChannelData trendData;
-    // состояние канала, наличие данных, сообщений об ошибках
+    // channel status, data availability, error messages
     ChannelStateManager channelState;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// Структура передаваемая в событии onNewLogMessageEvent
-struct LogMessageData : public IEventData
-{
-    // Тип сообщения
-    enum class MessageType
-    {
-        eError,         // сообщение об ошибке, в логе помечается красным цветом
-        eOrdinary,      // обычное сообщение
-    };
-    MessageType messageType = MessageType::eOrdinary;
-    // текст сообщения для лога
-    CString logMessage;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Структура передаваемая в случае возникновения ошибки мониторинга(onMonitoringErrorEvent)
-struct MonitoringErrorEventData : public IEventData
-{
-    CString errorTextForAllChannels;
-    std::vector<CString> problemChannelNames;
-
-    // идентификатор ошибки
-    GUID errorGUID = {};
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Структура с текстом передаваемая в событиях
-struct MessageTextData : public IEventData
-{
-    // текст сообщения
-    CString messageText;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Интерфейс для мониторинга данных, использутеся для получения списка каналов и управления им
+// Interface for data monitoring, used to get and manage the list of channels, see also IMonitoringListEvents
 interface ITrendMonitoring
 {
     virtual ~ITrendMonitoring() = default;
 
-#pragma region Общие функции над списком каналов
-    /// <summary>Получить список имём всех доступным для мониторинга каналов.</summary>
-    [[nodiscard]] virtual std::list<CString> getNamesOfAllChannels() const = 0;
-    /// <summary>Получить список имен каналов по которым происходит мониторинг.</summary>
-    [[nodiscard]] virtual std::list<CString> getNamesOfMonitoringChannels() const = 0;
+#pragma region General functions above the channel list
+    /// <summary>Get a list of names of all channels available for monitoring.</summary>
+    EXT_NODISCARD virtual std::list<std::wstring> GetNamesOfAllChannels() const = 0;
+    /// <summary>Get a list of channel names that are being monitored.</summary>
+    EXT_NODISCARD virtual std::list<std::wstring> GetNamesOfMonitoringChannels() const = 0;
 
-    /// <summary>Обновить данные для всех каналов.</summary>
-    virtual void updateDataForAllChannels() = 0;
+    /// <summary>Update data for all channels.</summary>
+    virtual void UpdateDataForAllChannels() = 0;
 
-    /// <summary>Получить количества наблюдаемых каналов.</summary>
-    [[nodiscard]] virtual size_t getNumberOfMonitoringChannels() const = 0;
-    /// <summary>Получить данные для наблюдаемого канала по индексу.</summary>
-    /// <param name="channelIndex">Индекс в списке каналов.</param>
-    /// <returns>Данные для канала.</returns>
-    [[nodiscard]] virtual const MonitoringChannelData& getMonitoringChannelData(const size_t channelIndex) const = 0;
-#pragma endregion Общие функции над списком каналов
+    /// <summary>Get the number of observed channels.</summary>
+    EXT_NODISCARD virtual size_t GetNumberOfMonitoringChannels() const = 0;
+    /// <summary>Get data for the monitored channel by index.</summary>
+    /// <param name="channelIndex">Index in the list of channels.</param>
+    /// <returns>Data for the channel.</returns>
+    EXT_NODISCARD virtual const MonitoringChannelData& GetMonitoringChannelData(const size_t channelIndex) const = 0;
+#pragma endregion General functions above the channel list
 
-#pragma region Управление списком каналов
-    /// <summary>Добавить канал для мониторинга.</summary>
-    /// <returns>Индекс добавленного канала в списке.</returns>
-    virtual size_t addMonitoringChannel() = 0;
-    /// <summary>Удалить наблюдаемый канал из списка по индексу.</summary>
-    /// <param name="channelIndex">Индекс канала в списке каналов.</param>
-    /// <returns>Индекс выделения после удаления.</returns>
-    virtual size_t removeMonitoringChannelByIndex(const size_t channelIndex) = 0;
+#pragma region Channel list management
+    /// <summary>Add a channel for monitoring.</summary>
+    /// <returns>Index of the added channel in the list.</returns>
+    virtual size_t AddMonitoringChannel() = 0;
+    /// <summary>Remove the observed channel from the list by index.</summary>
+    /// <param name="channelIndex">Channel index in the channel list.</param>
+    /// <returns>Index of selection after deletion.</returns>
+    virtual size_t RemoveMonitoringChannelByIndex(const size_t channelIndex) = 0;
 
-    /// <summary>Изменить флаг оповещения у канала по номеру.</summary>
-    /// <param name="channelIndex">Индекс канала в списке каналов.</param>
-    /// <param name="newNotifyState">Новое состояние оповещения.</param>
-    virtual void changeMonitoringChannelNotify(const size_t channelIndex,
+    /// <summary>Change the notification flag of the channel by number.</summary>
+    /// <param name="channelIndex">Channel index in the channel list.</param>
+    /// <param name="newNotifyState">New notification state.</param>
+    virtual void ChangeMonitoringChannelNotify(const size_t channelIndex,
                                                const bool newNotifyState) = 0;
-    /// <summary>Изменить имя наблюдаемого канала.</summary>
-    /// <param name="channelIndex">Индекс канала в списке каналов.</param>
-    /// <param name="newChannelName">Новое имя канала.</param>
-    virtual void changeMonitoringChannelName(const size_t channelIndex,
-                                            const CString& newChannelName) = 0;
-    /// <summary>Изменить интервал мониторинга данных для наблюдаемого канала.</summary>
-    /// <param name="channelIndex">Индекс канала в списке каналов.</param>
-    /// <param name="newInterval">Новый интервал мониторинга.</param>
-    virtual void changeMonitoringChannelInterval(const size_t channelIndex,
+    /// <summary>Change the name of the monitored channel.</summary>
+    /// <param name="channelIndex">Channel index in the channel list.</param>
+    /// <param name="newChannelName">New channel name.</param>
+    virtual void ChangeMonitoringChannelNotify(const size_t channelIndex,
+                                             const std::wstring& newChannelName) = 0;
+    /// <summary>Change the data monitoring interval for the observed channel.</summary>
+    /// <param name="channelIndex">Channel index in the channel list.</param>
+    /// <param name="newInterval">New monitoring interval.</param>
+    virtual void ChangeMonitoringChannelInterval(const size_t channelIndex,
                                                  const MonitoringInterval newInterval) = 0;
-    /// <summary>Изменить значение по достижению которого будет произведено оповещение.</summary>
-    /// <param name="channelIndex">Индекс канала в списке каналов.</param>
-    /// <param name="newValue">Новое значение с оповещением.</param>
-    virtual void changeMonitoringChannelAlarmingValue(const size_t channelIndex,
+    /// <summary>Change the value upon reaching which a notification will be generated.</summary>
+    /// <param name="channelIndex">Channel index in the channel list.</param>
+    /// <param name="newValue">New value with notification.</param>
+    virtual void ChangeMonitoringChannelAlarmingValue(const size_t channelIndex,
                                                       const float newValue) = 0;
 
-
-    /// <summary>Передвинуть вверх по списку канал по индексу.</summary>
-    /// <param name="channelIndex">Индекс канала в списке каналов.</param>
-    /// <returns>Новый индекс канала.</returns>
-    virtual size_t moveUpMonitoringChannelByIndex(const size_t channelIndex) = 0;
-    /// <summary>Передвинуть вниз по списку канал по индексу.</summary>
-    /// <param name="channelIndex">Индекс канала в списке каналов.</param>
-    /// <returns>Новый индекс канала.</returns>
-    virtual size_t moveDownMonitoringChannelByIndex(const size_t channelIndex) = 0;
-#pragma endregion Управление списком каналов
-
-#pragma region Управление ботом
-    // Получить настройки бота телеграма
-    [[nodiscard]] virtual const telegram::bot::TelegramBotSettings& getBotSettings() const = 0;
-    // установить настройки бота телеграма
-    virtual void setBotSettings(const telegram::bot::TelegramBotSettings& newSettings) = 0;
-#pragma endregion Управление ботом
+    /// <summary>Move the channel up the list by index.</summary>
+    /// <param name="channelIndex">Channel index in the channel list.</param>
+    /// <returns>New channel index.</returns>
+    virtual size_t MoveUpMonitoringChannelByIndex(const size_t channelIndex) = 0;
+    /// <summary>Move the channel down the list by index.</summary>
+    /// <param name="channelIndex">Channel index in the channel list.</param>
+    /// <returns>New channel index.</returns>
+    virtual size_t MoveDownMonitoringChannelByIndex(const size_t channelIndex) = 0;
+#pragma endregion Channel list management
 };
 
-// получение сервиса для мониторинга
-[[nodiscard]] ITrendMonitoring* get_monitoring_service();
-
-////////////////////////////////////////////////////////////////////////////////
-// конвертация интервала мониторинга в текст
-[[nodiscard]] inline CString monitoring_interval_to_string(const MonitoringInterval interval)
+// converting monitoring interval to text
+EXT_NODISCARD inline std::wstring monitoring_interval_to_string(const MonitoringInterval interval)
 {
     switch (interval)
     {
     default:
-        assert(!"Неизвестный интервал мониторинга");
+        EXT_ASSERT(false) << "Неизвестный интервал мониторинга";
         [[fallthrough]];
     case MonitoringInterval::eOneDay:
         return L"День";
@@ -213,14 +183,13 @@ interface ITrendMonitoring
     }
 }
 
-//------------------------------------------------------------------------//
-// конвертация интервала мониторинга в промежуток времени
-[[nodiscard]] inline CTimeSpan monitoring_interval_to_timespan(const MonitoringInterval interval)
+// conversion of monitoring interval into time interval
+EXT_NODISCARD inline CTimeSpan monitoring_interval_to_timespan(const MonitoringInterval interval)
 {
     switch (interval)
     {
     default:
-        assert(!"Неизвестный интервал мониторинга");
+        EXT_ASSERT(false) << "Неизвестный интервал мониторинга";
         [[fallthrough]];
     case MonitoringInterval::eOneDay:
         return CTimeSpan(1, 0, 0, 0);
@@ -239,55 +208,53 @@ interface ITrendMonitoring
     }
 }
 
-//------------------------------------------------------------------------//
-// конвертация временного промежутка в текст
-[[nodiscard]] inline CString time_span_to_string(const CTimeSpan& value)
+// convert time span to text
+EXT_NODISCARD inline std::wstring time_span_to_string(const CTimeSpan& value)
 {
-    CString res;
+    std::wstring res;
 
     if (const auto countDays = value.GetDays(); countDays > 0)
     {
         const LONGLONG countHours = (value - CTimeSpan((LONG)countDays, 0, 0, 0)).GetTotalHours();
         if (countHours == 0)
-            res.Format(L"%lld дней", countDays);
+            res = std::string_swprintf(L"%lld дней", countDays);
         else
-            res.Format(L"%lld дней %lld часов", countDays, countHours);
+            res = std::string_swprintf(L"%lld дней %lld часов", countDays, countHours);
     }
     else if (const auto countHours = value.GetTotalHours(); countHours > 0)
     {
         const LONGLONG countMinutes = (value - CTimeSpan(0, (LONG)countHours, 0, 0)).GetTotalMinutes();
         if (countMinutes == 0)
-            res.Format(L"%lld часов", countHours);
+            res = std::string_swprintf(L"%lld часов", countHours);
         else
-            res.Format(L"%lld часов %lld минут", countHours, countMinutes);
+            res = std::string_swprintf(L"%lld часов %lld минут", countHours, countMinutes);
     }
     else if (const auto countMinutes = value.GetTotalMinutes(); countMinutes > 0)
     {
         const LONGLONG countSeconds = (value - CTimeSpan(0, 0, (LONG)countMinutes, 0)).GetTotalSeconds();
         if (countSeconds == 0)
-            res.Format(L"%lld минут", countMinutes);
+            res = std::string_swprintf(L"%lld минут", countMinutes);
         else
-            res.Format(L"%lld минут %lld секунд", countMinutes, countSeconds);
+            res = std::string_swprintf(L"%lld минут %lld секунд", countMinutes, countSeconds);
     }
     else if (const auto countSeconds = value.GetTotalSeconds(); countSeconds > 0)
-        res.Format(L"%lld секунд", countSeconds);
+        res = std::string_swprintf(L"%lld секунд", countSeconds);
     else
         res = L"Нет пропусков";
 
-    assert(!res.IsEmpty());
+    EXT_DUMP_IF(res.empty());
 
     return res;
 }
 
 //----------------------------------------------------------------------------//
 template <typename... Args>
-inline void send_message_to_log(const LogMessageData::MessageType type, Args&&... textFormat)
+inline void send_message_to_log(const ILogEvents::LogMessageData::MessageType type, const std::wstring& format, Args&&... textFormat)
 {
     // оповещаем о возникшей ошибке
-    auto logMessage = std::make_shared<LogMessageData>();
+    auto logMessage = std::make_shared<ILogEvents::LogMessageData>();
     logMessage->messageType = type;
-    logMessage->logMessage.Format(textFormat...);
+    logMessage->logMessage = std::string_swprintf(format.c_str(), std::forward<Args>(textFormat)...);
 
-    get_service<CMassages>().postMessage(onNewLogMessageEvent, 0,
-                                         std::static_pointer_cast<IEventData>(logMessage));
+    ext::send_event_async(&ILogEvents::OnNewLogMessage, logMessage);
 }

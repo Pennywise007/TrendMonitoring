@@ -2,11 +2,11 @@
 
 #include "Controls/ListBox/CListBoxEx/CListBoxEx.h"
 
-#include "Messages.h"
+#include <include/ITrendMonitoring.h>
 
 class СTabTrendLog
     : public CDialogEx
-    , public EventRecipientImpl
+    , ext::events::ScopeSubscription<ILogEvents>
 {
     DECLARE_DYNAMIC(СTabTrendLog)
 
@@ -14,11 +14,9 @@ public:
     СTabTrendLog(CWnd* pParent = nullptr);   // standard constructor
     virtual ~СTabTrendLog() = default;
 
-// IEventRecipient
-public:
-    // оповещение о произошедшем событии
-    void onEvent(const EventId& code, float eventValue,
-                 const std::shared_ptr<IEventData>& eventData) override;
+// ILogEvents
+private:
+    void OnNewLogMessage(const std::shared_ptr<LogMessageData>& logMessage) override;
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME

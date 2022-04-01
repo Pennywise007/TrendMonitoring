@@ -6,121 +6,73 @@
 
 #include <afx.h>
 #include <future>
-#include <thread>
 #include <list>
 #include <map>
 
-#include <Messages.h>
-#include "Singleton.h"
-
-#include <ChannelDataCorrector/ChannelDataGetter.h>
 #include <include/IMonitoringTasksService.h>
 
-////////////////////////////////////////////////////////////////////////////////
-// сервис для управления потоком получения данных используется для
-// управления заданиями монитроинга которые выполняются в отдельном потоке
-// результаты выполнения заданий получаются через onCompletingMonitoringTask
-class MonitoringTasksServiceImpl : public IMonitoringTasksService
-{
-    friend class CSingleton<MonitoringTasksServiceImpl>;
+#include <ext/core/noncopyable.h>
+#include <ext/thread/thread_pool.h>
 
+// service interface to control the flow of receiving data is used to
+// control monitoring jobs that run in a separate thread
+// task execution results are obtained via IMonitoringTaskEvent
+class MonitoringTasksServiceImpl final
+    : public IMonitoringTasksService
+    , ext::NonCopyable
+{
 public:
     MonitoringTasksServiceImpl();
-    virtual ~MonitoringTasksServiceImpl();
 
 // IMonitoringTasksService
 public:
-    // добавляем список заданий для мониторинга, результат по ним должен быть получен единовременно
-    // @param channelNames - список имен каналов для которых нужно произвести мониторинг
-    // @param intervalStart - начало интервала по которому надо произвести мониторинг
-    // @param intervalEnd - конец интервала по которому надо произвести мониторинг
-    // @param priority - приоритет задания, определяет в какой очередности будут выполняться задания
-    // @return идентификатор задания
-    TaskId addTaskList(const std::list<CString>& channelNames,
+    // add a list of tasks for monitoring, the result for them should be received at a time
+    // @param channelNames - list of channel names for which you want to monitor
+    // @param intervalStart - start of channel data monitoring interval
+    // @param intervalEnd - end   of channel data monitoring interval
+    // @param priority - task priority determines the order in which jobs will be executed
+    // @return task ID
+    TaskId AddTaskList(const std::list<std::wstring>& channelNames,
                        const CTime& intervalStart,
                        const CTime& intervalEnd,
                        const TaskPriority priority) override;
 
-    // добавляем список заданий для мониторинга, результат по ним должен быть получен единовременно
-    // @param listTaskParams - список параметров для задания
-    // @param priority - приоритет задания, определяет в какой очередности будут выполняться задания
-    // @return идентификатор задания
-    TaskId addTaskList(const std::list<TaskParameters::Ptr>& listTaskParams,
+    // add a list of tasks for monitoring, the result for them should be received at a time
+    // @param listTaskParams - list of parameters for the task
+    // @param priority - task priority determines the order in which jobs will be executed
+    // @return task id
+    TaskId AddTaskList(const std::list<TaskParameters::Ptr>& listTaskParams,
                        const TaskPriority priority) override;
 
-    // прервать выполнение задания и удалить из очереди
-    void removeTask(const TaskId& taskId);
+    // abort the task and remove it from the queue
+    void RemoveTask(const TaskId& taskId) override;
 
 private:
-    // класс с параметрами задания для мониторинга
-    class MonitoringTask;
-    typedef std::shared_ptr<MonitoringTask> MonitoringTaskPtr;
-    // вспомогательный класс для хранения результатов мониторинга
-    class MonitoringResultHelper;
+    // helper class for storing monitoring results
+    struct  MonitoringResultHelper;
 private:
-    // поток, выполняющий задания для мониторинга
-    void tasksExecutorThread();
-    // выполнить задание
-    void executeTask(MonitoringTaskPtr pMonitoringTask);
+    // execution function
+    static IMonitoringTaskEvent::ResultDataPtr ExecuteTask(const TaskParameters::Ptr& taskParams);
 
 private:
-    // флаг прерывания работы потока
-    std::atomic_bool m_interruptThread = false;
-
-    // поток мониторинга данных
-    std::thread m_monitoringTasksExecutorThread;
-
-    // очередь заданий
-    std::list<MonitoringTaskPtr> m_queueTasks;
-
-    // мьютекс на очередь заданий, используется в двух случаях
-    // 1. Синхронизация действий над m_queueTasks
-    // 2. Для m_cvTasks
-    std::mutex m_queueMutex;
-    // используется при необходимости отработать потоком что-либо
-    std::condition_variable m_cvTasks;
-
-    // список идентификаторов заданий и результатов мониторинга
-    std::map<TaskId, MonitoringResultHelper, TaskComparer> m_resultsList;
-    // мьютекс на список результатов
+    // list of task IDs and monitoring results
+    std::map<TaskId, MonitoringResultHelper, TaskIdHelper> m_resultsList;
+    // results list mutex
     std::mutex m_resultsMutex;
+
+    // task thread pool
+    ext::thread_pool m_threadPool;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// задание для мониторинга
-class MonitoringTasksServiceImpl::MonitoringTask
+// helper class for storing monitoring results
+struct MonitoringTasksServiceImpl::MonitoringResultHelper
 {
-public:
-    MonitoringTask(const TaskParameters::Ptr& taskParameters,
-                   const TaskPriority priority,
-                   const TaskId& taskId)
-        : m_pTaskParams(taskParameters)
-        , m_priority(priority)
-        , m_taskId(taskId)
+    explicit MonitoringResultHelper(const size_t taskCount) EXT_NOEXCEPT
+        : taskCount(taskCount)
     {}
 
-public:
-    // параметры задания
-    TaskParameters::Ptr m_pTaskParams;
-    // приоритет задания
-    TaskPriority m_priority;
-    // идентификатор задания
-    TaskId m_taskId;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// вспомогательный класс для хранения результатов мониторинга
-class MonitoringTasksServiceImpl::MonitoringResultHelper
-{
-public:
-    MonitoringResultHelper(const size_t taskCount, const TaskId& taskId)
-        : m_taskCount(taskCount)
-        , m_pMonitoringResult(new MonitoringResult(taskId))
-    {}
-
-public:
-    // количество заданий которое было запущено
-    size_t m_taskCount;
-    // результат мониторинга
-    MonitoringResult::Ptr m_pMonitoringResult;
+    // the number of jobs that have been run
+    const size_t taskCount;
+    // monitoring result
+    IMonitoringTaskEvent::ResultsPtrList results;
 };

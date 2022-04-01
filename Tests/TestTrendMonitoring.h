@@ -5,7 +5,6 @@
 #include <include/ITrendMonitoring.h>
 #include "src/TrendMonitoring.h"
 
-#include "Messages.h"
 #include "MonitoringTaskServiceMock.h"
 #include "TelegamBotMock.h"
 #include "TestHelper.h"
@@ -14,18 +13,14 @@
 // класс работы с трендами данных, используется для тестирования мониторинга
 class MonitoringTestClass
     : public testing::Test
-    , EventRecipientImpl
+    // to send us messages immediately without waiting for another thread
+    , ext::events::ScopeAsyncSubscription<IMonitoringListEvents, IMonitoringErrorEvents, ILogEvents>
 {
 protected:
     void SetUp() override
     {
         // сбрасывааем все настройки у сервиса которые уже могли появиться при более раннем использовании другими тестами
         get_service<TestHelper>().resetMonitoringService();
-
-        // чтобы нам присылали сообщения сразу без ожидания другого потока
-        EventRecipientImpl::subscribeAsync(onMonitoringListChanged);
-        EventRecipientImpl::subscribeAsync(onMonitoringErrorEvent);
-        EventRecipientImpl::subscribeAsync(onNewLogMessageEvent);
 
         set_monitoring_tasks_service_mock(m_monitoringServiceMock);
 
@@ -40,10 +35,6 @@ protected:
 
     void TearDown() override
     {
-        EventRecipientImpl::unsubscribeAsync(onMonitoringListChanged);
-        EventRecipientImpl::unsubscribeAsync(onMonitoringErrorEvent);
-        EventRecipientImpl::unsubscribeAsync(onNewLogMessageEvent);
-
         set_monitoring_tasks_service_mock(nullptr);
 
         TrendMonitoring* monitoring = dynamic_cast<TrendMonitoring*>(m_monitoringService);
@@ -76,32 +67,44 @@ protected:
         return res;
     }
 
-    void ExpectChangesOnCompletingMonitoringTask(const MonitoringResult::Ptr& monitoringResult, const bool expectListChanged,
-                                                 const bool expectErrorReport, const bool expectLogMessage);
+    void ExpectChangesOnCompletingMonitoringTask(const ext::task::TaskId& expectedTaskId,
+                                                 IMonitoringTaskEvent::ResultsPtrList&& monitoringResult,
+                                                 const bool expectListChanged,
+                                                 const bool expectErrorReport,
+                                                 const bool expectLogMessage);
 
-// IMessagesRecipient
+// IMonitoringListEvents
 private:
-    void onEvent(const EventId& code, float /*eventValue*/, const std::shared_ptr<IEventData>& eventData) override
+    void OnChanged() override
     {
-        if (code == onMonitoringListChanged)
-        {
-            EXPECT_FALSE(m_listChanged) << "Called twice!";
-            m_listChanged = true;
-        }
-        else if (code == onMonitoringErrorEvent)
-        {
-            EXPECT_FALSE(m_errorReport) << "Called twice!";
-            m_errorReport = std::static_pointer_cast<MonitoringErrorEventData>(eventData);
-            EXPECT_TRUE(m_errorReport);
-        }
-        else if (code == onNewLogMessageEvent)
-        {
-            EXPECT_FALSE(m_logMessage) << "Called twice!";
-            m_logMessage = std::static_pointer_cast<LogMessageData>(eventData);
-            EXPECT_TRUE(m_logMessage);
-        }
-        else
-            EXPECT_TRUE(false);
+        EXPECT_FALSE(m_listChanged) << "Called twice!";
+        m_listChanged = true;
+    }
+
+// IMonitoringListEvents
+private:
+    void OnChanged() override
+    {
+        EXPECT_FALSE(m_listChanged) << "Called twice!";
+        m_listChanged = true;
+    }
+
+// ILogEvents
+private:
+    void OnNewLogMessage(const std::shared_ptr<LogMessageData>& logMessage) override
+    {
+        EXPECT_FALSE(m_logMessage) << "Called twice!";
+        m_logMessage = logMessage;
+        EXPECT_TRUE(m_logMessage);
+    }
+
+// IMonitoringErrorEvents
+private:
+    void OnError(const std::shared_ptr<EventData>& errorData) override
+    {
+        EXPECT_FALSE(m_errorReport) << "Called twice!";
+        m_errorReport = errorData;
+        EXPECT_TRUE(m_errorReport);
     }
 
 protected:  // Тесты
@@ -121,11 +124,11 @@ protected:
     // список данных текущих каналов, частично должен совпадать с тем что в сервисе
     std::list<std::pair<TaskId, MonitoringChannelData>> m_channelsData;
     // сервис мониторинга
-    ITrendMonitoring* m_monitoringService = get_monitoring_service();
+    ITrendMonitoring* m_monitoringService = GetInterface<ITrendMonitoring>();
 
     bool m_listChanged = false;
-    std::shared_ptr<MonitoringErrorEventData> m_errorReport;
-    std::shared_ptr<LogMessageData> m_logMessage;
+    std::shared_ptr<IMonitoringErrorEvents::EventData> m_errorReport;
+    std::shared_ptr<ILogEvents::LogMessageData> m_logMessage;
 
     std::shared_ptr<MonitoringTaskServiceMock> m_monitoringServiceMock = std::make_shared<MonitoringTaskServiceMock>();
     std::shared_ptr<telegram::bot::TelegramBotMock> m_botMock = std::make_shared<telegram::bot::TelegramBotMock>();

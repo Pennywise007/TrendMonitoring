@@ -5,87 +5,82 @@
 #include <vector>
 
 #include <include/ITelegramUsersList.h>
-#include <TelegramDLL/TelegramThread.h>
+#include <TelegramThread.h>
 
-#include "Singleton.h"
+#include <ext/core/singleton.h>
 #include "TelegramCallbacks.h"
 
 namespace telegram::command {
 
-// выполнение команды на рестарт
+// executing bot command "restart"
 void execute_restart_command(const std::int64_t& chatId, ITelegramThread* telegramThread);
 
-////////////////////////////////////////////////////////////////////////////////
-// вспомогательный клас дл€ работы с командами телеграма
+// singleton for managing bot commands
 class CommandsInfoService
 {
-    friend class CSingleton<CommandsInfoService>;
+    friend ext::Singleton<CommandsInfoService>;
 public:
-    // статус пользователей которым доступно использование команды
+    // user status for checking command availability
     typedef users::ITelegramUsersList::UserStatus AvailableStatus;
 
-    // ѕеречень команд
+    // Bot commands list
     enum class Command
     {
-        eUnknown,           // Ќеизвестна€ комнада бота
-        eInfo,              // «апрос информации бота
-        eReport,            // «апрос отчЄта за период
-        eRestart,           // перезапуск мониторинга
-        eAlertingOn,        // оповещени€ о событи€х канала включить
-        eAlertingOff,       // оповещени€ о событи€х канала выключить
-        eAlarmingValue,     // изменение допустимого уровн€ значений дл€ канала
-        // ѕоследн€€ команда
+        eUnknown,           // Unknown bot command(not registered)
+        eInfo,              // Get bot commands info
+        eReport,            // Get channel report for period
+        eRestart,           // Restarting monitoring
+        eAlertingOn,        // Enable notifications about channel
+        eAlertingOff,       // Disable notifications about channel
+        eAlarmingValue,     // Change alarming value for channel
+        // Last command, add commands before this line
         eLastCommand
     };
 
 public:
-    // ƒобавление описани€ команды
-    // @param command - идентификатор исполн€емой команды
-    // @param commandtext - текст команды
-    // @param description - описание команды
-    // @param callbacksKeyWords - перечень ключевых слов у колбэков которые порождены командой
-    // @param availabilityStatuses - перечень статусов пользователей которым доступна команда
-    void addCommand(Command command, std::wstring&& commandText, std::wstring&& description,
+    // Add command info
+    // @param command - Command id
+    // @param commandText - Command text which need send to bot for executing
+    // @param description - Command description for user
+    // @param callbacksKeyWords - callbacks for command list, all callbacks which command can use
+    // @param availabilityStatuses - availability of command for users
+    void AddCommand(Command command, std::wstring&& commandText, std::wstring&& description,
                     std::set<std::string>&& callbacksKeyWords,
                     const std::vector<AvailableStatus>& availabilityStatuses);
 
-    // ѕолучить список команд с описанием дл€ определенного пользовател€
-    std::wstring getAvailableCommandsWithDescription(AvailableStatus userStatus) const;
+    // Get all available commands for user with given status
+    EXT_NODISCARD std::wstring GetAvailableCommandsWithDescription(AvailableStatus userStatus) const;
 
-    // ѕроверка что надо ответить на команду пользователю
-    // если false - в messageToUser будет ответ пользователю
-    bool ensureNeedAnswerOnCommand(users::ITelegramUsersList* usersList, Command command,
-                                   const TgBot::User::Ptr& from, const std::int64_t& chatId,  std::wstring& messageToUser) const;
+    // Check if we need to process on command from user
+    // Returns false if we don`t need to process command and add information to @messageToUser
+    bool EnsureNeedAnswerOnCommand(users::ITelegramUsersList& usersList, Command command,
+                                   const TgBot::User::Ptr& from, const std::int64_t& chatId, std::wstring& messageToUser) const;
 
-    // ѕроверка что надо ответить на колбэк, пока пользователю показывали кнопку у него мог помен€тьс€ статус
-    // если false - в messageToUser будет ответ пользователю
-    bool ensureNeedAnswerOnCallback(users::ITelegramUsersList* usersList,
+    // Check if we need to process on callback from user(if user pressed callback button after user status changed)
+    bool EnsureNeedAnswerOnCallback(users::ITelegramUsersList& usersList,
                                     const std::string& callbackKeyWord,
                                     const TgBot::CallbackQuery::Ptr& query) const;
 
-    // ќчищаем список команд
-    void resetCommandList();
+    // Clean commands list
+    void ResetCommandList();
 
 private:
-    // ќписание команды телеграм бота
     struct CommandDescription
     {
-        CommandDescription(std::wstring&& text, std::wstring&& descr, std::set<std::string>&& callbacksKeyWord)
+        explicit CommandDescription(std::wstring&& text, std::wstring&& descr, std::set<std::string>&& callbacksKeyWord) EXT_NOEXCEPT
             : m_text(std::move(text)), m_description(std::move(descr)), m_callbacksKeywords(std::move(callbacksKeyWord))
         {}
 
-        // тект который надо отправить дл€ выполнени€ команды
+        // command text which need send to bot for executing
         std::wstring m_text;
-        // описание команды
+        // Command description for user
         std::wstring m_description;
-        // перечень ключевых слов у колбэков команды
+        // callbacks for command list, all callbacks which command can use
         std::set<std::string> m_callbacksKeywords;
-        // доступность команды дл€ различных типов пользователей
+        // availability of command for users
         std::bitset<AvailableStatus::eLastStatus> m_availabilityForUsers;
     };
 
-    // перечень команд бота
-    //       команда | описание команды
     std::map<Command, CommandDescription> m_botCommands;
 };
 

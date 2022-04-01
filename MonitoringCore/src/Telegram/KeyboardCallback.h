@@ -1,40 +1,39 @@
 #pragma once
 
-#include <afxstr.h>
 #include <string>
 
-#include <TelegramDLL/TelegramThread.h>
+#include <TelegramThread.h>
+
+#include <ext/core/defines.h>
 
 namespace telegram::callback {
 
-////////////////////////////////////////////////////////////////////////////////
-// Класс для формирования колбэка для кнопок телеграма, на выходе UTF-8
+// Class for forming a callback for telegram buttons, UTF-8 output
 class KeyboardCallback
 {
 public:
-    // стандартный конструктор
     explicit KeyboardCallback(const std::string& keyWord) noexcept;
     KeyboardCallback(const KeyboardCallback& callback) = default;
 
-    // добавить строку для колбэка с парой параметр - значение
-    KeyboardCallback& addCallbackParam(const std::string& param, const CString& value);
+    // add a line for the callback with a parameter - value pair
+    KeyboardCallback& AddCallbackParam(const std::string& param, const std::wstring& value);
     template <typename CharType, typename Traits, typename Alloc>
-    KeyboardCallback& addCallbackParam(const std::string& param, const std::basic_string<CharType, Traits, Alloc>& value)
+    KeyboardCallback& AddCallbackParam(const std::string& param, const std::basic_string<CharType, Traits, Alloc>& value)
     {
         if constexpr (std::is_same_v<CharType, char>)
-            return addCallbackParam(param, CString(getUNICODEString(value).c_str()));
+            return AddCallbackParam(param, getUNICODEString(value));
         else
-            return addCallbackParam(param, CString(value.c_str()));
+            return AddCallbackParam(param, std::wstring(value));
     }
-    // сформировать колбэк(UTF-8)
-    std::string buildReport() const;
+    // build callback(UTF-8)
+    EXT_NODISCARD std::string BuildCallback() const;
 
 private:
-    // строка отчёта
-    CString m_reportStr;
+    // callback string
+    std::wstring m_callbackString;
 };
 
-// создание кнопки с ответом
-TgBot::InlineKeyboardButton::Ptr create_keyboard_button(const CString& text, const KeyboardCallback& callback);
+// create button with callbacks
+TgBot::InlineKeyboardButton::Ptr create_keyboard_button(const std::wstring& text, const KeyboardCallback& callback);
 
 } // namespace telegram::callback

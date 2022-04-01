@@ -4,25 +4,22 @@
 
 #include <gtest/gtest.h>
 
-#include <Messages.h>
-
 #include <include/IMonitoringTasksService.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Проверка сервиса с получением данных через таски MonitoringTasksService
 class MonitoringTasksTestClass
     : public testing::Test
-    , public EventRecipientImpl
+    , ext::events::ScopeAsyncSubscription<IMonitoringTaskEvent>
 {
 protected:
     // настройка класса (инициализация)
     void SetUp() override;
 
-// IEventRecipient
+// IMonitoringTaskEvent
 public:
     // оповещение о произошедшем событии
-    void onEvent(const EventId& code, float eventValue,
-                 const std::shared_ptr<IEventData>& eventData) override;
+    void OnCompleteTask(const TaskId& taskId, IMonitoringTaskEvent::ResultsPtrList monitoringResult) override;
 
 protected:
     // задаем параметры всех тестовых каналов мониторинга в m_taskParams

@@ -106,7 +106,7 @@ TEST(Serialization, TestXMLSerialization)
          i < size; ++i, ++serializableIt, ++deserializableIt)
     {
         CStringA errorText;
-        errorText.Format("ƒанные в массиве подклассов различны по индексу %u", i);
+        errorText = std::string_swprintf"ƒанные в массиве подклассов различны по индексу %u", i);
         EXPECT_TRUE(CompareSubClasses(**serializableIt, **deserializableIt)) << errorText;
     }
 

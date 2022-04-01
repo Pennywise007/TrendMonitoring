@@ -6,6 +6,9 @@
 #include <map>
 #include <optional>
 
+#include <ext/core/check.h>
+#include <ext/std/string.h>
+
 constexpr LONGLONG kCountOfHoursForIgnoringSimilarError = 3;
 
 // TODO ADD TESTS
@@ -14,70 +17,25 @@ struct ChannelStateManager
     // —осто€ние канала
     enum ReportErrors
     {
-        eFallenOff,         // произошло оповещение пользователей об отваливании датчика
-        eExcessOfValue,     // произошло оповещение пользователей о превышении допустимого значени€
-        eLotOfEmptyData     // произошло оповещение пользователей о большом количестве пропусков
+        eFallenOff,     // users were notified about the sensor falling off
+        eExcessOfValue, // users were notified about exceeding the allowed value
+        eLotOfEmptyData // users were notified about a large number of passes
     };
 
-    void OnAddChannelErrorReport(const ReportErrors error, CString& errorMessage, LPCWSTR newErrorMessageFormat, ...)
-    {
-        auto it = channelState.find(error);
-        if (it == channelState.end())
-        {
-            switch (error)
-            {
-            case ReportErrors::eFallenOff:
-                it = channelState.emplace(error, ErrorInfo(3, 1)).first;
-                break;
-            case ReportErrors::eExcessOfValue:
-            case ReportErrors::eLotOfEmptyData:
-                it = channelState.emplace(error, 3).first;
-                break;
-            default:
-                assert(!"Ќе опознанный тип репорта");
-                return;
-            }
-        }
-
-        va_list argList;
-        va_start(argList, newErrorMessageFormat);
-        it->second.OnAddError(errorMessage, newErrorMessageFormat, argList);
-        va_end(argList);
-    }
+    template<class... Args>
+    void OnAddChannelErrorReport(const ReportErrors error, std::wstring& errorMessage, LPCWSTR newErrorMessageFormat, Args&&... args);
 
     // true - если надо оповестить о новом состо€нии
-    void OnRemoveChannelErrorReport(const ReportErrors error, CString& errorMessage, LPCWSTR newErrorMessageFormat, ...)
-    {
-        auto it = channelState.find(error);
-        if (it == channelState.end())
-            return;
-
-        va_list argList;
-        va_start(argList, newErrorMessageFormat);
-        if (it->second.OnRemove(errorMessage, newErrorMessageFormat, argList))
-            channelState.erase(it);
-        va_end(argList);
-    }
+    template<class... Args>
+    void OnRemoveChannelErrorReport(const ReportErrors error, std::wstring& errorMessage, LPCWSTR newErrorMessageFormat, Args&&... args);
 
     // true - если надо оповестить о новом состо€нии
-    void OnRemoveChannelErrorReport(const ReportErrors error)
-    {
-        if (auto it = channelState.find(error); it != channelState.end() && it->second.OnRemove())
-            channelState.erase(it);
-    }
+    void OnRemoveChannelErrorReport(const ReportErrors error);
 
     bool dataLoaded = false;
     bool loadingDataError = false;
 
-    bool operator==(const ChannelStateManager& other) const
-    {
-        auto wrap_fields = [](const ChannelStateManager& manager)
-        {
-            return std::tie(manager.dataLoaded, manager.loadingDataError, manager.channelState);
-        };
-
-        return wrap_fields(*this) == wrap_fields(other);
-    }
+    bool operator==(const ChannelStateManager& other) const;
 
 private:
     struct ErrorInfo
@@ -92,7 +50,8 @@ private:
             : m_countOfSuccessBeforeDeleteError(_countOfSuccessToDeleteState)
         {}
 
-        void OnAddError(CString& errorMessage, LPCWSTR newErrorFormat, const va_list& argList)
+        template<class... Args>
+        void OnAddError(std::wstring& errorMessage, LPCWSTR newErrorFormat, Args&&... args)
         {
             if (m_countOfIgnoringErrors > 0 && m_countOfIgnoringErrors-- != 0)
                 return;
@@ -100,20 +59,20 @@ private:
             const auto curTime = CTime::GetCurrentTime();
             if (!m_timeOfLastReporting.has_value())
             {
-                if (!errorMessage.IsEmpty())
-                    errorMessage.AppendChar(L' ');
+                if (!errorMessage.empty())
+                    errorMessage += L' ';
 
                 m_timeOfLastReporting = std::move(curTime);
-                errorMessage.AppendFormatV(newErrorFormat, argList);
+                errorMessage += std::string_swprintf(newErrorFormat, std::forward<Args>(args)...);
             }
             else if ((curTime - m_timeOfLastReporting.value()).GetTotalHours() > kCountOfHoursForIgnoringSimilarError)
             {
-                if (!errorMessage.IsEmpty())
-                    errorMessage.AppendChar(L' ');
+                if (!errorMessage.empty())
+                    errorMessage += L' ';
 
-                errorMessage.AppendFormat(L"¬ течениe %lld часов наблюдаетс€ ошибка: ", (curTime - m_timeOfFirstError).GetTotalHours());
+                errorMessage += std::string_swprintf(L"¬ течениe %lld часов наблюдаетс€ ошибка: ", (curTime - m_timeOfFirstError).GetTotalHours());
                 m_timeOfLastReporting = std::move(curTime);
-                errorMessage.AppendFormatV(newErrorFormat, argList);
+                errorMessage += std::string_swprintf(newErrorFormat, std::forward<Args>(args)...);
             }
         }
 
@@ -124,18 +83,19 @@ private:
             if (!m_timeOfLastReporting.has_value())
                 return true;
 
-            assert(m_currentCountOfDeletingState + 1 > m_countOfSuccessBeforeDeleteError);
+            EXT_ASSERT(m_currentCountOfDeletingState + 1 > m_countOfSuccessBeforeDeleteError);
             return ++m_currentCountOfDeletingState == m_countOfSuccessBeforeDeleteError;
         }
 
-        bool OnRemove(CString& errorMessage, LPCWSTR newErrorFormat, const va_list& argList)
+        template<class... Args>
+        bool OnRemove(std::wstring& errorMessage, LPCWSTR newErrorFormat, Args&&... args)
         {
             const auto res = OnRemove();
             if (res)
             {
-                if (!errorMessage.IsEmpty())
-                    errorMessage.AppendChar(L' ');
-                errorMessage.AppendFormatV(newErrorFormat, argList);
+                if (!errorMessage.empty())
+                    errorMessage += L' ';
+                errorMessage += std::string_swprintf(newErrorFormat, std::forward<Args>(args)...);
             }
             return res;
         }
@@ -162,3 +122,56 @@ private:
 
     std::map<ReportErrors, ErrorInfo> channelState;
 };
+
+template<class... Args>
+inline void ChannelStateManager::OnAddChannelErrorReport(const ReportErrors error, std::wstring& errorMessage,
+                                                         LPCWSTR newErrorMessageFormat, Args&&... args)
+{
+    auto it = channelState.find(error);
+    if (it == channelState.end())
+    {
+        switch (error)
+        {
+        case ReportErrors::eFallenOff:
+            it = channelState.emplace(error, ErrorInfo(3, 1)).first;
+            break;
+        case ReportErrors::eExcessOfValue:
+        case ReportErrors::eLotOfEmptyData:
+            it = channelState.emplace(error, 3).first;
+            break;
+        default:
+            EXT_ASSERT(!"Ќе опознанный тип репорта");
+            return;
+        }
+    }
+
+    it->second.OnAddError(errorMessage, newErrorMessageFormat, std::forward<Args>(args)...);
+}
+
+template<class... Args>
+inline void ChannelStateManager::OnRemoveChannelErrorReport(const ReportErrors error, std::wstring& errorMessage,
+                                                            LPCWSTR newErrorMessageFormat, Args&&... args)
+{
+    auto it = channelState.find(error);
+    if (it == channelState.end())
+        return;
+
+    if (it->second.OnRemove(errorMessage, newErrorMessageFormat, std::forward<Args>(args)...))
+        channelState.erase(it);
+}
+
+inline void ChannelStateManager::OnRemoveChannelErrorReport(const ReportErrors error)
+{
+    if (auto it = channelState.find(error); it != channelState.end() && it->second.OnRemove())
+        channelState.erase(it);
+}
+
+inline bool ChannelStateManager::operator==(const ChannelStateManager& other) const
+{
+    auto wrap_fields = [](const ChannelStateManager& manager)
+    {
+        return std::tie(manager.dataLoaded, manager.loadingDataError, manager.channelState);
+    };
+
+    return wrap_fields(*this) == wrap_fields(other);
+}

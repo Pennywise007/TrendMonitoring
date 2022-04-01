@@ -54,29 +54,11 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="$(UtilsDir)Controls\Tables\ListGroupCtrl\ListGroupCtrl.h">
-      <Filter>Controls\ListGroupCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="$(UtilsDir)Controls\ComboBox\CComboBoxWithSearch\ComboWithSearch.h">
-      <Filter>Controls\ComboWithSearch</Filter>
-    </ClInclude>
-    <ClInclude Include="$(UtilsDir)Controls\Tables\ListEditSubItems\ListEditSubItems.h">
-      <Filter>Controls\ListEditSubItems</Filter>
-    </ClInclude>
-    <ClInclude Include="$(UtilsDir)Controls\Tables\ListEditSubItems\ListEditSubItemsImpl.h">
-      <Filter>Controls\ListEditSubItems</Filter>
-    </ClInclude>
     <ClInclude Include="TrendMonitor.h">
       <Filter>MainDlg</Filter>
     </ClInclude>
     <ClInclude Include="TrendMonitorDlg.h">
       <Filter>MainDlg</Filter>
-    </ClInclude>
-    <ClInclude Include="$(UtilsDir)Controls\ListBox\CListBoxEx\CListBoxEx.h">
-      <Filter>Controls\ListBoxEx</Filter>
-    </ClInclude>
-    <ClInclude Include="$(UtilsDir)Controls\TabControl\TabControl.h">
-      <Filter>Controls\TabControl</Filter>
     </ClInclude>
     <ClInclude Include="TabReports.h">
       <Filter>MainDlg\Tabs</Filter>
@@ -90,31 +72,34 @@
     <ClInclude Include="BotSettingDlg.h">
       <Filter>BotSettings</Filter>
     </ClInclude>
+    <ClInclude Include="Controls\ComboBox\CComboBoxWithSearch\ComboWithSearch.h">
+      <Filter>Controls\ComboWithSearch</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\ListBox\CListBoxEx\CListBoxEx.h">
+      <Filter>Controls\ListBoxEx</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\Tables\ListGroupCtrl\ListGroupCtrl.h">
+      <Filter>Controls\ListGroupCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\Tables\ListEditSubItems\ListEditSubItems.h">
+      <Filter>Controls\ListEditSubItems</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\Tables\ListEditSubItems\ListEditSubItemsImpl.h">
+      <Filter>Controls\ListEditSubItems</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\TabControl\TabControl.h">
+      <Filter>Controls\TabControl</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="$(UtilsDir)Controls\Tables\ListGroupCtrl\ListGroupCtrl.cpp">
-      <Filter>Controls\ListGroupCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="$(UtilsDir)Controls\ComboBox\CComboBoxWithSearch\ComboWithSearch.cpp">
-      <Filter>Controls\ComboWithSearch</Filter>
-    </ClCompile>
-    <ClCompile Include="$(UtilsDir)Controls\Tables\ListEditSubItems\ListEditSubItems.cpp">
-      <Filter>Controls\ListEditSubItems</Filter>
     </ClCompile>
     <ClCompile Include="TrendMonitor.cpp">
       <Filter>MainDlg</Filter>
     </ClCompile>
     <ClCompile Include="TrendMonitorDlg.cpp">
       <Filter>MainDlg</Filter>
-    </ClCompile>
-    <ClCompile Include="$(UtilsDir)Controls\ListBox\CListBoxEx\CListBoxEx.cpp">
-      <Filter>Controls\ListBoxEx</Filter>
-    </ClCompile>
-    <ClCompile Include="$(UtilsDir)Controls\TabControl\TabControl.cpp">
-      <Filter>Controls\TabControl</Filter>
     </ClCompile>
     <ClCompile Include="TabTrendLog.cpp">
       <Filter>MainDlg\Tabs</Filter>
@@ -128,6 +113,21 @@
     <ClCompile Include="BotSettingDlg.cpp">
       <Filter>BotSettings</Filter>
     </ClCompile>
+    <ClCompile Include="Controls\ComboBox\CComboBoxWithSearch\ComboWithSearch.cpp">
+      <Filter>Controls\ComboWithSearch</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\ListBox\CListBoxEx\CListBoxEx.cpp">
+      <Filter>Controls\ListBoxEx</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\Tables\ListGroupCtrl\ListGroupCtrl.cpp">
+      <Filter>Controls\ListGroupCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\Tables\ListEditSubItems\ListEditSubItems.cpp">
+      <Filter>Controls\ListEditSubItems</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\TabControl\TabControl.cpp">
+      <Filter>Controls\TabControl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TrendMonitor.rc">
@@ -138,6 +138,7 @@
     <None Include="res\TrendMonitor.rc2">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\TrendMonitor.ico">

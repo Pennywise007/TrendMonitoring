@@ -1,11 +1,9 @@
 #pragma once
 
-// Лёгкий хидер с утилитами для работы других объектов, в частности для упрощения работы тестов
+// Lightweight header with tools for working with other objects, in particular, to simplify the work of tests
 
-#include <afxstr.h>
+// name of the configuration file with settings
+constexpr auto kConfigFileName = L"AppConfig.xml";
 
-// имя конфигурационного файла с настройками
-const CString kConfigFileName(L"AppConfig.xml");
-
-// имя исполняемого файла для перезапуска системы
-const CString kRestartSystemFileName(L"restart.bat");
+// the name of the executable file to restart the system
+constexpr auto kRestartSystemFileName = L"restart.bat";
