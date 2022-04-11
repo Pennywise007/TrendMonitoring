@@ -20,12 +20,17 @@ constexpr std::wstring_view gBotPassword_Admin = L"MonitoringAuthAdmin";    // a
 // Implementation of the bot
 CTelegramBot::CTelegramBot(ext::ServiceProvider::Ptr provider,
                            std::shared_ptr<telegram::users::ITelegramUsersList>&& telegramUsers,
-                           std::shared_ptr<ITelegramThread>&& thread)
+                           std::shared_ptr<ITelegramThread>&& thread,
+                           std::shared_ptr<telegram::bot::ITelegramBotSettings>&& botSettings)
     : ServiceProviderHolder(std::move(provider))
     , m_telegramUsers(std::move(telegramUsers))
     , m_callbacksHandler(CreateObject<callback::TelegramCallbacks>())
     , m_telegramThread(std::move(thread))
 {
+    bool enable;
+    std::wstring botToken;
+    botSettings->GetSettings(enable, botToken);
+    OnBotSettingsChanged(enable, botToken);
 }
 
 CTelegramBot::~CTelegramBot()
@@ -36,6 +41,9 @@ CTelegramBot::~CTelegramBot()
 
 void CTelegramBot::OnBotSettingsChanged(const bool newEnableValue, const std::wstring& newBotToken)
 {
+    if (!newEnableValue || newBotToken.empty())
+        return;
+
     // list of commands and functions executed when the command is called
     std::unordered_map<std::string, CommandFunction> commandsList;
     // command to be executed when any message is received

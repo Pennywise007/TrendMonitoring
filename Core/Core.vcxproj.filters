@@ -9,9 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="UI">
-      <UniqueIdentifier>{19f9f129-357c-4a9d-b2fa-6b2e60699655}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Configuration">
       <UniqueIdentifier>{7ef74747-0792-47ad-963d-40f2dba892d0}</UniqueIdentifier>
     </Filter>

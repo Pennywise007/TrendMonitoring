@@ -320,14 +320,20 @@ size_t TrendMonitoring::MoveDownMonitoringChannelByIndex(const size_t channelInd
 
 void TrendMonitoring::OnChanged()
 {
-    // save changes to config
-    SaveConfiguration();
+    ext::InvokeMethodAsync([&]()
+        {
+            // save changes to config
+            SaveConfiguration();
+        });
 }
 
 void TrendMonitoring::OnBotSettingsChanged(const bool, const std::wstring&)
 {
-    // save changes to config
-    SaveConfiguration();
+    ext::InvokeMethodAsync([&]()
+        {
+            // save changes to config
+            SaveConfiguration();
+        });
 }
 
 void TrendMonitoring::OnCompleteTask(const TaskId& taskId, ResultsPtrList monitoringResult)
@@ -337,91 +343,94 @@ void TrendMonitoring::OnCompleteTask(const TaskId& taskId, ResultsPtrList monito
         // completed not our task
         return;
 
-    EXT_ASSERT(!monitoringResult.empty() && !it->second.channelParameters.empty());
-
-    // iterators by channel parameters
-    ChannelIt channelIt = it->second.channelParameters.begin();
-    const ChannelIt channelEnd = it->second.channelParameters.end();
-
-    // iterators by job results
-    auto resultIt = monitoringResult.begin();
-    const auto resultEnd = monitoringResult.end();
-
-    // flag that there were changes in the monitoring list
-    bool bMonitoringListChanged = false;
-
-    std::vector<std::wstring> listOfProblemChannels;
-    listOfProblemChannels.reserve(monitoringResult.size());
-
-    std::wstring reportTextForAllChannels;
-    // for each channel, analyze its task result
-    for (; channelIt != channelEnd && resultIt != resultEnd; ++channelIt, ++resultIt)
+    ext::InvokeMethodAsync([&, taskId, monitoringResult]()
     {
-        EXT_ASSERT((*channelIt)->channelName == (*resultIt)->taskParameters->channelName) << "Wrong channel name data received!";
+        EXT_ASSERT(!monitoringResult.empty() && !it->second.channelParameters.empty());
 
-        std::wstring channelError;
-        bMonitoringListChanged |= MonitoringTaskResultHandler::HandleIntervalInfoResult(it->second.taskType, *resultIt,
-                                                                                        channelIt->get(), channelError);
+        // iterators by channel parameters
+        ChannelIt channelIt = it->second.channelParameters.begin();
+        const ChannelIt channelEnd = it->second.channelParameters.end();
 
-        // if an error occurred while receiving data and you can notify about it
-        if (!channelError.empty() && (*channelIt)->bNotify)
+        // iterators by job results
+        auto resultIt = monitoringResult.begin();
+        const auto resultEnd = monitoringResult.end();
+
+        // flag that there were changes in the monitoring list
+        bool bMonitoringListChanged = false;
+
+        std::vector<std::wstring> listOfProblemChannels;
+        listOfProblemChannels.reserve(monitoringResult.size());
+
+        std::wstring reportTextForAllChannels;
+        // for each channel, analyze its task result
+        for (; channelIt != channelEnd && resultIt != resultEnd; ++channelIt, ++resultIt)
         {
-            reportTextForAllChannels += std::string_swprintf(L"Канал \"%s\": %s\n",
-                (*channelIt)->channelName.c_str(),
-                channelError.c_str());
+            EXT_ASSERT((*channelIt)->channelName == (*resultIt)->taskParameters->channelName) << "Wrong channel name data received!";
 
-            listOfProblemChannels.emplace_back((*channelIt)->channelName);
+            std::wstring channelError;
+            bMonitoringListChanged |= MonitoringTaskResultHandler::HandleIntervalInfoResult(it->second.taskType, *resultIt,
+                channelIt->get(), channelError);
+
+            // if an error occurred while receiving data and you can notify about it
+            if (!channelError.empty() && (*channelIt)->bNotify)
+            {
+                reportTextForAllChannels += std::string_swprintf(L"Канал \"%s\": %s\n",
+                    (*channelIt)->channelName.c_str(),
+                    channelError.c_str());
+
+                listOfProblemChannels.emplace_back((*channelIt)->channelName);
+            }
         }
-    }
 
-    std::string_trim_all(reportTextForAllChannels);
+        std::string_trim_all(reportTextForAllChannels);
 
-    // if errors occur, we process them differently for each task type
-    if (it->second.taskType == MonitoringTaskInfo::TaskType::eEveryDayReport)
-    {
-        // if there is nothing to report, we say that everything is OK
-        if (reportTextForAllChannels.empty())
-            reportTextForAllChannels = L"Data is OK.";
+        // if errors occur, we process them differently for each task type
+        if (it->second.taskType == MonitoringTaskInfo::TaskType::eEveryDayReport)
+        {
+            // if there is nothing to report, we say that everything is OK
+            if (reportTextForAllChannels.empty())
+                reportTextForAllChannels = L"Data is OK.";
 
-        const std::wstring reportDelimer(L'*', 25);
+            const std::wstring reportDelimer(L'*', 25);
 
-        // create a report message
-        std::wstring reportMessage;
-        reportMessage = std::string_swprintf(L"%s\n\nЕжедневный отчёт за %s\n\n%s\n%s",
-                             reportDelimer.c_str(),
-                             CTime::GetCurrentTime().Format(L"%d.%m.%Y").GetString(),
-                             reportTextForAllChannels.c_str(),
-                             reportDelimer.c_str());
+            // create a report message
+            std::wstring reportMessage;
+            reportMessage = std::string_swprintf(L"%s\n\nЕжедневный отчёт за %s\n\n%s\n%s",
+                reportDelimer.c_str(),
+                CTime::GetCurrentTime().Format(L"%d.%m.%Y").GetString(),
+                reportTextForAllChannels.c_str(),
+                reportDelimer.c_str());
 
-        // notify about the finished report
-        ext::send_event_async(&IReportEvents::OnReportDone, reportMessage);
+            // notify about the finished report
+            ext::send_event_async(&IReportEvents::OnReportDone, reportMessage);
 
-        // inform telegram users
-        m_telegramBot->SendMessageToAdmins(reportMessage);
-    }
-    else if (!reportTextForAllChannels.empty())
-    {
-        EXT_ASSERT(it->second.taskType == MonitoringTaskInfo::TaskType::eIntervalInfo ||
-            it->second.taskType == MonitoringTaskInfo::TaskType::eUpdatingInfo);
+            // inform telegram users
+            m_telegramBot->SendMessageToAdmins(reportMessage);
+        }
+        else if (!reportTextForAllChannels.empty())
+        {
+            EXT_ASSERT(it->second.taskType == MonitoringTaskInfo::TaskType::eIntervalInfo ||
+                it->second.taskType == MonitoringTaskInfo::TaskType::eUpdatingInfo);
 
-        // report to the log that there are problems
-        send_message_to_log(ILogEvents::LogMessageData::MessageType::eError, reportTextForAllChannels);
+            // report to the log that there are problems
+            send_message_to_log(ILogEvents::LogMessageData::MessageType::eError, reportTextForAllChannels);
 
-        // notify about the error
-        auto errorMessage = std::make_shared<IMonitoringErrorEvents::EventData>();
-        errorMessage->errorTextForAllChannels = std::move(reportTextForAllChannels);
-        errorMessage->problemChannelNames = std::move(listOfProblemChannels);
+            // notify about the error
+            auto errorMessage = std::make_shared<IMonitoringErrorEvents::EventData>();
+            errorMessage->errorTextForAllChannels = std::move(reportTextForAllChannels);
+            errorMessage->problemChannelNames = std::move(listOfProblemChannels);
 
-        // generate an error ID
-        EXT_DUMP_IF(FAILED(CoCreateGuid(&errorMessage->errorGUID)));
-        ext::send_event(&IMonitoringErrorEvents::OnError, errorMessage);
-    }
+            // generate an error ID
+            EXT_DUMP_IF(FAILED(CoCreateGuid(&errorMessage->errorGUID)));
+            ext::send_event(&IMonitoringErrorEvents::OnError, errorMessage);
+        }
 
-    if (bMonitoringListChanged)
-        ext::send_event_async(&IMonitoringListEvents::OnChanged);
+        if (bMonitoringListChanged)
+            ext::send_event_async(&IMonitoringListEvents::OnChanged);
 
-    // remove the task from the list
-    m_monitoringTasksInfo.erase(it);
+        // remove the task from the list
+        m_monitoringTasksInfo.erase(it);
+    });
 }
 
 void TrendMonitoring::OnTick(ext::tick::TickParam tickParam) EXT_NOEXCEPT

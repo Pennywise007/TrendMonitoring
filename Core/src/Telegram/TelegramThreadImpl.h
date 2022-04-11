@@ -23,6 +23,9 @@ public:
         std::wstring botToken;
         botSettings->GetSettings(enable, botToken);
         OnBotSettingsChanged(enable, botToken);
+
+        // we must handle changing settings event the very first
+        ScopeSubscription::SetFirstPriority<telegram::bot::ISettingsChangedEvent>();
     }
 
 // ITelegramThread
@@ -49,8 +52,8 @@ private:
                      TgBot::GenericReply::Ptr replyMarkup = std::make_shared<TgBot::GenericReply>(),
                      const std::string& parseMode = "", bool disableNotification = false) override
     {
-        EXT_EXPECT(!!m_telegramThread);
-        m_telegramThread->SendMessage(chatIds, msg, disableWebPagePreview, replyToMessageId, replyMarkup, parseMode, disableNotification);
+        if (m_telegramThread)
+            m_telegramThread->SendMessage(chatIds, msg, disableWebPagePreview, replyToMessageId, replyMarkup, parseMode, disableNotification);
     }
 
     // function to send a message to the chat
@@ -59,8 +62,8 @@ private:
                      TgBot::GenericReply::Ptr replyMarkup = std::make_shared<TgBot::GenericReply>(),
                      const std::string& parseMode = "", bool disableNotification = false) override
     {
-        EXT_EXPECT(!!m_telegramThread);
-        m_telegramThread->SendMessage(chatId, msg, disableWebPagePreview, replyToMessageId, replyMarkup, parseMode, disableNotification);
+        if (m_telegramThread)
+            m_telegramThread->SendMessage(chatId, msg, disableWebPagePreview, replyToMessageId, replyMarkup, parseMode, disableNotification);
     }
 
     // returns bot events to handle everything itself

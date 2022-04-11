@@ -137,7 +137,8 @@ xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>TelegramDLLD.lib;</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
@@ -171,7 +172,8 @@ xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>TelegramDLL.lib;</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
@@ -205,7 +207,8 @@ xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>TelegramDLL.lib;</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>

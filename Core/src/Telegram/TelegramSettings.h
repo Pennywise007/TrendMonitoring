@@ -16,7 +16,7 @@ namespace telegram {
 namespace users {
 
 // Telegram user information
-class ATL_NO_VTABLE TelegramUser
+class TelegramUser
     : public ext::serializable::SerializableObject<TelegramUser>
     , public TgBot::User
 {

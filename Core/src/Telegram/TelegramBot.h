@@ -24,7 +24,7 @@ class CTelegramBot final
 {
 public:
     CTelegramBot(ext::ServiceProvider::Ptr provider, std::shared_ptr<telegram::users::ITelegramUsersList>&& telegramUsers,
-                 std::shared_ptr<ITelegramThread>&& thread);
+                 std::shared_ptr<ITelegramThread>&& thread, std::shared_ptr<telegram::bot::ITelegramBotSettings>&& botSettings);
     ~CTelegramBot();
 
 // ITelegramBot

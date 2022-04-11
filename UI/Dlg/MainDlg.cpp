@@ -742,7 +742,14 @@ void MainDlg::OnClose()
 //----------------------------------------------------------------------------//
 void MainDlg::OnBnClickedMfcbuttonAdd()
 {
-    selectChannelsListItem(ServiceProviderHolder::GetInterface<ITrendMonitoring>()->AddMonitoringChannel());
+    try
+    {
+        selectChannelsListItem(ServiceProviderHolder::GetInterface<ITrendMonitoring>()->AddMonitoringChannel());
+    }
+    catch (std::exception&)
+    {
+        MessageBoxW(ext::ManageExceptionText<wchar_t>().c_str(), L"Не удалось найти каналы для мониторинга.", MB_ICONERROR | MB_OK);
+    }
 }
 
 //----------------------------------------------------------------------------//
