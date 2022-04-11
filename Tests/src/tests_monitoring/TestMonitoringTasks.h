@@ -4,17 +4,29 @@
 
 #include <gtest/gtest.h>
 
-#include <include/IMonitoringTasksService.h>
+#include <ext/core/dependency_injection.h>
+
+#include "helpers/TestHelper.h"
+#include "mocks/MonitoringTaskServiceMock.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Проверка сервиса с получением данных через таски MonitoringTasksService
 class MonitoringTasksTestClass
     : public testing::Test
-    , ext::events::ScopeAsyncSubscription<IMonitoringTaskEvent>
+    , ext::events::ScopeSubscription<IMonitoringTaskEvent>
 {
 protected:
-    // настройка класса (инициализация)
-    void SetUp() override;
+
+    void SetUp() override
+    {
+        m_serviceProvider = ext::get_service<ext::ServiceCollection>().BuildServiceProvider();
+        m_monitoringService = ext::GetInterface<IMonitoringTasksService>(m_serviceProvider);
+    }
+
+    void TearDown() override
+    {
+        ext::get_service<TestHelper>().ResetAll();
+    }
 
 // IMonitoringTaskEvent
 public:
@@ -28,10 +40,12 @@ protected:
     bool waitForTaskResult(std::unique_lock<std::mutex>& lock, bool bNoTimeOut);
 
 protected:
+    ext::ServiceProvider::Ptr m_serviceProvider;
+
+    std::shared_ptr<IMonitoringTasksService> m_monitoringService;
+
     // идентификатор текущего задания
     TaskId m_currentTask = {};
-    // результат задания
-    MonitoringResult::Ptr m_taskResult;
     // Вспомогательный объект для ожидания загрузки данных
     std::condition_variable m_resultTaskCV;
     std::mutex m_resultMutex;

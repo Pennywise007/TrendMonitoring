@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<Collection Name="class ApplicationConfiguration">
+    <Collection Name="m_chanelParameters">
+        <Collection Name="0">
+            <Field Name="channelName" Value="Прогибометр №3" Type="1" />
+            <Field Name="bNotify" Value="false" Type="2" />
+            <Field Name="monitoringInterval" Value="0" Type="6" />
+            <Field Name="alarmingValue" Value="100" Type="7" />
+        </Collection>
+        <Collection Name="1">
+            <Field Name="channelName" Value="Прогибометр №1" Type="1" />
+            <Field Name="bNotify" Value="true" Type="2" />
+            <Field Name="monitoringInterval" Value="3" Type="6" />
+            <Field Name="alarmingValue" Value="nan" Type="7" />
+        </Collection>
+        <Collection Name="2">
+            <Field Name="channelName" Value="Прогибометр №2" Type="1" />
+            <Field Name="bNotify" Value="false" Type="2" />
+            <Field Name="monitoringInterval" Value="4" Type="6" />
+            <Field Name="alarmingValue" Value="-1" Type="7" />
+        </Collection>
+    </Collection>
+    <Collection Name="m_telegramParameters">
+        <Field Name="bEnable" Value="false" Type="2" />
+        <Field Name="sToken" Value="" Type="1" />
+        <Collection Name="m_telegramUsers" />
+    </Collection>
+</Collection>

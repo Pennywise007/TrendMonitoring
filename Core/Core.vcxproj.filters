@@ -1,0 +1,239 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{19f9f129-357c-4a9d-b2fa-6b2e60699655}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Configuration">
+      <UniqueIdentifier>{7ef74747-0792-47ad-963d-40f2dba892d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TelegramBot">
+      <UniqueIdentifier>{34c4a16a-4577-458b-b412-bb5850909444}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MonitoringTasksService">
+      <UniqueIdentifier>{872fdb83-4b1a-461b-af7e-c50bdbca1e4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MonitoringTasksService\ChannelDataGetter">
+      <UniqueIdentifier>{6888f0e1-0ce8-4d89-8b68-b3a5d62306e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TelegramBot\Callback">
+      <UniqueIdentifier>{cbbbd1ff-cd87-4959-a2e2-071a4f612029}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pugixml">
+      <UniqueIdentifier>{d4b32d85-65bf-4f50-ac70-b875e8c0b770}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ext">
+      <UniqueIdentifier>{950e6a7a-7ed2-4520-97e2-ff928d753455}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ext\serialization">
+      <UniqueIdentifier>{e9c70a07-92ed-493d-9c6c-3e922c364813}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ext\serialization\serializers">
+      <UniqueIdentifier>{01128db3-3251-4422-88c3-85d25afc2aea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ext\core">
+      <UniqueIdentifier>{0427dc1b-bc5e-4e5d-ac13-ad9ea4a96023}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ext\thread">
+      <UniqueIdentifier>{0fa99bed-a500-466b-826e-b807c42f86fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TrendMonitoring">
+      <UniqueIdentifier>{6ad47340-4061-4898-bd24-82e59c175d4a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ApplicationConfiguration.h">
+      <Filter>Configuration</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Telegram\CommandsInfoService.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Telegram\TelegramBot.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MonitoringTaskService\MonitoringTasksServiceImpl.h">
+      <Filter>MonitoringTasksService</Filter>
+    </ClInclude>
+    <ClInclude Include="include\IMonitoringTasksService.h">
+      <Filter>MonitoringTasksService</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ITelegramUsersList.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Telegram\KeyboardCallback.h">
+      <Filter>TelegramBot\Callback</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Telegram\TelegramCallbacks.h">
+      <Filter>TelegramBot\Callback</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ITelegramBot.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="..\packages\pugixml.1.12.0\build\native\include\pugiconfig.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\packages\pugixml.1.12.0\build\native\include\pugixml.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\core\check.h">
+      <Filter>ext\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\core\COM.h">
+      <Filter>ext\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\core\defines.h">
+      <Filter>ext\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\core\dependency_injection.h">
+      <Filter>ext\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\core\dispatcher.h">
+      <Filter>ext\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\core\mpl.h">
+      <Filter>ext\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\core\noncopyable.h">
+      <Filter>ext\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\core\singleton.h">
+      <Filter>ext\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\IDirService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DirServiceImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\thread\event.h">
+      <Filter>ext\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\thread\invoker.h">
+      <Filter>ext\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\thread\thread.h">
+      <Filter>ext\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\thread\thread_pool.h">
+      <Filter>ext\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\thread\tick.h">
+      <Filter>ext\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\thread\scheduler.h">
+      <Filter>ext\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="DependencyRegistration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Telegram\TelegramThreadImpl.h">
+      <Filter>TelegramBot</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\serialization\iserializable.h">
+      <Filter>ext\serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\serialization\serializable_impl.h">
+      <Filter>ext\serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\serialization\serializable_value.h">
+      <Filter>ext\serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\serialization\serializer.h">
+      <Filter>ext\serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\serialization\serializer_impl.h">
+      <Filter>ext\serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\serialization\serializers\text.h">
+      <Filter>ext\serialization\serializers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ext\serialization\serializers\xml.h">
+      <Filter>ext\serialization\serializers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MonitoringTaskService\ChannelDataGetter\ChannelDataGetter.h">
+      <Filter>MonitoringTasksService\ChannelDataGetter</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MonitoringTaskService\ChannelDataGetter\ChannelsHelpHeader.h">
+      <Filter>MonitoringTasksService\ChannelDataGetter</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MonitoringTaskService\MonitoringTaskResultHandler.h">
+      <Filter>MonitoringTasksService</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ChannelStateManager.h">
+      <Filter>Configuration</Filter>
+    </ClInclude>
+    <ClInclude Include="src\TrendMonitoring.h">
+      <Filter>TrendMonitoring</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ITrendMonitoring.h">
+      <Filter>TrendMonitoring</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Telegram\TelegramSettings.h">
+      <Filter>Configuration</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ApplicationConfiguration.cpp">
+      <Filter>Configuration</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Telegram\CommandsInfoService.cpp">
+      <Filter>TelegramBot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Telegram\TelegramBot.cpp">
+      <Filter>TelegramBot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MonitoringTaskService\MonitoringTasksServiceImpl.cpp">
+      <Filter>MonitoringTasksService</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Telegram\KeyboardCallback.cpp">
+      <Filter>TelegramBot\Callback</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Telegram\TelegramCallbacks.cpp">
+      <Filter>TelegramBot\Callback</Filter>
+    </ClCompile>
+    <ClCompile Include="..\packages\pugixml.1.12.0\build\native\include\pugixml.cpp">
+      <Filter>pugixml</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DirServiceImpl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DependencyRegistration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MonitoringTaskService\ChannelDataGetter\ChannelDataGetter.cpp">
+      <Filter>MonitoringTasksService\ChannelDataGetter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MonitoringTaskService\MonitoringTaskResultHandler.cpp">
+      <Filter>MonitoringTasksService</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TrendMonitoring.cpp">
+      <Filter>TrendMonitoring</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="..\include\ext\thread\README.md">
+      <Filter>ext\thread</Filter>
+    </None>
+    <None Include="..\include\ext\serialization\README.md">
+      <Filter>ext\serialization</Filter>
+    </None>
+  </ItemGroup>
+</Project>

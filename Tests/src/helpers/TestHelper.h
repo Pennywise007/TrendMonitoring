@@ -4,7 +4,7 @@
 
 #include <filesystem>
 
-#include <Singleton.h>
+#include <ext/core/singleton.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Сервис работы с мониторингов данных, используется для того чтобы у сервиса был получатель сообщений
@@ -12,14 +12,14 @@
 // а так же для сохранения реального конфигурационного файла
 class TestHelper
 {
-    friend class CSingleton<TestHelper>;
+    friend ext::Singleton<TestHelper>;
 
 public:
     TestHelper() = default;
 
 public:
-    // Сброс настроек сервиса мониторинга
-    void resetMonitoringService();
+    // Сброс всех созданных объектов в начальное состояние
+    void ResetAll() const;
 
 // Пути к файлам
 public:

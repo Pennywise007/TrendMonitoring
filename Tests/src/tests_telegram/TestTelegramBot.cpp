@@ -1,53 +1,52 @@
 ﻿#include "pch.h"
 
+#include <filesystem>
 #include <fstream>
 #include <regex>
 
-#include <boost/algorithm/string.hpp>
-
-#pragma warning( push )
-#pragma warning( disable: 4996 ) // boost deprecated objects usage
-#include <tgbot/tgbot.h>
-#pragma warning( pop )
-
-#include <TelegramDLL/TelegramThread.h>
-
-#include <DirsService.h>
 #include <include/ITrendMonitoring.h>
-#include <Messages.h>
 
-#include "TestHelper.h"
+#include "helpers/TestHelper.h"
+#include "mocks/MonitoringTaskServiceMock.h"
+
 #include "TestTelegramBot.h"
 
-#include <experimental/filesystem>
+using namespace testing;
 
 namespace telegram {
 
-    // идентификатор фиктивного пользователя телеграма
+// идентификатор фиктивного пользователя телеграма
 const int64_t kTelegramTestChatId = 1234;
 
 namespace bot {
 
-////////////////////////////////////////////////////////////////////////////////
+TestTelegramBot::TestTelegramBot()    
+{
+    auto& service = ext::get_service<ext::ServiceCollection>();
+    service.RegisterScoped<NiceMock<MonitoringTaskServiceMock>, IMonitoringTasksService>();
+
+    m_serviceProvider = service.BuildServiceProvider();
+
+    m_pUserList = ext::GetInterface<telegram::users::TestTelegramUsersList>(m_serviceProvider);
+    m_telegramThread = ext::GetInterface<TestTelegramThread>(m_serviceProvider);
+
+    m_telegramBot = ext::GetInterface<ITelegramBot>(m_serviceProvider);
+    ext::send_event(&ISettingsChangedEvent::OnBotSettingsChanged, true, std::wstring(L"testToken"));
+}
+
+TestTelegramBot::~TestTelegramBot()
+{
+    auto& service = ext::get_service<ext::ServiceCollection>();
+    service.UnregisterObject<NiceMock<MonitoringTaskServiceMock>, IMonitoringTasksService>(); 
+}
+
 void TestTelegramBot::SetUp()
 {
+    m_pUserList->Clear();
+
     using namespace users;
-    // инициализируем список пользователей
-    m_pUserList = TestTelegramUsersList::create();
-
-    m_pTelegramThread = new TestTelegramThread();
-
-    // создаем фейковый поток телеграмма и запоминаем его указатель
-    ITelegramThreadPtr pTelegramThread(m_pTelegramThread);
-    // создаем настройки бота
-    TelegramBotSettings botSettings;
-    botSettings.bEnable = true;
-    botSettings.sToken = L"Testing";
-
     // инициализируем список пользователей и фейкового потока для имтитации работы телеграма, имитируем что у нас unique_ptr
-    m_testTelegramBot = std::make_unique<CTelegramBot>(m_pUserList, pTelegramThread.release());
-    // передаём настройки
-    m_testTelegramBot->SetBotSettings(botSettings);
+    m_testTelegramBot = std::make_unique<CTelegramBot>(m_serviceProvider, m_pUserList, m_telegramThread);
 
     // заполняем перечень команд и доступность её для различных пользователей
     m_commandsToUserStatus[L"info"] = { ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };
@@ -60,9 +59,7 @@ void TestTelegramBot::SetUp()
     static_assert(ITelegramUsersList::eLastStatus == 3,
                   "Список пользовтеля изменился, возможно стоит пересмотреть доступность команд");
 
-    TestHelper& helper = get_service<TestHelper>();
-    // сбрасываем предыдущие настройки
-    helper.resetMonitoringService();
+    TestHelper& helper = ext::get_service<TestHelper>();
 
     // удаляем файл рестарта системы
     std::filesystem::remove(helper.getRestartFilePath());
@@ -78,13 +75,18 @@ void TestTelegramBot::SetUp()
         L"Для того чтобы их использовать необходимо написать их этому боту(обязательно использовать слэш перед текстом команды(/)!). Или нажать в этом окне, они должны подсвечиваться.";
 }
 
+void TestTelegramBot::TearDown()
+{
+    ext::get_service<TestHelper>().ResetAll();
+}
+
 //----------------------------------------------------------------------------//
 void TestTelegramBot::emulateBroadcastMessage(const std::wstring& text) const
 {
     TgBot::Update::Ptr pUpdate = std::make_shared<TgBot::Update>();
     pUpdate->message = generateMessage(text);
 
-    HandleTgUpdate(m_pTelegramThread->m_botApi->getEventHandler(), pUpdate);
+    HandleTgUpdate(m_telegramThread->m_bot->getEventHandler(), pUpdate);
 }
 
 //----------------------------------------------------------------------------//
@@ -108,7 +110,7 @@ void TestTelegramBot::emulateBroadcastCallbackQuery(LPCWSTR queryFormat, ...) co
                                               std::wregex(LR"(\\')"),
                                               L"'"));
 
-    HandleTgUpdate(m_pTelegramThread->m_botApi->getEventHandler(), pUpdate);
+    HandleTgUpdate(m_telegramThread->m_bot->getEventHandler(), pUpdate);
 }
 
 //----------------------------------------------------------------------------//
@@ -138,11 +140,11 @@ TgBot::Message::Ptr TestTelegramBot::generateMessage(const std::wstring& text) c
 } // namespace bot
 
 ////////////////////////////////////////////////////////////////////////////////
-TelegramUserMessagesChecker::TelegramUserMessagesChecker(bot::TestTelegramThread* pTelegramThread,
-                                                         CString* pExpectedMessage,
+TelegramUserMessagesChecker::TelegramUserMessagesChecker(std::shared_ptr<bot::TestTelegramThread> pTelegramThread,
+                                                         std::wstring* pExpectedMessage,
                                                          TgBot::GenericReply::Ptr* pExpectedReply /*= nullptr*/,
-                                                         std::list<int64_t>** pExpectedRecipientsChats /*= nullptr*/,
-                                                         CString* pExpectedMessageToRecipients /*= nullptr*/)
+                                                         std::list<int64_t>* pExpectedRecipientsChats /*= nullptr*/,
+                                                         std::wstring* pExpectedMessageToRecipients /*= nullptr*/)
 {
     // сравнение двух ответов(клавиатур пользователя)
     auto compareReply = [](const TgBot::GenericReply::Ptr realReply,
@@ -173,7 +175,7 @@ TelegramUserMessagesChecker::TelegramUserMessagesChecker(bot::TestTelegramThread
 
             for (size_t row = 0, countRows = keyboardReal.size(); row < countRows; ++row)
             {
-                EXPECT_EQ(keyboardReal[row].size(), keyboardExpected[row].size()) << "Количество кнопок в строке " << row << " различается";
+                EXPECT_EQ(keyboardReal[row].size(), keyboardExpected[row].size()) << "Количество кнопок в строке " << row << L" различается";
 
                 for (size_t col = 0, countColumns = keyboardReal[row].size(); col < countColumns; ++col)
                 {
@@ -184,8 +186,8 @@ TelegramUserMessagesChecker::TelegramUserMessagesChecker(bot::TestTelegramThread
                     EXPECT_TRUE(realKey->text == expectedKey->text) << "Текст на кнопках отличается.\nПолучили :" <<
                         CStringA(getUNICODEString(realKey->text).c_str()) << "\nОжидалось:" << CStringA(getUNICODEString(expectedKey->text).c_str());
 
-                    boost::trim(realKey->callbackData);
-                    boost::trim(expectedKey->callbackData);
+                    std::string_trim_all(realKey->callbackData);
+                    std::string_trim_all(expectedKey->callbackData);
 
                     EXPECT_TRUE(realKey->callbackData == expectedKey->callbackData) << "Колбэк у кнопок отличается.\nПолучили :" <<
                         CStringA(getUNICODEString(realKey->callbackData).c_str()) << "\nОжидалось:" << CStringA(getUNICODEString(expectedKey->callbackData).c_str());
@@ -205,8 +207,8 @@ TelegramUserMessagesChecker::TelegramUserMessagesChecker(bot::TestTelegramThread
             ASSERT_TRUE(pExpectedMessage) << "Не передали сообщение.";
 
             EXPECT_EQ(chatId, kTelegramTestChatId) << "Идентификатор чата с получателем сообщения не корректен";
-            EXPECT_TRUE(msg == pExpectedMessage->GetString()) << "Пришло сообщение отличающееся от ожидаемого.\n\nСообщение:\n" <<
-                CStringA(msg.c_str()) << "\n\nОжидалось:\n" << CStringA(*pExpectedMessage);
+            EXPECT_TRUE(msg == *pExpectedMessage) << "Пришло сообщение отличающееся от ожидаемого.\n\nСообщение:\n" <<
+                std::narrow(msg.c_str()).c_str() << "\n\nОжидалось:\n" << std::narrow(pExpectedMessage->c_str()).c_str();
 
             if (pExpectedReply)
                 EXPECT_TRUE(compareReply(replyMarkup, *pExpectedReply));
@@ -221,17 +223,17 @@ TelegramUserMessagesChecker::TelegramUserMessagesChecker(bot::TestTelegramThread
             ASSERT_TRUE(pExpectedRecipientsChats) << "Не передали список чатов.";
             ASSERT_TRUE(pExpectedMessageToRecipients) << "Не передали сообщение для получателей.";
 
-            EXPECT_EQ(chatIds.size(), (*pExpectedRecipientsChats)->size()) << "Ожидаемые чаты и фактические не совпали.";
+            EXPECT_EQ(chatIds.size(), pExpectedRecipientsChats->size()) << "Ожидаемые чаты и фактические не совпали.";
             auto chatId = chatIds.begin();
-            auto expectedId = (*pExpectedRecipientsChats)->begin();
-            for (size_t i = 0, count = std::min<size_t>(chatIds.size(), (*pExpectedRecipientsChats)->size());
+            auto expectedId = pExpectedRecipientsChats->begin();
+            for (size_t i = 0, count = std::min<size_t>(chatIds.size(), pExpectedRecipientsChats->size());
                  i < count; ++i, ++chatId, ++expectedId)
             {
                 EXPECT_EQ(*chatId, *expectedId) << "Ожидаемые чаты и фактические не совпали.";;
             }
 
-            EXPECT_TRUE(msg == pExpectedMessageToRecipients->GetString()) << "Пришло сообщение отличающееся от ожидаемого.\n\nСообщение:\n" <<
-                CStringA(msg.c_str()) << "\n\nОжидалось:\n" << CStringA(*pExpectedMessageToRecipients);
+            EXPECT_TRUE(msg == *pExpectedMessageToRecipients) << "Пришло сообщение отличающееся от ожидаемого.\n\nСообщение:\n" <<
+                std::narrow(msg.c_str()).c_str() << "\n\nОжидалось:\n" << std::narrow(pExpectedMessageToRecipients->c_str()).c_str();
 
             if (pExpectedReply)
                 EXPECT_TRUE(compareReply(replyMarkup, *pExpectedReply));

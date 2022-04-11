@@ -2,7 +2,8 @@
 
 #include <memory>
 
-#include "TelegamBotMock.h"
+#include "mocks/TelegamBotMock.h"
+
 #include "TestTrendMonitoring.h"
 
 #include "gmock/gmock.h"
@@ -11,14 +12,12 @@
 
 using namespace ::testing;
 
-namespace {
-
 void imitate_data_loaded_and_prepared_for_next_loading(TrendMonitoring* trendMonitoring)
 {
     EXPECT_TRUE(trendMonitoring);
 
-    auto& config = trendMonitoring->getConfiguration();
-    const auto lastLoadingTime = CTime::GetCurrentTime() - CTimeSpan(0, 0, TrendMonitoring::getUpdateDataInterval().count(), 0);
+    auto& config = *trendMonitoring->m_appConfig.get();
+    const auto lastLoadingTime = CTime::GetCurrentTime() - CTimeSpan(0, 0, TrendMonitoring::UpdateDataInterval.count(), 0);
     for (auto& channelParam : config.m_chanelParameters)
     {
         channelParam->m_loadingParametersIntervalEnd = lastLoadingTime;
@@ -26,20 +25,22 @@ void imitate_data_loaded_and_prepared_for_next_loading(TrendMonitoring* trendMon
     }
 }
 
+namespace {
+
 void add_monitoring_result(IMonitoringTaskEvent::ResultsPtrList& monitoringResult, const MonitoringChannelData& channelData,
                            IMonitoringTaskEvent::Result result = IMonitoringTaskEvent::Result::eSucceeded,
-                           CString errorText = L"")
+                           std::wstring errorText = L"")
 {
     const CTime curTime = CTime::GetCurrentTime();
     const CTime taskStartTime = curTime - monitoring_interval_to_timespan(channelData.monitoringInterval);
 
     TaskParameters::Ptr taskParams = std::make_shared<TaskParameters>(channelData.channelName, taskStartTime, curTime);
 
-    IMonitoringTaskEvent::ResultData& resultData = monitoringResult.emplace_back(std::make_shared<IMonitoringTaskEvent::ResultData>(taskParams));
-    resultData.resultType = result;
-    resultData.errorText = std::move(errorText);
+    IMonitoringTaskEvent::ResultDataPtr& resultData = monitoringResult.emplace_back(std::make_shared<IMonitoringTaskEvent::ResultData>(taskParams));
+    resultData->resultType = result;
+    resultData->errorText = std::move(errorText);
 
-    static_cast<TrendChannelData&>(resultData) = channelData.trendData;
+    static_cast<TrendChannelData&>(*resultData.get()) = channelData.trendData;
 }
 
 void compare_channel_data(const MonitoringChannelData& data1, const MonitoringChannelData& data2)
@@ -49,14 +50,11 @@ void compare_channel_data(const MonitoringChannelData& data1, const MonitoringCh
         (int)data1.monitoringInterval << " - " << (int)data2.monitoringInterval;
     EXPECT_EQ(data1.channelState.dataLoaded, data2.channelState.dataLoaded);
     EXPECT_EQ(data1.channelState.loadingDataError, data2.channelState.loadingDataError);
-    EXPECT_EQ(data1.channelState, data2.channelState);
 
     EXPECT_FLOAT_EQ(data1.trendData.startValue, data2.trendData.startValue);
     EXPECT_FLOAT_EQ(data1.trendData.currentValue, data2.trendData.currentValue);
     EXPECT_FLOAT_EQ(data1.trendData.maxValue, data2.trendData.maxValue);
     EXPECT_FLOAT_EQ(data1.trendData.minValue, data2.trendData.minValue);
-    EXPECT_EQ(data1.trendData.emptyDataTime, data2.trendData.emptyDataTime);
-    EXPECT_EQ(data1.trendData.lastDataExistTime, data2.trendData.lastDataExistTime);
 }
 
 TaskId prepare_timer_task(ITrendMonitoring* monitoringService, MonitoringTaskServiceMock* monitoringServiceMock,
@@ -65,9 +63,9 @@ TaskId prepare_timer_task(ITrendMonitoring* monitoringService, MonitoringTaskSer
 {
     TaskId taskId;
     if (!SUCCEEDED(CoCreateGuid(&taskId)))
-        EXT_ASSERT(!"Не удалось создать гуид!");
+        EXT_ASSERT(false) << "Не удалось создать гуид!";
 
-    EXPECT_CALL(*monitoringServiceMock, AddTaskList(_, Matcher(IMonitoringTasksService::eNormal))).
+    EXPECT_CALL(*monitoringServiceMock, AddTaskList(_, Matcher(IMonitoringTasksService::TaskPriority::eNormal))).
         WillOnce(Invoke([&](const std::list<TaskParameters::Ptr>& listTaskParams,
                             const IMonitoringTasksService::TaskPriority /*priority*/)
     {
@@ -97,9 +95,9 @@ TaskId prepare_timer_task(ITrendMonitoring* monitoringService, MonitoringTaskSer
         return taskId;
     }));
 
-    ITickHandler* tickHandler = dynamic_cast<ITickHandler*>(monitoringService);
+    ext::tick::ITickHandler* tickHandler = dynamic_cast<ext::tick::ITickHandler*>(monitoringService);
     EXPECT_TRUE(tickHandler);
-    EXPECT_TRUE(tickHandler->onTick(timerType));
+    tickHandler->OnTick(timerType);
 
     return taskId;
 }
@@ -112,15 +110,15 @@ void MonitoringTestClass::ExpectChangesOnCompletingMonitoringTask(const ext::tas
                                                                   const bool expectErrorReport,
                                                                   const bool expectLogMessage)
 {
-    EXPECT_FALSE(m_listChanged) << "Called twice!";
+    EXPECT_FALSE(m_notifictationEvent.Raised()) << "Called twice!";
     EXPECT_FALSE(m_errorReport) << "Called twice!";
     EXPECT_FALSE(m_logMessage) << "Called twice!";
 
-    ext::send_event(&IMonitoringTaskEvent::OnCompleteTask, expectedTaskId, std::move(monitoringResult));
+    ext::send_event(&IMonitoringTaskEvent::OnCompleteTask, expectedTaskId, monitoringResult);
 
-    EXPECT_EQ(m_listChanged, expectListChanged) << "Called twice!";
-    EXPECT_EQ(!!m_errorReport, expectErrorReport) << "Called twice!";
-    EXPECT_EQ(!!m_logMessage, expectLogMessage) << "Called twice!";
+    EXPECT_EQ(m_notifictationEvent.Wait(std::chrono::milliseconds(50)), expectListChanged);
+    EXPECT_EQ(m_logMessageEvent.Wait(std::chrono::milliseconds(50)), expectLogMessage);
+    EXPECT_EQ(m_errorReportEvent.Wait(std::chrono::milliseconds(50)), expectErrorReport);
 }
 
 TEST_F(MonitoringTestClass, ReportIntervalInfo_Success)
@@ -148,7 +146,7 @@ TEST_F(MonitoringTestClass, ReportIntervalInfo_Error)
     auto&& [taskId, channelData] = m_channelsData.front();
     channelData.trendData.emptyDataTime = CTimeSpan(1, 0, 0, 0);
 
-    const CString errorText = "Big error";
+    const std::wstring errorText = L"Big error";
 
     IMonitoringTaskEvent::ResultsPtrList monitoringResult;
     add_monitoring_result(monitoringResult, channelData, IMonitoringTaskEvent::Result::eErrorText, errorText);
@@ -160,18 +158,18 @@ TEST_F(MonitoringTestClass, ReportIntervalInfo_Error)
 
     const MonitoringChannelData& currentChannelData = m_monitoringService->GetMonitoringChannelData(0);
 
-    CString reportTextForAllChannels;
-    reportTextForAllChannels.AppendFormat(L"Канал \"%s\": %s",
-                                          currentChannelData.channelName.GetString(),
-                                          errorText.GetString());
+    auto reportTextForAllChannels = std::string_swprintf(L"Канал \"%s\": %s",
+                                                         currentChannelData.channelName.c_str(),
+                                                         errorText.c_str());
 
     // We expect settings only emptyDataTime
     compare_channel_data(currentChannelData, channelData);
 
+    ASSERT_TRUE(m_errorReport);
     EXPECT_EQ(m_errorReport->errorTextForAllChannels, reportTextForAllChannels);
     EXPECT_EQ(m_errorReport->problemChannelNames, decltype(m_errorReport->problemChannelNames)({ currentChannelData.channelName }));
 
-    EXPECT_EQ(m_logMessage->messageType, LogMessageData::MessageType::eError);
+    EXPECT_EQ(m_logMessage->messageType, ILogEvents::LogMessageData::MessageType::eError);
     EXPECT_EQ(m_logMessage->logMessage, reportTextForAllChannels);
 }
 
@@ -192,19 +190,19 @@ TEST_F(MonitoringTestClass, ReportIntervalInfo_NoData)
 
     const MonitoringChannelData& currentChannelData = m_monitoringService->GetMonitoringChannelData(0);
 
-    CString reportTextForAllChannels;
-    reportTextForAllChannels.AppendFormat(L"Канал \"%s\": %s",
-                                          currentChannelData.channelName.GetString(),
-                                          errorText.GetString());
+    auto reportTextForAllChannels = std::string_swprintf(L"Канал \"%s\": %s",
+                                                         currentChannelData.channelName.c_str(),
+                                                         errorText.GetString());
 
     // We expect settings only emptyDataTime
     compare_channel_data(currentChannelData, channelData);
 
-    EXPECT_EQ(m_errorReport->errorTextForAllChannels, reportTextForAllChannels);
+    ASSERT_TRUE(m_errorReport);
+    EXPECT_STREQ(m_errorReport->errorTextForAllChannels.c_str(), reportTextForAllChannels.c_str());
     EXPECT_EQ(m_errorReport->problemChannelNames, decltype(m_errorReport->problemChannelNames)({ currentChannelData.channelName }));
 
-    EXPECT_EQ(m_logMessage->messageType, LogMessageData::MessageType::eError);
-    EXPECT_EQ(m_logMessage->logMessage, reportTextForAllChannels);
+    EXPECT_EQ(m_logMessage->messageType, ILogEvents::LogMessageData::MessageType::eError);
+    EXPECT_STREQ(m_logMessage->logMessage.c_str(), reportTextForAllChannels.c_str());
 }
 
 TEST_F(MonitoringTestClass, ReportUpdating_FastTimerTick)
@@ -212,19 +210,19 @@ TEST_F(MonitoringTestClass, ReportUpdating_FastTimerTick)
     testAddChannels();
 
     // We should not start load data for recently added channels
-    auto* tickHandler = dynamic_cast<ITickHandler*>(m_monitoringService);
-    EXPECT_TRUE(tickHandler);
-    EXPECT_TRUE(tickHandler->onTick(TrendMonitoring::TimerType::eUpdatingData));
+    auto tickHandler = std::dynamic_pointer_cast<ext::tick::ITickHandler>(m_monitoringService);
+    ASSERT_TRUE(!!tickHandler);
+    tickHandler->OnTick(TrendMonitoring::TimerType::eUpdatingData);
 }
 
 TEST_F(MonitoringTestClass, ReportUpdating_Success)
 {
     testAddChannels();
 
-    imitate_data_loaded_and_prepared_for_next_loading(dynamic_cast<TrendMonitoring*>(m_monitoringService));
+    imitate_data_loaded_and_prepared_for_next_loading(dynamic_cast<TrendMonitoring*>(m_monitoringService.get()));
 
     {
-        const auto taskId = prepare_timer_task(m_monitoringService, m_monitoringServiceMock.get(),
+        const auto taskId = prepare_timer_task(m_monitoringService.get(), m_monitoringServiceMock.get(),
                                                TrendMonitoring::TimerType::eUpdatingData, m_channelsData);
 
         IMonitoringTaskEvent::ResultsPtrList monitoringResult;
@@ -255,32 +253,39 @@ TEST_F(MonitoringTestClass, ReportUpdating_Success)
 
 TEST_F(MonitoringTestClass, ReportUpdating_Failed)
 {
-    // TODO
-    testAddChannels();
+    testAddChannels(1);
 
-    imitate_data_loaded_and_prepared_for_next_loading(dynamic_cast<TrendMonitoring*>(m_monitoringService));
+    imitate_data_loaded_and_prepared_for_next_loading(dynamic_cast<TrendMonitoring*>(m_monitoringService.get()));
 
-
+    IMonitoringTaskEvent::ResultsPtrList monitoringResult;
+    for (auto&& [taskId, channelData] : m_channelsData)
     {
-        const auto taskId = prepare_timer_task(m_monitoringService, m_monitoringServiceMock.get(),
+        auto& trendData = channelData.trendData;
+        trendData.emptyDataTime = CTimeSpan(0, 0, TrendMonitoring::UpdateDataInterval.count(), 0);
+        trendData.lastDataExistTime = CTime::GetCurrentTime();
+
+        std::wstring alertText;
+        channelData.channelState.OnAddChannelErrorReport(ChannelStateManager::eFallenOff, alertText, L"Пропали данные по каналу.");
+        channelData.channelState.loadingDataError = true;
+        channelData.channelState.dataLoaded = true;
+
+        add_monitoring_result(monitoringResult, channelData, IMonitoringTaskEvent::Result::eNoData, alertText);
+    }
+
+    for (int i = 0; i < 6; ++i)
+    {
+        const auto taskId = prepare_timer_task(m_monitoringService.get(), m_monitoringServiceMock.get(),
                                                TrendMonitoring::TimerType::eUpdatingData, m_channelsData);
 
-        IMonitoringTaskEvent::ResultsPtrList monitoringResult;
-        for (auto&&[taskId, channelData] : m_channelsData)
-        {
-            channelData.channelState.dataLoaded = true; // вынести в imitate_data_loaded_and_prepared_for_next_loading и убрать тут и выше
 
-            auto& trendData = channelData.trendData;
-            trendData.emptyDataTime = CTimeSpan(0, 0, TrendMonitoring::getUpdateDataInterval().count(), 0);
-            trendData.lastDataExistTime = CTime::GetCurrentTime();
+        bool expectError = i == 3;
+        ExpectChangesOnCompletingMonitoringTask(taskId, std::move(monitoringResult), true, expectError, i == 0 || expectError);
 
-            CString alertText;
-            channelData.channelState.OnAddChannelErrorReport(ChannelStateManager::eFallenOff, alertText, L"Пропали данные по каналу.");
-
-            add_monitoring_result(monitoringResult, channelData, IMonitoringTaskEvent::Result::eNoData, alertText);
-        }
-
-        ExpectChangesOnCompletingMonitoringTask(taskId, std::move(monitoringResult), true, false, false);
+        m_notifictationEvent.Reset();
+        m_logMessageEvent.Reset();
+        m_errorReportEvent.Reset();
+        m_errorReport.reset();
+        m_logMessage.reset();
     }
 
     {

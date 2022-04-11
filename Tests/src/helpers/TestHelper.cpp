@@ -1,32 +1,30 @@
 ﻿#include "pch.h"
 
-#include <DirsService.h>
-#include <include/ITrendMonitoring.h>
-
-#include "src/TrendMonitoring.h"
-#include <src/Utils.h>
+#include "mocks/DirServiceMock.h"
 
 #include "TestHelper.h"
 
+#include <ext/core/dependency_injection.h>
+#include <ext/std/filesystem.h>
+
+#include <include/ITrendMonitoring.h>
+
+#include <src/Utils.h>
+
+using namespace testing;
 
 ////////////////////////////////////////////////////////////////////////////////
-void TestHelper::resetMonitoringService()
+void TestHelper::ResetAll() const
 {
-    // сервис мониторинга
-    ITrendMonitoring* monitoringService = GetInterface<ITrendMonitoring>();
+    ext::ServiceCollection& serviceCollection = ext::get_service<ext::ServiceCollection>();
+    serviceCollection.ResetObjects();
 
-    // сбрасываем все каналы
-    for (size_t i = monitoringService->GetNumberOfMonitoringChannels(); i > 0; --i)
-    {
-        monitoringService->RemoveMonitoringChannelByIndex(i - 1);
-    }
-
-    // reset mock
-    TrendMonitoring* monitoring = dynamic_cast<TrendMonitoring*>(monitoringService);
-    ASSERT_TRUE(!!monitoring);
-    monitoring->installTelegramBot(nullptr);
-
-    monitoringService->SetBotSettings(telegram::bot::TelegramBotSettings());
+    auto dirsServiceMock = serviceCollection.BuildServiceProvider()->GetInterface<DirServiceMock>();
+    EXPECT_CALL(*dirsServiceMock.get(), GetZetSignalsDir()).WillRepeatedly(DoAll(
+        Return((std::filesystem::get_exe_directory().append(LR"(Signals\)").c_str()))));
+    // только потому что список каналов грузится из директории со сжатыми сигналами подменяем
+    EXPECT_CALL(*dirsServiceMock.get(), GetZetCompressedDir()).WillRepeatedly(DoAll(
+        Return((std::filesystem::get_exe_directory().append(LR"(Signals\)").c_str()))));
 
     // удаляем конфигурационный файл
     const std::filesystem::path currentConfigPath(getConfigFilePath());
@@ -37,23 +35,23 @@ void TestHelper::resetMonitoringService()
 //----------------------------------------------------------------------------//
 std::filesystem::path TestHelper::getConfigFilePath() const
 {
-    return (get_service<DirsService>().getExeDir() + kConfigFileName).GetString();
+    return std::filesystem::get_exe_directory().append(kConfigFileName);
 }
 
 //----------------------------------------------------------------------------//
 std::filesystem::path TestHelper::getCopyConfigFilePath() const
 {
-    return (get_service<DirsService>().getExeDir() + kConfigFileName + L"_TestCopy").GetString();
+    return std::filesystem::get_exe_directory().append(kConfigFileName + std::wstring(L"_TestCopy"));
 }
 
 //----------------------------------------------------------------------------//
 std::filesystem::path TestHelper::getRestartFilePath() const
 {
-    return (get_service<DirsService>().getExeDir() + kRestartSystemFileName).GetString();
+    return std::filesystem::get_exe_directory().append(kRestartSystemFileName);
 }
 
 //----------------------------------------------------------------------------//
 std::filesystem::path TestHelper::getCopyRestartFilePath() const
 {
-    return (get_service<DirsService>().getExeDir() + kRestartSystemFileName + L"_TestCopy").GetString();
+    return std::filesystem::get_exe_directory().append(kRestartSystemFileName + std::wstring(L"_TestCopy"));
 }

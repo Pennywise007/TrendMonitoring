@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 
 #include <include/ITrendMonitoring.h>
-#include <TelegramDLL/TelegramThread.h>
+#include <TelegramThread.h>
 
 #include "TestTelegramBot.h"
 
@@ -11,10 +11,10 @@ namespace telegram::bot {
 TEST_F(TestTelegramBot, CheckCommandsAvailability)
 {
     // ожидаемое сообщение телеграм боту
-    CString expectedMessage;
+    std::wstring expectedMessage;
 
     // класс для проверки ответов пользователю
-    const TelegramUserMessagesChecker checker(m_pTelegramThread, &expectedMessage);
+    const TelegramUserMessagesChecker checker(m_telegramThread, &expectedMessage);
 
     // по умолчанию у пользователя статус eNotAuthorized и у него нет доступных команд пока он не авторизуется
     expectedMessage = L"Для работы бота вам необходимо авторизоваться.";
@@ -28,7 +28,9 @@ TEST_F(TestTelegramBot, CheckCommandsAvailability)
 
     {
         // авторизуем пользователя как обычного eOrdinaryUser
-        expectedMessage = L"Пользователь успешно авторизован.";
+        expectedMessage = L"Пользователь успешно авторизован.\n\nПоддерживаемые команды бота:\n\n\n"
+            "/info - Перечень команд бота.\n/report - Сформировать отчёт.\n\n\n"
+            "Для того чтобы их использовать необходимо написать их этому боту(обязательно использовать слэш перед текстом команды(/)!). Или нажать в этом окне, они должны подсвечиваться.";
         emulateBroadcastMessage(L"MonitoringAuth");
         EXPECT_EQ(m_pUserList->GetUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eOrdinaryUser)
             << "У пользователя не соответствует статус после авторизации";
@@ -72,7 +74,7 @@ TEST_F(TestTelegramBot, CheckCommandsAvailability)
 
     {
         // авторизуем пользователя как админа eAdmin
-        expectedMessage = L"Пользователь успешно авторизован как администратор.";
+        expectedMessage = L"Пользователь успешно авторизован как администратор.\n\n" + m_adminCommandsInfo;
         emulateBroadcastMessage(L"MonitoringAuthAdmin");
         EXPECT_EQ(m_pUserList->GetUserStatus(nullptr), users::ITelegramUsersList::UserStatus::eAdmin)
             << "У пользователя не соответствует статус после авторизации";
@@ -122,10 +124,10 @@ TEST_F(TestTelegramBot, CheckCommandsAvailability)
 TEST_F(TestTelegramBot, CheckUnauthorizedUser)
 {
     // ожидаемое сообщение телеграм боту
-    CString expectedMessage;
+    std::wstring expectedMessage;
 
     // класс для проверки ответов пользователю
-    const TelegramUserMessagesChecker checker(m_pTelegramThread, &expectedMessage);
+    const TelegramUserMessagesChecker checker(m_telegramThread, &expectedMessage);
 
     // по умолчанию у пользователя статус eNotAuthorized и у него нет доступных команд пока он не авторизуется
     expectedMessage = L"Для работы бота вам необходимо авторизоваться.";
@@ -144,7 +146,7 @@ TEST_F(TestTelegramBot, CheckUnauthorizedUser)
     auto errorMessage = std::make_shared<IMonitoringErrorEvents::EventData>();
     errorMessage->errorTextForAllChannels = L"Error";
     ext::send_event(&IMonitoringErrorEvents::OnError, errorMessage);
-
-    ext::send_event_async(&IMonitoringErrorEvents::OnError, L"Test report");
+    errorMessage->errorTextForAllChannels = L"Test report";
+    ext::send_event_async(&IMonitoringErrorEvents::OnError, errorMessage);
 }
 } // namespace telegram::bot

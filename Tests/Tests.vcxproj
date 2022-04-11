@@ -45,49 +45,42 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClInclude Include="MonitoringTaskServiceMock.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="SamplesHelper.h" />
-    <ClInclude Include="TelegamBotMock.h" />
-    <ClInclude Include="Telegram\TestTelegramBot.h" />
-    <ClInclude Include="TestMonitoringTasks.h" />
-    <ClInclude Include="TestSerialization.h" />
-    <ClInclude Include="TestTrendMonitoring.h" />
-    <ClInclude Include="TestHelper.h" />
+    <ClInclude Include="src\helpers\SamplesHelper.h" />
+    <ClInclude Include="src\helpers\TestHelper.h" />
+    <ClInclude Include="src\mocks\DirServiceMock.h" />
+    <ClInclude Include="src\mocks\MonitoringTaskServiceMock.h" />
+    <ClInclude Include="src\mocks\TelegamBotMock.h" />
+    <ClInclude Include="src\mocks\TelegramThreadMock.h" />
+    <ClInclude Include="src\tests_monitoring\TestMonitoringTasks.h" />
+    <ClInclude Include="src\tests_monitoring\TestTrendMonitoring.h" />
+    <ClInclude Include="src\tests_telegram\TestTelegramBot.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SamplesHelper.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Telegram\TestCallbacks.cpp" />
-    <ClCompile Include="Telegram\TestCommands.cpp" />
-    <ClCompile Include="Telegram\TestTelegramBot.cpp" />
-    <ClCompile Include="TestCOM.cpp" />
-    <ClCompile Include="TestMonitoringReporting.cpp" />
-    <ClCompile Include="TestMonitoringTasks.cpp" />
-    <ClCompile Include="TestTrendMonitoring.cpp" />
-    <ClCompile Include="TestSerialization.cpp" />
-    <ClCompile Include="TestHelper.cpp" />
+    <ClCompile Include="src\helpers\SamplesHelper.cpp" />
+    <ClCompile Include="src\helpers\TestHelper.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\tests_monitoring\TestMonitoringReporting.cpp" />
+    <ClCompile Include="src\tests_monitoring\TestMonitoringTasks.cpp" />
+    <ClCompile Include="src\tests_monitoring\TestTrendMonitoring.cpp" />
+    <ClCompile Include="src\tests_telegram\TestCallbacks.cpp" />
+    <ClCompile Include="src\tests_telegram\TestCommands.cpp" />
+    <ClCompile Include="src\tests_telegram\TestTelegramBot.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MonitoringCore\MonitoringCore.vcxproj">
+    <ProjectReference Include="..\Core\Core.vcxproj">
       <Project>{c9f032dd-2b15-4aaa-bd44-3eb960c834e9}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="Samples\TestAppConfig.xml" />
-    <Xml Include="Samples\TestXMLFileValid.xml">
-      <SubType>Designer</SubType>
-    </Xml>
-    <Xml Include="Samples\TestXMLSerialization.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <ProjectReference Include="..\TelegramDLL\TelegramDLL\TelegramDLL.vcxproj">
+      <Project>{09a510b3-8932-45b1-9a40-84b6f49f81c4}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Tests.rc" />
@@ -95,10 +88,14 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="samples\TestAppConfig.xml" />
+  </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\gmock.1.10.0\build\native\gmock.targets" Condition="Exists('..\packages\gmock.1.10.0\build\native\gmock.targets')" />
+    <Import Project="..\packages\boost.1.78.0\build\boost.targets" Condition="Exists('..\packages\boost.1.78.0\build\boost.targets')" />
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -112,7 +109,7 @@
       <WarningLevel>Level3</WarningLevel>
       <ShowIncludes>false</ShowIncludes>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)MonitoringCore\;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)Core\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -121,8 +118,8 @@
       </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>echo copy signals "$(ProjectDir)Signals" "$(OutputPath)Signals"
-xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
+      <Command>echo copy signals "$(ProjectDir)samples/Signals" "$(OutputPath)Signals"
+xcopy /y /d /s /i "$(ProjectDir)samples/Signals" "$(OutputPath)Signals"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -137,7 +134,7 @@ xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
       <WarningLevel>Level3</WarningLevel>
       <ShowIncludes>false</ShowIncludes>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)MonitoringCore\;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)Core\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -146,8 +143,8 @@ xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
       </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>echo copy signals "$(ProjectDir)Signals" "$(OutputPath)Signals"
-xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
+      <Command>echo copy signals "$(ProjectDir)samples/Signals" "$(OutputPath)Signals"
+xcopy /y /d /s /i "$(ProjectDir)samples/Signals" "$(OutputPath)Signals"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -160,7 +157,7 @@ xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ShowIncludes>false</ShowIncludes>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)MonitoringCore\;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)Core\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -171,8 +168,8 @@ xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
       </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>echo copy signals "$(ProjectDir)Signals" "$(OutputPath)Signals"
-xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
+      <Command>echo copy signals "$(ProjectDir)samples/Signals" "$(OutputPath)Signals"
+xcopy /y /d /s /i "$(ProjectDir)samples/Signals" "$(OutputPath)Signals"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -185,7 +182,7 @@ xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ShowIncludes>false</ShowIncludes>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)MonitoringCore\;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(SolutionDir)include\;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);$(ProjectDir);$(SolutionDir)Core\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -196,8 +193,8 @@ xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
       </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>echo copy signals "$(ProjectDir)Signals" "$(OutputPath)Signals"
-xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
+      <Command>echo copy signals "$(ProjectDir)samples/Signals" "$(OutputPath)Signals"
+xcopy /y /d /s /i "$(ProjectDir)samples/Signals" "$(OutputPath)Signals"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -205,5 +202,6 @@ xcopy /y /d /s /i "$(ProjectDir)Signals" "$(OutputPath)Signals"</Command>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\gmock.1.10.0\build\native\gmock.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\gmock.1.10.0\build\native\gmock.targets'))" />
+    <Error Condition="!Exists('..\packages\boost.1.78.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost.1.78.0\build\boost.targets'))" />
   </Target>
 </Project>

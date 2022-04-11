@@ -6,26 +6,27 @@
 
 #include <gtest/gtest.h>
 
-#include <COM.h>
-#include <TelegramDLL/TelegramThread.h>
+#include <ext/core/dispatcher.h>
+#include <ext/serialization/iserializable.h>
+
+#include <TelegramThread.h>
 
 #include <include/ITelegramUsersList.h>
 #include <src/Telegram/TelegramBot.h>
 
+#include <mocks/TelegramThreadMock.h>
+
 namespace telegram {
 namespace users {
+
 ////////////////////////////////////////////////////////////////////////////////
 // Класс хранящий список пользователей телеграма
 // позволяет работать со списком пользователей из нескольких потоков
-DECLARE_COM_INTERNAL_CLASS(TestTelegramUsersList)
-    , public ITelegramUsersList
+class TestTelegramUsersList 
+    : public ext::serializable::SerializableObject<TestTelegramUsersList, nullptr, ITelegramUsersList>
 {
 public:
     TestTelegramUsersList() = default;
-
-    BEGIN_COM_MAP(TestTelegramUsersList)
-        COM_INTERFACE_ENTRY(ITelegramUsersList)
-    END_COM_MAP()
 
 public:
     // Добавить идентификатор чата с поьльзователем и задать статус
@@ -69,6 +70,14 @@ public:
         return m_chatIdsToUserStatusMap[userStatus];
     }
 
+    // remove all info about users
+    void Clear() override
+    {
+        m_curStatus = UserStatus::eNotAuthorized;
+        m_lastCommand.clear();
+        m_chatIdsToUserStatusMap.clear();
+    }
+
 private:
     // текущий статус (общий для всех)
     UserStatus m_curStatus = UserStatus::eNotAuthorized;
@@ -79,43 +88,9 @@ private:
 };
 
 } // namespace users
+
 namespace bot {
-////////////////////////////////////////////////////////////////////////////////
-// тестовый телеграм бот
-class TestTelegramBot
-    : public testing::Test
-{
-protected:
-    // Sets up the test fixture.
-    void SetUp() override;
 
-    // эмулятор команд от телеграма
-protected:
-    // эмуляция отправки сообщения
-    void emulateBroadcastMessage(const std::wstring& text) const;
-    // эмуляция запросов от телеграма (нажатие на кнопки)
-    void emulateBroadcastCallbackQuery(LPCWSTR queryFormat, ...) const;
-
-private:
-    // создаем сообщение телеграма
-    TgBot::Message::Ptr generateMessage(const std::wstring& text) const;
-
-protected:
-    // тестовый телеграм бот
-    std::unique_ptr<CTelegramBot> m_testTelegramBot;
-
-    // список пользователей
-    users::TestTelegramUsersList::Ptr m_pUserList;
-
-    // тестовый объект с фейковым потоком телеграма
-    class TestTelegramThread* m_pTelegramThread = nullptr;
-
-    // список команд и доступности для различных пользователей
-    std::map<std::wstring, std::set<users::ITelegramUsersList::UserStatus>> m_commandsToUserStatus;
-
-    // текст со списком команд для админа
-    CString m_adminCommandsInfo;
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 class TestTelegramThread
@@ -138,7 +113,7 @@ public:
     };
 
     TestTelegramThread()
-        : m_botApi(CreateTelegramBot("", m_testClient))
+        : m_bot(CreateTelegramBot("", m_testClient))
     {}
 
 public:
@@ -173,7 +148,7 @@ public:
             eventBroadCaster.onCommand(command, function);
         }
         eventBroadCaster.onUnknownCommand(onUnknownCommand);
-        eventBroadCaster.OnNonCommandMessage(OnNonCommandMessage);
+        eventBroadCaster.onNonCommandMessage(OnNonCommandMessage);
     }
 
     // остановка потока
@@ -186,7 +161,7 @@ public:
                      TgBot::GenericReply::Ptr replyMarkup = std::make_shared<TgBot::GenericReply>(),
                      const std::string& parseMode = "", bool disableNotification = false) override
     {
-        ASSERT_TRUE(m_sendMessageToChatsCallback) << "Отправилось сообщение без колбэка " + CStringA(msg.c_str());
+        ASSERT_TRUE(m_sendMessageToChatsCallback) << L"Отправилось сообщение без колбэка " + CStringA(msg.c_str());
 
         m_sendMessageToChatsCallback(chatIds, msg, disableWebPagePreview, replyToMessageId,
                                      replyMarkup, parseMode, disableNotification);
@@ -198,7 +173,7 @@ public:
                      TgBot::GenericReply::Ptr replyMarkup = std::make_shared<TgBot::GenericReply>(),
                      const std::string& parseMode = "", bool disableNotification = false) override
     {
-        ASSERT_TRUE(m_sendMessageCallback) << "Отправилось сообщение без колбэка " + CStringA(msg.c_str());
+        ASSERT_TRUE(m_sendMessageCallback) << L"Отправилось сообщение без колбэка " + CStringA(msg.c_str());
 
         m_sendMessageCallback(chatId, msg, disableWebPagePreview, replyToMessageId,
                               replyMarkup, parseMode, disableNotification);
@@ -207,18 +182,18 @@ public:
     // возвращает события бота чтобы самому все обрабатывать
     TgBot::EventBroadcaster& GetBotEvents() override
     {
-        return m_botApi->getEvents();
+        return m_bot->getEvents();
     }
 
     // получение апи бота
     const TgBot::Api& GetBotApi() override
     {
-        return m_botApi->getApi();
+        return m_bot->getApi();
     }
 
 public:
     // Апи бота
-    std::unique_ptr<TgBot::Bot> m_botApi;
+    std::unique_ptr<TgBot::Bot> m_bot;
     // тестовый клиент для сборки
     TestClient m_testClient;
     // Колбэк на отправку сообщения
@@ -226,6 +201,58 @@ public:
     // Колбэк на отправку сообщения в несколько чатов
     onSendMessageToChatsCallback m_sendMessageToChatsCallback;
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// тестовый телеграм бот
+class TestTelegramBot
+    : public testing::Test
+    , public ext::events::ScopeSubscription<IMonitoringListEvents>
+{
+protected:
+    TestTelegramBot();
+    ~TestTelegramBot();
+
+    // Sets up the test fixture.
+    void SetUp() override;
+    void TearDown() override;
+
+    // эмулятор команд от телеграма
+protected:
+    // эмуляция отправки сообщения
+    void emulateBroadcastMessage(const std::wstring& text) const;
+    // эмуляция запросов от телеграма (нажатие на кнопки)
+    void emulateBroadcastCallbackQuery(LPCWSTR queryFormat, ...) const;
+
+// IMonitoringListEvents
+private:
+    // avoid no subscribers assertion
+    void OnChanged() override
+    {}
+
+private:
+    // создаем сообщение телеграма
+    TgBot::Message::Ptr generateMessage(const std::wstring& text) const;
+
+protected:
+    ext::ServiceProvider::Ptr m_serviceProvider;
+
+    std::shared_ptr<telegram::users::TestTelegramUsersList> m_pUserList;
+
+    // тестовый телеграм бот
+    std::unique_ptr<ITelegramBot> m_testTelegramBot;
+
+    // тестовый объект с фейковым потоком телеграма
+    std::shared_ptr<TestTelegramThread> m_telegramThread;
+    // need to create tested class
+    std::shared_ptr<ITelegramBot> m_telegramBot;
+
+    // список команд и доступности для различных пользователей
+    std::map<std::wstring, std::set<users::ITelegramUsersList::UserStatus>> m_commandsToUserStatus;
+
+    // текст со списком команд для админа
+    CString m_adminCommandsInfo;
+};
+
 } // namespace bot
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -239,11 +266,11 @@ public:
     // pExpectedReply - ответ который должен получить пользователь(как правило тут клавиатура с кнопками ответа)
     // pExpectedRecipientsChats - список чатов которым предназначается сообщение
     // pExpectedMessageToRecipients - сообщение которое должно быть отправлено на указанный список чатов
-    TelegramUserMessagesChecker(bot::TestTelegramThread* pTelegramThread,
-                                CString* pExpectedUserMessage,
+    TelegramUserMessagesChecker(std::shared_ptr<bot::TestTelegramThread> pTelegramThread,
+                                std::wstring* pExpectedUserMessage,
                                 TgBot::GenericReply::Ptr* pExpectedReply = nullptr,
-                                std::list<int64_t>** pExpectedRecipientsChats = nullptr,
-                                CString* pExpectedMessageToRecipients = nullptr);
+                                std::list<int64_t>* pExpectedRecipientsChats = nullptr,
+                                std::wstring* pExpectedMessageToRecipients = nullptr);
 };
 
 } // namespace telegram

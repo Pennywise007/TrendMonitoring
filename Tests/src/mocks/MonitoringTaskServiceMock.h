@@ -6,7 +6,7 @@
 
 struct MonitoringTaskServiceMock : public IMonitoringTasksService
 {
-    MOCK_METHOD(TaskId, AddTaskList, (const std::list<CString>& channelNames,
+    MOCK_METHOD(TaskId, AddTaskList, (const std::list<std::wstring>& channelNames,
                                       const CTime& intervalStart,
                                       const CTime& intervalEnd,
                                       const TaskPriority priority), (override));
@@ -17,5 +17,5 @@ struct MonitoringTaskServiceMock : public IMonitoringTasksService
 
 MATCHER_P(TaskIdComporator, taskId, "CompareTaskIds")
 {
-    return TaskComparer::Compare(arg, taskId);
+    return ext::task::TaskIdHelper::Compare(arg, taskId);
 }

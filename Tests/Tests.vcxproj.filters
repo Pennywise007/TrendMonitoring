@@ -2,119 +2,98 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="TestCOM.cpp">
-      <Filter>TestSources</Filter>
-    </ClCompile>
-    <ClCompile Include="TestSerialization.cpp">
-      <Filter>TestSources</Filter>
-    </ClCompile>
-    <ClCompile Include="SamplesHelper.cpp">
-      <Filter>Samples</Filter>
-    </ClCompile>
-    <ClCompile Include="TestTrendMonitoring.cpp">
-      <Filter>TestSources\TestTrendMonitoring</Filter>
-    </ClCompile>
-    <ClCompile Include="TestMonitoringTasks.cpp">
-      <Filter>TestSources\TestMonitoringTasks</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="TestHelper.cpp">
-      <Filter>TestHelper</Filter>
-    </ClCompile>
-    <ClCompile Include="Telegram\TestCallbacks.cpp">
-      <Filter>TestSources\Telegram</Filter>
-    </ClCompile>
-    <ClCompile Include="Telegram\TestCommands.cpp">
-      <Filter>TestSources\Telegram</Filter>
-    </ClCompile>
-    <ClCompile Include="Telegram\TestTelegramBot.cpp">
-      <Filter>TestSources\Telegram</Filter>
-    </ClCompile>
-    <ClCompile Include="TestMonitoringReporting.cpp">
-      <Filter>TestSources\TestTrendMonitoring</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc">
       <Filter>gtest</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gmock\gmock-all.cc">
       <Filter>gtest</Filter>
     </ClCompile>
+    <ClCompile Include="src\helpers\SamplesHelper.cpp">
+      <Filter>helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\helpers\TestHelper.cpp">
+      <Filter>helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests_telegram\TestCallbacks.cpp">
+      <Filter>tests_telegram</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests_telegram\TestCommands.cpp">
+      <Filter>tests_telegram</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests_telegram\TestTelegramBot.cpp">
+      <Filter>tests_telegram</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests_monitoring\TestMonitoringReporting.cpp">
+      <Filter>tests_monitoring</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests_monitoring\TestMonitoringTasks.cpp">
+      <Filter>tests_monitoring</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests_monitoring\TestTrendMonitoring.cpp">
+      <Filter>tests_monitoring</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="TestSerialization.h">
-      <Filter>TestSources</Filter>
-    </ClInclude>
-    <ClInclude Include="SamplesHelper.h">
-      <Filter>Samples</Filter>
-    </ClInclude>
-    <ClInclude Include="TestTrendMonitoring.h">
-      <Filter>TestSources\TestTrendMonitoring</Filter>
-    </ClInclude>
-    <ClInclude Include="TestMonitoringTasks.h">
-      <Filter>TestSources\TestMonitoringTasks</Filter>
-    </ClInclude>
-    <ClInclude Include="TestHelper.h">
-      <Filter>TestHelper</Filter>
-    </ClInclude>
-    <ClInclude Include="Telegram\TestTelegramBot.h">
-      <Filter>TestSources\Telegram</Filter>
-    </ClInclude>
-    <ClInclude Include="MonitoringTaskServiceMock.h">
-      <Filter>TestSources\TestMonitoringTasks</Filter>
-    </ClInclude>
-    <ClInclude Include="TelegamBotMock.h">
-      <Filter>TestSources\Telegram</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="src\mocks\MonitoringTaskServiceMock.h">
+      <Filter>mocks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mocks\TelegamBotMock.h">
+      <Filter>mocks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\helpers\SamplesHelper.h">
+      <Filter>helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\helpers\TestHelper.h">
+      <Filter>helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tests_telegram\TestTelegramBot.h">
+      <Filter>tests_telegram</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tests_monitoring\TestMonitoringTasks.h">
+      <Filter>tests_monitoring</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tests_monitoring\TestTrendMonitoring.h">
+      <Filter>tests_monitoring</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mocks\TelegramThreadMock.h">
+      <Filter>mocks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mocks\DirServiceMock.h">
+      <Filter>mocks</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="TestSources">
-      <UniqueIdentifier>{32fcd626-b7ed-43ac-a71d-dd11639d2635}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Serialization">
-      <UniqueIdentifier>{d4070935-01ed-4251-b0d3-c8f3134d4859}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Samples">
       <UniqueIdentifier>{7c1242f9-4ea8-4b23-add3-b1e99a0604ee}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Samples\Files">
-      <UniqueIdentifier>{cfdac590-0676-4ec4-a9be-afd6ee5d5afc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="TestSources\TestTrendMonitoring">
-      <UniqueIdentifier>{974968ef-e0f1-4b6a-a583-dc45f337cb60}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="TestSources\TestMonitoringTasks">
-      <UniqueIdentifier>{d8b086be-38f4-4fdf-a25e-b5175bc44574}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="TestHelper">
-      <UniqueIdentifier>{4ae69fe3-f34c-4972-ad61-51f26b0d38ff}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="TestSources\Telegram">
-      <UniqueIdentifier>{114695d6-27e5-4bc0-a5c4-df740f8d6c1c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="TestSources\Reporting">
-      <UniqueIdentifier>{f52e7473-c035-40d0-8d86-56a91a4ce67d}</UniqueIdentifier>
     </Filter>
     <Filter Include="gtest">
       <UniqueIdentifier>{5842ed49-cf09-4a96-9c55-e8bd5e1bee39}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="Samples\TestXMLFileValid.xml">
-      <Filter>Samples\Files</Filter>
-    </Xml>
-    <Xml Include="Samples\TestXMLSerialization.xml">
-      <Filter>Samples\Files</Filter>
-    </Xml>
-    <Xml Include="Samples\TestAppConfig.xml">
-      <Filter>Samples\Files</Filter>
-    </Xml>
+    <Filter Include="tests_monitoring">
+      <UniqueIdentifier>{d02e9d42-854c-4204-a167-6f81c4a2dfab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tests_telegram">
+      <UniqueIdentifier>{97fdc2e0-f0fb-48ab-b24a-91aebd4b7b28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="helpers">
+      <UniqueIdentifier>{a9fe2a2a-d9a1-4fc7-acd4-1fdaf64e832d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mocks">
+      <UniqueIdentifier>{dddf95a7-decf-4fa1-b564-910f4e969b9f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Tests.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="samples\TestAppConfig.xml">
+      <Filter>Samples</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

@@ -1,0 +1,169 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Controls">
+      <UniqueIdentifier>{775d031b-9749-4d90-b477-c09b38ffff1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Controls\ListGroupCtrl">
+      <UniqueIdentifier>{e99cc5c4-ac03-430c-aee6-3b80c2647b4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Controls\ListEditSubItems">
+      <UniqueIdentifier>{1733d3a7-19fb-420a-8d01-0242c9d9fa64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Controls\ComboWithSearch">
+      <UniqueIdentifier>{cc45329a-1b94-4016-84e9-dd37378b23d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Controls\ListBoxEx">
+      <UniqueIdentifier>{a3dbbd33-a69a-495a-a666-439d2572ef43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Controls\TabControl">
+      <UniqueIdentifier>{c5c5c0f5-9f21-4c23-9439-235e10aafed2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dlg">
+      <UniqueIdentifier>{b64bbaba-2604-47d7-b0bd-f0eb32a063f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tabs">
+      <UniqueIdentifier>{3dbc03be-0fd6-4973-87ba-bab20a618509}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TrayHelper">
+      <UniqueIdentifier>{44d9eb2a-7fe4-4532-b622-5d9551a92e22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dlg\BotSettings">
+      <UniqueIdentifier>{80a06af8-5499-4f17-9255-8e204441f352}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dlg\MainDlg">
+      <UniqueIdentifier>{561260a0-4347-45f8-a2e1-479f89b75a59}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tabs\TabReports.h">
+      <Filter>Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="Tabs\TabTrendLog.h">
+      <Filter>Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="Dlg\BotSettingDlg.h">
+      <Filter>Dlg\BotSettings</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\ComboBox\CComboBoxWithSearch\ComboWithSearch.h">
+      <Filter>Controls\ComboWithSearch</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\ListBox\CListBoxEx\CListBoxEx.h">
+      <Filter>Controls\ListBoxEx</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\Tables\ListGroupCtrl\ListGroupCtrl.h">
+      <Filter>Controls\ListGroupCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\Tables\ListEditSubItems\ListEditSubItems.h">
+      <Filter>Controls\ListEditSubItems</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\Tables\ListEditSubItems\ListEditSubItemsImpl.h">
+      <Filter>Controls\ListEditSubItems</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\TabControl\TabControl.h">
+      <Filter>Controls\TabControl</Filter>
+    </ClInclude>
+    <ClInclude Include="TrayHelper.h">
+      <Filter>TrayHelper</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dlg\MainDlg.h">
+      <Filter>Dlg\MainDlg</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tabs\TabTrendLog.cpp">
+      <Filter>Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="Tabs\TabReports.cpp">
+      <Filter>Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="Dlg\BotSettingDlg.cpp">
+      <Filter>Dlg\BotSettings</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\ComboBox\CComboBoxWithSearch\ComboWithSearch.cpp">
+      <Filter>Controls\ComboWithSearch</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\ListBox\CListBoxEx\CListBoxEx.cpp">
+      <Filter>Controls\ListBoxEx</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\Tables\ListGroupCtrl\ListGroupCtrl.cpp">
+      <Filter>Controls\ListGroupCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\Tables\ListEditSubItems\ListEditSubItems.cpp">
+      <Filter>Controls\ListEditSubItems</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\TabControl\TabControl.cpp">
+      <Filter>Controls\TabControl</Filter>
+    </ClCompile>
+    <ClCompile Include="TrayHelper.cpp">
+      <Filter>TrayHelper</Filter>
+    </ClCompile>
+    <ClCompile Include="UI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dlg\MainDlg.cpp">
+      <Filter>Dlg\MainDlg</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="UI.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\UI.rc2">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\UI.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\add.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\remove.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\move_down.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\move_up.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\refresh.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\show_trends.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+</Project>

@@ -1,8 +1,8 @@
 [submodule "TelegramDLL"]
 	path = TelegramDLL
 	url = https://github.com/Pennywise007/TelegramDLL
-[submodule "TrendMonitor/Controls"]
-	path = TrendMonitor/Controls
+[submodule "UI/Controls"]
+	path = UI/Controls
 	url = https://github.com/Pennywise007/Controls
 [submodule "include/ext"]
 	path = include/ext

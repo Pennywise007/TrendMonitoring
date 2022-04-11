@@ -2,8 +2,6 @@
 // Microsoft Visual C++ generated include file.
 // Used by Tests.rc
 //
-#define IDR_TESTXMLFILEVALID            101
-#define IDR_TESTXMLSERIALIZATION        102
 #define IDR_TESTAPPCONFIG               103
 
 // Next default values for new objects

@@ -2,9 +2,19 @@
 
 #include <afxwin.h>
 
-#include <DirsService.h>
+#include "helpers/TestHelper.h"
 
-#include "TestHelper.h"
+#include "DependencyRegistration.h"
+
+#include <ext/core.h>
+#include <ext/core/dependency_injection.h>
+#include <ext/std/filesystem.h>
+
+#include "mocks/DirServiceMock.h"
+
+#include "tests_telegram/TestTelegramBot.h"
+
+using namespace testing;
 
 int main(int argc, char** argv)
 {
@@ -13,18 +23,16 @@ int main(int argc, char** argv)
     ::testing::InitGoogleMock(&argc, argv);
     ::testing::InitGoogleTest(&argc, argv);
 
-    // включает выдачу в аутпут русского текста
-    setlocale(LC_ALL, "Russian");
+    ext::core::Init();
 
-    EXPECT_TRUE(AfxWinInit(::GetModuleHandle(NULL), NULL, ::GetCommandLine(), 0)) << "Не удалось инициализировать приложение";
+    DependencyRegistration::RegisterServices();
 
-    // задаем директорию с сигналами как тестовую директорию
-    auto& zetDirsService = get_service<DirsService>();
-    zetDirsService.setZetSignalsDir(zetDirsService.getExeDir() + LR"(Signals\)");
-    // только потому что список каналов грузится из директории со сжатыми сигналами подменяем
-    zetDirsService.setZetCompressedDir(zetDirsService.getExeDir() + LR"(Signals\)");
+    ext::ServiceCollection& serviceCollection = ext::get_service<ext::ServiceCollection>();
+    serviceCollection.RegisterSingleton<DirServiceMock, IDirService, DirServiceMock>();
+    serviceCollection.RegisterScoped<telegram::bot::TestTelegramThread, ITelegramThread, telegram::bot::TestTelegramThread>();
+    serviceCollection.RegisterScoped<telegram::users::TestTelegramUsersList, telegram::users::ITelegramUsersList, telegram::users::TestTelegramUsersList>();
 
-    const TestHelper& helper = get_service<TestHelper>();
+    const TestHelper& helper = ext::get_service<TestHelper>();
     // пока мы будем делать тесты могут попортиться реальные конфиги, если они есть сохраняем их и потом вернём
     const std::filesystem::path currentConfigPath(helper.getConfigFilePath());
     std::optional<std::filesystem::path> copyConfigFilePath(helper.getCopyConfigFilePath());
@@ -41,31 +49,26 @@ int main(int argc, char** argv)
     else
         copyRestartFilePath.reset();
 
+    helper.ResetAll();
+
     ////////////////////////////////////////////////////////////////////////////
     // запускаем тесты
     const int res = RUN_ALL_TESTS();
     ////////////////////////////////////////////////////////////////////////////
 
+    // after executing tests congif files must be deleted
+    EXPECT_FALSE(std::filesystem::is_regular_file(currentConfigPath)) << "Файл с настройками мониторинга не был удалён!";
+    EXPECT_FALSE(std::filesystem::is_regular_file(restartFilePath)) << "Файл рестарта не был удалён!";
+
     // восстанавливаем сохраненный конфиг или удаляем созданный тестом
     if (copyConfigFilePath.has_value() && std::filesystem::is_regular_file(copyConfigFilePath.value()))
         // если был реальный файл конфига сохранён копией - возвращаем его на место
         std::filesystem::rename(copyConfigFilePath.value(), currentConfigPath);
-    else
-    {
-        // подчищаем созданный файл с настройками
-        EXPECT_TRUE(std::filesystem::is_regular_file(currentConfigPath)) << "Файл с настройками мониторинга не был создан!";
-        EXPECT_TRUE(std::filesystem::remove(currentConfigPath)) << "Не удалось удалить файл";
-    }
 
     // восстанавливаем файл рестарта
     if (copyRestartFilePath.has_value() && std::filesystem::is_regular_file(copyRestartFilePath.value()))
         // если был реальный файл конфига сохранён копией - возвращаем его на место
         std::filesystem::rename(copyRestartFilePath.value(), restartFilePath);
-    else
-    {
-        // файл рестарта должен был быть удалён после использования в тестах
-        EXPECT_FALSE(std::filesystem::is_regular_file(restartFilePath)) << "Файл рестарта не был удалён!";
-    }
 
     return res;
 }
