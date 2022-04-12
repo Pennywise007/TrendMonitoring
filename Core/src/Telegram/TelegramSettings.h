@@ -149,6 +149,13 @@ namespace users {
 
 inline TelegramUser::TelegramUser(const TgBot::User& pUser)
 {
+    REGISTER_SERIALIZABLE_OBJECT(id);
+    REGISTER_SERIALIZABLE_OBJECT(isBot);
+    REGISTER_SERIALIZABLE_OBJECT(firstName);
+    REGISTER_SERIALIZABLE_OBJECT(lastName);
+    REGISTER_SERIALIZABLE_OBJECT(username);
+    REGISTER_SERIALIZABLE_OBJECT(languageCode);
+
     *this = pUser;
 }
 

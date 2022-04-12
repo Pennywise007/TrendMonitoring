@@ -111,11 +111,8 @@
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>echo copy "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
-
-echo copy "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -142,11 +139,8 @@ xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>echo copy "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
-
-echo copy "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -177,11 +171,8 @@ xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>echo copy "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
-
-echo copy "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -212,11 +203,8 @@ xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Comman
       <AdditionalLibraryDirectories>D:\Program Files (x86)\Visual Leak Detector\lib\Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>echo copy "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)external\OpenSSL\libeay32.dll" "$(OutputPath)"
-
-echo copy "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"
-xcopy /y /d "$(ProjectDIr)external\OpenSSL\ssleay32.dll" "$(OutputPath)"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
