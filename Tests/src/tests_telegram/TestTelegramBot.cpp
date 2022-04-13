@@ -46,7 +46,7 @@ void TestTelegramBot::SetUp()
 
     using namespace users;
     // инициализируем список пользователей и фейкового потока для имтитации работы телеграма, имитируем что у нас unique_ptr
-    m_testTelegramBot = std::make_unique<CTelegramBot>(m_serviceProvider, m_pUserList, m_telegramThread);
+    m_testTelegramBot = ext::CreateObject<CTelegramBot>(m_serviceProvider);
 
     // заполняем перечень команд и доступность её для различных пользователей
     m_commandsToUserStatus[L"info"] = { ITelegramUsersList::eAdmin, ITelegramUsersList::eOrdinaryUser };

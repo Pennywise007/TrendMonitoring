@@ -239,7 +239,7 @@ protected:
     std::shared_ptr<telegram::users::TestTelegramUsersList> m_pUserList;
 
     // тестовый телеграм бот
-    std::unique_ptr<ITelegramBot> m_testTelegramBot;
+    std::shared_ptr<ITelegramBot> m_testTelegramBot;
 
     // тестовый объект с фейковым потоком телеграма
     std::shared_ptr<TestTelegramThread> m_telegramThread;
