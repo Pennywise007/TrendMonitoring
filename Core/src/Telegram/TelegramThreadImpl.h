@@ -87,7 +87,8 @@ private:
         if (m_telegramThread)
         {
             m_telegramThread->StopTelegramThread();
-            // currently we can`t top it immediatly
+            m_telegramThread = nullptr;
+            // currently we can`t stop it immediatly
             // TODO rework on BoostHttpOnlySslClient in dll
             //m_telegramThread.reset();
         }

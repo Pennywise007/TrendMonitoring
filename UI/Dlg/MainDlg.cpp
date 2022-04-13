@@ -217,7 +217,7 @@ void MainDlg::initControls()
 
                         pList->SetItemText(pParams->iItem, pParams->iSubItem, text);
 
-                        ServiceProviderHolder::GetInterface<ITrendMonitoring>()->ChangeMonitoringChannelNotify(pParams->iItem, text);
+                        ServiceProviderHolder::GetInterface<ITrendMonitoring>()->ChangeMonitoringChannelName(pParams->iItem, text.GetString());
                     });
             }
             break;
