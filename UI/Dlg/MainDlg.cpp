@@ -186,7 +186,7 @@ void MainDlg::initControls()
                         auto allChannelsNames = ServiceProviderHolder::GetInterface<ITrendMonitoring>()->GetNamesOfAllChannels();
                         allChannelsNames.sort([](const std::wstring& lhs, const std::wstring& rhs)
                         {
-                            return lhs.compare(rhs);
+                            return lhs.compare(rhs) < 0;
                         });
 
                         for (const auto& channelName : allChannelsNames)

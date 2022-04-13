@@ -343,7 +343,7 @@ void TrendMonitoring::OnCompleteTask(const TaskId& taskId, ResultsPtrList monito
         // completed not our task
         return;
 
-    ext::InvokeMethodAsync([&, taskId, monitoringResult]()
+    ext::InvokeMethodAsync([&, taskId, monitoringResult, it]()
     {
         EXT_ASSERT(!monitoringResult.empty() && !it->second.channelParameters.empty());
 
