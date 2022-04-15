@@ -33,6 +33,9 @@
       <Filter>tests_monitoring</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\tests_monitoring\TestChannelStateManager.cpp">
+      <Filter>tests_monitoring</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

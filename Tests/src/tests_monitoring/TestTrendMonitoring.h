@@ -64,7 +64,7 @@ protected:
     void ExpectNotificationAboutListChanges(ChangeDataFunction function, Args&&... args)
     {
         m_notifictationEvent.Reset();
-        (m_monitoringService->*function)(std::forward<Args>(args)...);
+        ((*m_monitoringService).*function)(std::forward<Args>(args)...);
         EXPECT_TRUE(m_notifictationEvent.Wait(std::chrono::milliseconds(100)));
     }
 
@@ -72,7 +72,7 @@ protected:
     size_t ExpectNotificationAboutListChangesWithReturn(ChangeDataFunction function, Args&&... args)
     {
         m_notifictationEvent.Reset();
-        const size_t res = (m_monitoringService->*function)(std::forward<Args>(args)...);
+        const size_t res = ((*m_monitoringService).*function)(std::forward<Args>(args)...);
         EXPECT_TRUE(m_notifictationEvent.Wait(std::chrono::milliseconds(100)));
         return res;
     }

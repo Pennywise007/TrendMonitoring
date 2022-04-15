@@ -391,7 +391,7 @@ void TrendMonitoring::OnCompleteTask(const TaskId& taskId, ResultsPtrList monito
             if (reportTextForAllChannels.empty())
                 reportTextForAllChannels = L"Data is OK.";
 
-            const std::wstring reportDelimer(L'*', 25);
+            const std::wstring reportDelimer(25, L'*');
 
             // create a report message
             std::wstring reportMessage;

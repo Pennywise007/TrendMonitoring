@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <afx.h>
 #include <afxwin.h>
@@ -9,9 +9,14 @@
 #include <ext/core/check.h>
 #include <ext/std/string.h>
 
+struct ChannelStateManager;
+
+namespace testing {
+inline void SetFirstErrorTime(ChannelStateManager& manager, CTime time);
+} // namespace testing
+
 constexpr LONGLONG kCountOfHoursForIgnoringSimilarError = 3;
 
-// TODO ADD TESTS
 struct ChannelStateManager
 {
     // Состояние канала
@@ -66,7 +71,7 @@ private:
                 m_timeOfLastReporting = std::move(curTime);
                 errorMessage += std::string_swprintf(newErrorFormat, std::forward<Args>(args)...);
             }
-            else if (auto errorTime = (curTime - m_timeOfLastReporting.value()).GetTotalHours();
+            else if (const auto errorTime = (curTime - m_timeOfLastReporting.value()).GetTotalHours();
                      errorTime > kCountOfHoursForIgnoringSimilarError)
             {
                 // ignore errors that appear more than a day, information about them will be in the reports
@@ -76,7 +81,7 @@ private:
                 if (!errorMessage.empty())
                     errorMessage += L' ';
 
-                errorMessage += std::string_swprintf(L"В течениe %lld часов наблюдается ошибка: ", (curTime - m_timeOfFirstError).GetTotalHours());
+                errorMessage += std::string_swprintf(L"В течениe %lld часов наблюдается ошибка: ", errorTime);
                 m_timeOfLastReporting = std::move(curTime);
                 errorMessage += std::string_swprintf(newErrorFormat, std::forward<Args>(args)...);
             }
@@ -89,7 +94,7 @@ private:
             if (!m_timeOfLastReporting.has_value())
                 return true;
 
-            EXT_ASSERT(m_currentCountOfDeletingState + 1 > m_countOfSuccessBeforeDeleteError);
+            EXT_ASSERT(m_countOfSuccessBeforeDeleteError > m_currentCountOfDeletingState);
             return ++m_currentCountOfDeletingState == m_countOfSuccessBeforeDeleteError;
         }
 
@@ -124,9 +129,13 @@ private:
         // некоторые состояния могут стрелять часто, например о превышении уровня, не даём спамить ими
         size_t m_countOfSuccessBeforeDeleteError = 1;
         size_t m_currentCountOfDeletingState = 0;
+
+        friend void testing::SetFirstErrorTime(ChannelStateManager& manager, CTime time);
     };
 
     std::map<ReportErrors, ErrorInfo> channelState;
+
+    friend void testing::SetFirstErrorTime(ChannelStateManager& manager, CTime time);
 };
 
 template<class... Args>
