@@ -44,7 +44,7 @@ void compareWithResourceFile(const CString& verifiableFile,
     ASSERT_TRUE(resourceLocker.m_pLockedResource && dwResourceSize != 0) << "Ошибка при загрузке ресурса " + CStringA(resourceName);
 
     // проверяем что размеры совпадают
-    ASSERT_EQ(file.tellg(), dwResourceSize) <<
+    EXPECT_EQ(file.tellg(), dwResourceSize) <<
         "Размер файла " + CStringA(verifiableFile) + " и ресурса " + CStringA(resourceName) + " отличается";
 
     // перемещаемся в начало и будем сравнивать содержимое
@@ -57,6 +57,6 @@ void compareWithResourceFile(const CString& verifiableFile,
         std::insert_iterator<std::string>(fileText, fileText.begin()));
 
     // сравниваем содержимое ресурса и файла
-    ASSERT_EQ(fileText, (char*)resourceLocker.m_pLockedResource) <<
+    EXPECT_EQ(fileText, (char*)resourceLocker.m_pLockedResource) <<
         "Содержимое файла " + CStringA(verifiableFile) + " и ресурса " + CStringA(resourceName) + " отличается";
 }

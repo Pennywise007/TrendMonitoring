@@ -11,7 +11,7 @@
             <Field Name="channelName" Value="Прогибометр №1" Type="1" />
             <Field Name="bNotify" Value="true" Type="2" />
             <Field Name="monitoringInterval" Value="3" Type="6" />
-            <Field Name="alarmingValue" Value="nan" Type="7" />
+            <Field Name="alarmingValue" Value="-nan(ind)" Type="7" />
         </Collection>
         <Collection Name="2">
             <Field Name="channelName" Value="Прогибометр №2" Type="1" />
