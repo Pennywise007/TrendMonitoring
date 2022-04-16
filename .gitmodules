@@ -4,3 +4,6 @@
 [submodule "include/ext"]
 	path = include/ext
 	url = https://github.com/Pennywise007/ext
+[submodule "UI/Controls"]
+	path = UI/Controls
+	url = https://github.com/Pennywise007/Controls
