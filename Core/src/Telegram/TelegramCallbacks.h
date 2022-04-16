@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 
-#include <ext/core/dependency_injection.h>
+#include <ext/std/memory.h>
 
 #include <include/ITelegramUsersList.h>
 #include <include/IMonitoringTasksService.h>
@@ -66,10 +66,10 @@ namespace alarmingValue
 
 class TelegramCallbacks
     : ext::events::ScopeSubscription<IMonitoringTaskEvent, IMonitoringErrorEvents>
-    , ext::ServiceProviderHolder
 {
 public:
-    explicit TelegramCallbacks(ext::ServiceProvider::Ptr provider,
+    explicit TelegramCallbacks(ITrendMonitoring::Ptr&& trendMonitoring,
+                               std::shared_ptr<IMonitoringTasksService>&& monitoringTaskService,
                                std::shared_ptr<ITelegramThread>&& telegramThread,
                                std::shared_ptr<users::ITelegramUsersList>&& userList);
 
@@ -103,13 +103,11 @@ private:
     // Map with callback keywords and their functions
     typedef void (TelegramCallbacks::*CommandCallback)(const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message, const CallBackParams&, bool);
     std::map<std::string, CommandCallback> m_commandCallbacks;
-    // running telegram stream
+    
+    ITrendMonitoring::Ptr m_trendMonitoring;
+    std::shared_ptr<IMonitoringTasksService> m_monitoringTaskService;
     std::shared_ptr<ITelegramThread> m_telegramThread;
-    // telegram user data
     std::shared_ptr<users::ITelegramUsersList> m_telegramUsers;
-
-    // trend monitoring class
-    std::shared_ptr<ITrendMonitoring> m_trendMonitoring;
 
 // tasks that the bot started
 private:

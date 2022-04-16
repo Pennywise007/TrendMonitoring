@@ -4,6 +4,7 @@
 #include <string>
 
 #include <ext/core/noncopyable.h>
+#include <ext/core/dependency_injection.h>
 #include <ext/core/dispatcher.h>
 
 #include <include/ITelegramUsersList.h>
@@ -20,11 +21,13 @@ namespace telegram::bot {
 class CTelegramBot final
     : public ITelegramBot
     , public ext::events::ScopeSubscription<telegram::bot::ISettingsChangedEvent>
-    , ext::ServiceProviderHolder
 {
 public:
-    CTelegramBot(ext::ServiceProvider::Ptr provider, std::shared_ptr<telegram::users::ITelegramUsersList>&& telegramUsers,
-                 std::shared_ptr<ITelegramThread>&& thread, std::shared_ptr<telegram::bot::ITelegramBotSettings>&& botSettings);
+    CTelegramBot(ext::ServiceProvider::Ptr provider,
+                 ITrendMonitoring::Ptr&& trendMonitoring,
+                 std::shared_ptr<telegram::users::ITelegramUsersList>&& telegramUsers,
+                 std::shared_ptr<ITelegramThread>&& thread,
+                 std::shared_ptr<telegram::bot::ITelegramBotSettings>&& botSettings);
     ~CTelegramBot();
 
 // ITelegramBot
@@ -56,6 +59,7 @@ private:
     void OnCommandAlarmingValue (const MessagePtr& commandMessage) const;
 
 private:
+    ITrendMonitoring::Ptr m_trendMonitoring;
     // Telegram thread
     std::shared_ptr<ITelegramThread> m_telegramThread;
     // Telegram users list

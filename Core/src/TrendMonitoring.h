@@ -18,15 +18,15 @@
 // Implementation of a service for channel monitoring
 // Manages the list of monitored channels, performs tasks for monitoring
 class TrendMonitoring
-    : ext::ServiceProviderHolder
-    , public ITrendMonitoring
+    : public ITrendMonitoring
     , ext::events::ScopeSubscription<telegram::users::ITelegramUserChangedEvent,
                                      telegram::bot::ISettingsChangedEvent,
                                      IMonitoringTaskEvent>
     , public ext::tick::TickSubscriber
 {
 public:
-    TrendMonitoring(ext::ServiceProvider::Ptr&& serviceProvider);
+    TrendMonitoring(ext::ServiceProvider::Ptr&& serviceProvider,
+                    std::shared_ptr<IMonitoringTasksService>&& monitoringTasksService);
 
     // update interval
     inline const static std::chrono::minutes UpdateDataInterval = std::chrono::minutes(5);
@@ -156,6 +156,8 @@ private:
     std::map<TaskId, MonitoringTaskInfo, TaskIdHelper> m_monitoringTasksInfo;
 
 private:
+    // monitoring tasks manager
+    std::shared_ptr<IMonitoringTasksService> m_monitoringTasksService;
     // bot for working with telegram
     std::shared_ptr<telegram::bot::ITelegramBot> m_telegramBot;
 

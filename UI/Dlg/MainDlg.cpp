@@ -16,6 +16,8 @@
 #include <ext/scope/on_exit.h>
 
 #include <Controls/ComboBox/CComboBoxWithSearch/ComboWithSearch.h>
+#include <Controls/Edit/SpinEdit/SpinEdit.h>
+#include <Controls/Layout/Layout.h>
 
 #include <include/ITrendMonitoring.h>
 #include <include/IDirService.h>
@@ -38,10 +40,14 @@ std::map<MonitoringInterval, CString> kMonitoringIntervalStrings;
 
 //----------------------------------------------------------------------------//
 // MainDlg dialog
-MainDlg::MainDlg(ext::ServiceProvider::Ptr serviceProvider, CWnd* pParent /*=nullptr*/)
+MainDlg::MainDlg(std::shared_ptr<ITrendMonitoring>&& trendMonitoring,
+                 std::shared_ptr<IDirService>&& dirServide,
+                 CWnd* pParent /*=nullptr*/)
     : CDialogEx(IDD_TRENDMONITOR_DIALOG, pParent)
-    , ServiceProviderHolder(serviceProvider)
     , ScopeSubscription(false)
+    , m_trendMonitoring(std::move(trendMonitoring))
+    , m_dirServide(std::move(dirServide))
+    , m_splitter(CSplitter::Orientation::eHorizontal)
 {
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
@@ -59,6 +65,7 @@ void MainDlg::DoDataExchange(CDataExchange* pDX)
     CDialogEx::DoDataExchange(pDX);
     DDX_Control(pDX, IDC_LIST_MONITORING_CHANNELS, m_monitorChannelsList);
     DDX_Control(pDX, IDC_TAB, m_tabCtrl);
+    DDX_Control(pDX, IDC_SPLITTER, m_splitter);
 }
 
 //----------------------------------------------------------------------------//
@@ -176,33 +183,39 @@ void MainDlg::initControls()
                     TableColumns::eChannelName,
                     [&](CListCtrl* pList, CWnd* parentWindow, const LVSubItemParams* pParams) -> std::shared_ptr<CWnd>
                     {
-                        ComboWithSearch* comboBox = new ComboWithSearch;
-
-                        comboBox->Create(SubItemEditorControllerBase::getStandartEditorWndStyle() |
-                                         CBS_DROPDOWN | CBS_HASSTRINGS | CBS_AUTOHSCROLL | WS_VSCROLL,
-                                         CRect(), parentWindow, 0);
-
-                        // добавляем все каналы из списка в комбобокс
-                        auto allChannelsNames = ServiceProviderHolder::GetInterface<ITrendMonitoring>()->GetNamesOfAllChannels();
-                        allChannelsNames.sort([](const std::wstring& lhs, const std::wstring& rhs)
+                        try
                         {
-                            return lhs.compare(rhs) < 0;
-                        });
+                            // добавляем все каналы из списка в комбобокс
+                            auto allChannelsNames = m_trendMonitoring->GetNamesOfAllChannels();
+                            allChannelsNames.sort([](const std::wstring& lhs, const std::wstring& rhs)
+                                {
+                                    return lhs.compare(rhs) < 0;
+                                });
+                            auto comboBox = std::make_shared<ComboWithSearch>();
 
-                        for (const auto& channelName : allChannelsNames)
-                            comboBox->AddString(channelName.c_str());
+                            comboBox->Create(SubItemEditorControllerBase::getStandartEditorWndStyle() |
+                                             CBS_DROPDOWN | CBS_HASSTRINGS | CBS_AUTOHSCROLL | WS_VSCROLL,
+                                             CRect(), parentWindow, 0);
 
-                        // получаем текущее имя канала которое выбранно в таблицы
-                        std::wstring curSubItemText = pList->GetItemText(pParams->iItem, pParams->iSubItem).GetString();
-                        if (!curSubItemText.empty())
-                        {
-                            // ищем и ставим на текущий выделенный канал выделение в комбобоксе
-                            const auto it = std::find(allChannelsNames.begin(), allChannelsNames.end(), curSubItemText);
-                            if (it != allChannelsNames.end())
-                                comboBox->SetCurSel((int)std::distance(allChannelsNames.begin(), it));
+                            for (const auto& channelName : allChannelsNames)
+                                comboBox->AddString(channelName.c_str());
+
+                            // получаем текущее имя канала которое выбранно в таблицы
+                            std::wstring curSubItemText = pList->GetItemText(pParams->iItem, pParams->iSubItem).GetString();
+                            if (!curSubItemText.empty())
+                            {
+                                // ищем и ставим на текущий выделенный канал выделение в комбобоксе
+                                const auto it = std::find(allChannelsNames.begin(), allChannelsNames.end(), curSubItemText);
+                                if (it != allChannelsNames.end())
+                                    comboBox->SetCurSel((int)std::distance(allChannelsNames.begin(), it));
+                            }
+                            return std::static_pointer_cast<CWnd>(comboBox);
                         }
-
-                        return std::shared_ptr<CWnd>(comboBox);
+                        catch (std::exception)
+                        {
+                            MessageBoxW(ext::ManageExceptionText<wchar_t>().c_str(), L"Не удалось найти каналы для мониторинга.", MB_ICONERROR | MB_OK);
+                        }
+                        return nullptr;
                     },
                     [&](CListCtrl* pList,
                        CWnd* editorControl,
@@ -217,7 +230,13 @@ void MainDlg::initControls()
 
                         pList->SetItemText(pParams->iItem, pParams->iSubItem, text);
 
-                        ServiceProviderHolder::GetInterface<ITrendMonitoring>()->ChangeMonitoringChannelName(pParams->iItem, text.GetString());
+                        m_trendMonitoring->ChangeMonitoringChannelName(pParams->iItem, text.GetString());
+                    },
+                    [](CWnd* editorControl)
+                    {
+                        auto* comboBox = dynamic_cast<ComboWithSearch*>(editorControl);
+                        EXT_EXPECT(comboBox);
+                        comboBox->ShowDropDown();
                     });
             }
             break;
@@ -226,7 +245,7 @@ void MainDlg::initControls()
                 TableColumns::eInterval,
                 [](CListCtrl* pList, CWnd* parentWindow, const LVSubItemParams* pParams) -> std::shared_ptr<CWnd>
                 {
-                    ComboWithSearch* comboBox = new ComboWithSearch;
+                    auto comboBox = std::shared_ptr<ComboWithSearch>();
 
                     comboBox->Create(SubItemEditorControllerBase::getStandartEditorWndStyle() |
                                      CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_AUTOHSCROLL | WS_VSCROLL,
@@ -251,7 +270,7 @@ void MainDlg::initControls()
                             comboBox->SetCurSel((int)std::distance(kMonitoringIntervalStrings.begin(), it));
                     }
 
-                    return std::shared_ptr<CWnd>(comboBox);
+                    return std::static_pointer_cast<CWnd>(comboBox);
                 },
                 [&](CListCtrl* pList,
                    CWnd* editorControl,
@@ -274,7 +293,7 @@ void MainDlg::initControls()
                                                return intervalPair.second == text;
                                            });
                     if (it != kMonitoringIntervalStrings.end())
-                        ServiceProviderHolder::GetInterface<ITrendMonitoring>()->ChangeMonitoringChannelInterval(pParams->iItem, it->first);
+                        m_trendMonitoring->ChangeMonitoringChannelInterval(pParams->iItem, it->first);
                     else
                         EXT_ASSERT(false);
                 });
@@ -282,7 +301,14 @@ void MainDlg::initControls()
         case TableColumns::eAlarmingValue:
             m_monitorChannelsList.setSubItemEditorController(
                 TableColumns::eAlarmingValue,
-                nullptr,
+                [](CListCtrl* pList, CWnd* parentWindow, const LVSubItemParams* pParams) -> std::shared_ptr<CWnd>
+                {
+                    auto editor = std::make_shared<CSpinEdit>();
+                    editor->Create(SubItemEditorControllerBase::getStandartEditorWndStyle() |
+                        ES_CENTER,
+                        CRect(), parentWindow, 0);
+                    return std::shared_ptr<CWnd>(editor);
+                },
                 [&](CListCtrl* pList,
                    CWnd* editorControl,
                    const LVSubItemParams* pParams,
@@ -297,9 +323,9 @@ void MainDlg::initControls()
                     pList->SetItemText(pParams->iItem, pParams->iSubItem, text);
 
                     if (text == L"-")
-                        ServiceProviderHolder::GetInterface<ITrendMonitoring>()->ChangeMonitoringChannelAlarmingValue(pParams->iItem, NAN);
+                        m_trendMonitoring->ChangeMonitoringChannelAlarmingValue(pParams->iItem, NAN);
                     else
-                        ServiceProviderHolder::GetInterface<ITrendMonitoring>()->ChangeMonitoringChannelAlarmingValue(pParams->iItem, (float)_wtof(text));
+                        m_trendMonitoring->ChangeMonitoringChannelAlarmingValue(pParams->iItem, (float)_wtof(text));
                 });
             break;
         case TableColumns::eNotify:
@@ -323,6 +349,33 @@ void MainDlg::initControls()
                         std::make_shared<CTabTrendLog>(), IDD_TAB_EVENTS_LOG);
     m_tabCtrl.InsertTab(TabIndexes::eTabReport, L"Отчёты",
                         std::make_shared<CTabReports>(), IDD_TAB_REPORTS);
+
+    LayoutLoader::ApplyLayoutFromResource(*this, m_lpszTemplateName);
+
+    Layout::AnchorWindow(m_monitorChannelsList, m_splitter, { AnchorSide::eBottom }, AnchorSide::eTop, 100);
+    Layout::AnchorWindow(m_tabCtrl, m_splitter, { AnchorSide::eTop }, AnchorSide::eBottom, 100);
+    Layout::AnchorWindow(m_tabCtrl, *this, { AnchorSide::eBottom }, AnchorSide::eBottom, 100);
+
+    const auto autoSizeColumns = [](CWnd& window, int width, int /*height*/)
+    {
+        constexpr int firstColumnWidth = 40;
+        auto& list = dynamic_cast<CListGroupCtrl&>(window);
+        list.SetColumnWidth(0, firstColumnWidth);
+
+        const int countColumns = list.GetHeaderCtrl()->GetItemCount();
+
+        if (countColumns != 0)
+        {
+            const int autoWidth = (width - firstColumnWidth) / (countColumns - 1);
+            for (int column = 1; column < countColumns; ++column)
+                list.SetColumnWidth(column, autoWidth);
+        }
+    };
+    CRect rect;
+    m_monitorChannelsList.GetClientRect(rect);
+    autoSizeColumns(m_monitorChannelsList, rect.Width(), rect.Height());
+
+    Layout::OnSizeChanged(m_monitorChannelsList, autoSizeColumns);
 }
 
 //----------------------------------------------------------------------------//
@@ -416,11 +469,8 @@ void MainDlg::reloadChannelsList()
     // Перезаполняем нашу таблицу
     ext::scope::AutoSet set(m_bUpdatingTable, true, false);
 
-    // получаем сервис с данными
-    auto monitoringService = ServiceProviderHolder::GetInterface<ITrendMonitoring>();
-
     // получаем текущее и новое количество каналов
-    int newChannelsCount = (int)monitoringService->GetNumberOfMonitoringChannels();
+    int newChannelsCount = (int)m_trendMonitoring->GetNumberOfMonitoringChannels();
     int curChannelsCount = m_monitorChannelsList.GetItemCount();
 
     // ресайзим таблицу до нашего количества каналов
@@ -433,10 +483,10 @@ void MainDlg::reloadChannelsList()
     }
 
     // проходим по всем каналам и заносим в таблицу информацию о канале
-    for (int channelIndex = 0, channelsCount = (int)monitoringService->GetNumberOfMonitoringChannels();
+    for (int channelIndex = 0, channelsCount = (int)m_trendMonitoring->GetNumberOfMonitoringChannels();
          channelIndex < channelsCount; ++channelIndex)
     {
-        const MonitoringChannelData& channelData = monitoringService->GetMonitoringChannelData(channelIndex);
+        const MonitoringChannelData& channelData = m_trendMonitoring->GetMonitoringChannelData(channelIndex);
         // отрабатываем оповещения
         m_monitorChannelsList.SetCheck(channelIndex, channelData.bNotify);
         m_monitorChannelsList.SetItemText(channelIndex, TableColumns::eChannelName,     channelData.channelName.c_str());
@@ -500,41 +550,39 @@ void MainDlg::addTrayIcon()
 {
     // Добавляем иконку в трей
     m_trayHelper.addTrayIcon(m_hIcon, L"Мониторинг данных",
-                             []()
-                             {
-                                 return ::GetSubMenu(LoadMenu(AfxGetInstanceHandle(),
-                                                              MAKEINTRESOURCE(IDR_MENU_TRAY)),
-                                                     0);
-                             },
-                             nullptr,
-                             [this](UINT commandId)
-                             {
-                                 switch (commandId)
-                                 {
-                                 case ID_MENU_OPEN:
-                                     // Показываем наш диалог
-                                     restoreDlg();
-                                     break;
-                                 case ID_MENU_BOTSETTINGS:
-                                     {
-                                         // Показываем диалог настройки
-                                         auto botSettingsDlg = ServiceProviderHolder::CreateObject<CBotSettingDlg>();
-                                         botSettingsDlg->DoModal();
-                                     }
-                                     break;
-                                 case ID_MENU_CLOSE:
-                                     EndDialog(IDCANCEL);
-                                     break;
-                                 default:
-                                     EXT_ASSERT(!"Не известный пункт меню!");
-                                     break;
-                                 }
-                             },
-                             [this]()
-                             {
-                                 // Показываем наш диалог
-                                 restoreDlg();
-                             });
+        []()
+        {
+            return ::GetSubMenu(LoadMenu(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MENU_TRAY)), 0);
+        },
+        nullptr,
+        [this](UINT commandId)
+        {
+            switch (commandId)
+            {
+            case ID_MENU_OPEN:
+                // Показываем наш диалог
+                restoreDlg();
+                break;
+            case ID_MENU_BOTSETTINGS:
+                {
+                    // Показываем диалог настройки
+                    auto botSettingsDlg = ext::CreateObject<CBotSettingDlg>(ext::get_service<ext::ServiceCollection>().BuildServiceProvider());
+                    botSettingsDlg->DoModal();
+                }
+                break;
+            case ID_MENU_CLOSE:
+                EndDialog(IDCANCEL);
+                break;
+            default:
+                EXT_ASSERT(!"Не известный пункт меню!");
+                break;
+            }
+        },
+        [this]()
+        {
+            // Показываем наш диалог
+            restoreDlg();
+        });
 }
 
 //----------------------------------------------------------------------------//
@@ -599,8 +647,7 @@ void MainDlg::OnNMCustomdrawListMonitoringChannels(NMHDR *pNMHDR, LRESULT *pResu
                 // если это колонка с текущим значением проверяем каким цветом его отрисовать
                 DWORD_PTR iItem = pNMCD->nmcd.dwItemSpec;
 
-                const MonitoringChannelData& monitoringData =
-                    ServiceProviderHolder::GetInterface<ITrendMonitoring>()->GetMonitoringChannelData(iItem);
+                const MonitoringChannelData& monitoringData = m_trendMonitoring->GetMonitoringChannelData(iItem);
                 if (monitoringData.channelState.dataLoaded &&
                     _finite(monitoringData.alarmingValue) != 0)
                 {
@@ -651,10 +698,10 @@ void MainDlg::OnLvnItemchangedListMonitoringChannels(NMHDR* pNMHDR,
         switch (pNMLV->uNewState & LVIS_STATEIMAGEMASK)
         {
         case INDEXTOSTATEIMAGEMASK(2):
-            ServiceProviderHolder::GetInterface<ITrendMonitoring>()->ChangeMonitoringChannelNotify(pNMLV->iItem, true);
+            m_trendMonitoring->ChangeMonitoringChannelNotify(pNMLV->iItem, true);
             break;
         case INDEXTOSTATEIMAGEMASK(1):
-            ServiceProviderHolder::GetInterface<ITrendMonitoring>()->ChangeMonitoringChannelNotify(pNMLV->iItem, false);
+            m_trendMonitoring->ChangeMonitoringChannelNotify(pNMLV->iItem, false);
             break;
         }
     }
@@ -744,7 +791,7 @@ void MainDlg::OnBnClickedMfcbuttonAdd()
 {
     try
     {
-        selectChannelsListItem(ServiceProviderHolder::GetInterface<ITrendMonitoring>()->AddMonitoringChannel());
+        selectChannelsListItem(m_trendMonitoring->AddMonitoringChannel());
     }
     catch (std::exception&)
     {
@@ -760,7 +807,7 @@ void MainDlg::OnBnClickedMfcbuttonRemove()
     {
         int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
 
-        selectChannelsListItem(ServiceProviderHolder::GetInterface<ITrendMonitoring>()->RemoveMonitoringChannelByIndex(nItem));
+        selectChannelsListItem(m_trendMonitoring->RemoveMonitoringChannelByIndex(nItem));
     }
 }
 
@@ -772,7 +819,7 @@ void MainDlg::OnBnClickedMfcbuttonMoveUp()
     {
         int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
 
-        selectChannelsListItem(ServiceProviderHolder::GetInterface<ITrendMonitoring>()->MoveUpMonitoringChannelByIndex((size_t)nItem));
+        selectChannelsListItem(m_trendMonitoring->MoveUpMonitoringChannelByIndex((size_t)nItem));
     }
 }
 
@@ -783,22 +830,20 @@ void MainDlg::OnBnClickedMfcbuttonMoveDown()
     if (pos != NULL)
     {
         int nItem = m_monitorChannelsList.GetNextSelectedItem(pos);
-        selectChannelsListItem(ServiceProviderHolder::GetInterface<ITrendMonitoring>()->MoveDownMonitoringChannelByIndex((size_t)nItem));
+        selectChannelsListItem(m_trendMonitoring->MoveDownMonitoringChannelByIndex((size_t)nItem));
     }
 }
 
 //----------------------------------------------------------------------------//
 void MainDlg::OnBnClickedMfcbuttonRefresh()
 {
-    ServiceProviderHolder::GetInterface<ITrendMonitoring>()->UpdateDataForAllChannels();
+    m_trendMonitoring->UpdateDataForAllChannels();
 }
 
 //----------------------------------------------------------------------------//
 void MainDlg::OnBnClickedMfcbuttonShowTrends()
 {
-    const auto monitoringService = ServiceProviderHolder::GetInterface<ITrendMonitoring>();
-
-    const size_t countChannels = monitoringService->GetNumberOfMonitoringChannels();
+    const size_t countChannels = m_trendMonitoring->GetNumberOfMonitoringChannels();
     if (countChannels == 0)
     {
         MessageBox(L"", L"Нет выбранных каналов!", MB_OK);
@@ -811,7 +856,7 @@ void MainDlg::OnBnClickedMfcbuttonShowTrends()
     CTimeSpan maxTimeSpan = 0;
     for (size_t ind = 0; ind < countChannels; ++ind)
     {
-        const MonitoringChannelData& channelData = monitoringService->GetMonitoringChannelData(ind);
+        const MonitoringChannelData& channelData = m_trendMonitoring->GetMonitoringChannelData(ind);
         channels.AppendFormat(L"%s;", channelData.channelName.c_str());
         maxTimeSpan = std::max<CTimeSpan>(maxTimeSpan, monitoring_interval_to_timespan(channelData.monitoringInterval));
     }
@@ -840,7 +885,7 @@ void MainDlg::OnBnClickedMfcbuttonShowTrends()
         // Getting full path to trends
         CString trendsFullPath;
         {
-            CString zetInstallFolder = ServiceProviderHolder::GetInterface<IDirService>()->GetZetInstallDir().c_str();
+            CString zetInstallFolder = m_dirServide->GetZetInstallDir().c_str();
             if (zetInstallFolder.IsEmpty())
             {
                 MessageBox(L"", L"Директория установки зетлаба не найдена.", MB_OK);

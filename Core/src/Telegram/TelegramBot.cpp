@@ -19,12 +19,13 @@ constexpr std::wstring_view gBotPassword_Admin = L"MonitoringAuthAdmin";    // a
 
 // Implementation of the bot
 CTelegramBot::CTelegramBot(ext::ServiceProvider::Ptr provider,
+                           ITrendMonitoring::Ptr&& trendMonitoring,
                            std::shared_ptr<telegram::users::ITelegramUsersList>&& telegramUsers,
                            std::shared_ptr<ITelegramThread>&& thread,
                            std::shared_ptr<telegram::bot::ITelegramBotSettings>&& botSettings)
-    : ServiceProviderHolder(std::move(provider))
+    : m_trendMonitoring(std::move(trendMonitoring))
     , m_telegramUsers(std::move(telegramUsers))
-    , m_callbacksHandler(CreateObject<callback::TelegramCallbacks>())
+    , m_callbacksHandler(ext::CreateObject<callback::TelegramCallbacks>(provider))
     , m_telegramThread(std::move(thread))
 {
     bool enable;
@@ -270,7 +271,7 @@ void CTelegramBot::OnCommandInfo(const MessagePtr& commandMessage) const
 
 void CTelegramBot::OnCommandReport(const MessagePtr& commandMessage) const
 {
-    if (GetInterface<ITrendMonitoring>()->GetNamesOfMonitoringChannels().empty())
+    if (m_trendMonitoring->GetNamesOfMonitoringChannels().empty())
     {
         m_telegramThread->SendMessage(commandMessage->chat->id, L"Каналы для мониторинга не выбраны");
         return;
@@ -311,7 +312,7 @@ void CTelegramBot::OnCommandRestart(const MessagePtr& commandMessage) const
 void CTelegramBot::OnCommandAlert(const MessagePtr& commandMessage, bool bEnable) const
 {
     // получаем список каналов
-    std::list<std::wstring> monitoringChannels = GetInterface<ITrendMonitoring>()->GetNamesOfMonitoringChannels();
+    std::list<std::wstring> monitoringChannels = m_trendMonitoring->GetNamesOfMonitoringChannels();
     if (monitoringChannels.empty())
     {
         m_telegramThread->SendMessage(commandMessage->chat->id, L"Каналы для мониторинга не выбраны");
@@ -352,7 +353,7 @@ void CTelegramBot::OnCommandAlert(const MessagePtr& commandMessage, bool bEnable
 void CTelegramBot::OnCommandAlarmingValue(const MessagePtr& commandMessage) const
 {
     // get a list of channels
-    std::list<std::wstring> monitoringChannels = GetInterface<ITrendMonitoring>()->GetNamesOfMonitoringChannels();
+    std::list<std::wstring> monitoringChannels = m_trendMonitoring->GetNamesOfMonitoringChannels();
     if (monitoringChannels.empty())
     {
         m_telegramThread->SendMessage(commandMessage->chat->id, L"Каналы для мониторинга не выбраны");

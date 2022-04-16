@@ -1,16 +1,18 @@
 ﻿#pragma once
 
 #include <string>
+#include <memory>
 
-#include <ext/core/dependency_injection.h>
+#include <include/ITelegramBot.h>
 
 // диалог настройки бота Telegram
-class CBotSettingDlg : ext::ServiceProviderHolder, public CDialogEx
+class CBotSettingDlg : public CDialogEx
 {
     DECLARE_DYNAMIC(CBotSettingDlg)
 
 public:
-    CBotSettingDlg(ext::ServiceProvider::Ptr&& provider, CWnd* pParent = nullptr);   // standard constructor
+    CBotSettingDlg(std::shared_ptr<telegram::bot::ITelegramBotSettings> botSettings,
+                   CWnd* pParent = nullptr);   // standard constructor
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
@@ -23,4 +25,7 @@ protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
     virtual BOOL OnInitDialog();
     virtual void OnOK();
+
+private:
+    std::shared_ptr<telegram::bot::ITelegramBotSettings> m_botSettings;
 };

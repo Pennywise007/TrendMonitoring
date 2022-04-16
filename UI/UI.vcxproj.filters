@@ -46,6 +46,15 @@
     <Filter Include="Dlg\MainDlg">
       <UniqueIdentifier>{561260a0-4347-45f8-a2e1-479f89b75a59}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Layout">
+      <UniqueIdentifier>{95f3628f-91dc-41d8-b3ca-f09b0d574368}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Controls\Splitter">
+      <UniqueIdentifier>{262fc6c5-b9ab-4719-aecb-970fc5eeb835}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Controls\Edit">
+      <UniqueIdentifier>{1f56992f-9989-4b3a-bd9e-97f23b8ab37f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -93,6 +102,18 @@
     <ClInclude Include="Dlg\MainDlg.h">
       <Filter>Dlg\MainDlg</Filter>
     </ClInclude>
+    <ClInclude Include="Controls\Layout\Layout.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\Splitter\Splitter.h">
+      <Filter>Controls\Splitter</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\Edit\SpinEdit\SpinEdit.h">
+      <Filter>Controls\Edit</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls\Edit\CEditBase\CEditBase.h">
+      <Filter>Controls\Edit</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -130,6 +151,18 @@
     </ClCompile>
     <ClCompile Include="Dlg\MainDlg.cpp">
       <Filter>Dlg\MainDlg</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\Layout\Layout.cpp">
+      <Filter>Layout</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\Splitter\Splitter.cpp">
+      <Filter>Controls\Splitter</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\Edit\SpinEdit\SpinEdit.cpp">
+      <Filter>Controls\Edit</Filter>
+    </ClCompile>
+    <ClCompile Include="Controls\Edit\CEditBase\CEditBase.cpp">
+      <Filter>Controls\Edit</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

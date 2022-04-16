@@ -7,16 +7,16 @@
 
 #include "BotSettingDlg.h"
 
-#include <include/ITelegramBot.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // CBotSettingDlg dialog
 IMPLEMENT_DYNAMIC(CBotSettingDlg, CDialogEx)
 
 //----------------------------------------------------------------------------//
-CBotSettingDlg::CBotSettingDlg(ext::ServiceProvider::Ptr&& provider, CWnd* pParent /*=nullptr*/)
-    : ServiceProviderHolder(std::move(provider))
-    , CDialogEx(IDD_BOT_SETTINGS_DLG, pParent)
+CBotSettingDlg::CBotSettingDlg(std::shared_ptr<telegram::bot::ITelegramBotSettings> botSettings,
+                               CWnd* pParent /*=nullptr*/)
+    : CDialogEx(IDD_BOT_SETTINGS_DLG, pParent)
+    , m_botSettings(std::move(botSettings))
 {
 }
 
@@ -37,7 +37,7 @@ BOOL CBotSettingDlg::OnInitDialog()
 
     bool enable;
     std::wstring token;
-    ServiceProviderHolder::ServiceProviderHolder::GetInterface<telegram::bot::ITelegramBotSettings>()->GetSettings(enable, token);
+    m_botSettings->GetSettings(enable, token);
 
     ((CWnd*)GetDlgItem(IDC_EDIT_TOKEN))->SetWindowText(token.c_str());
 
@@ -57,7 +57,7 @@ void CBotSettingDlg::OnOK()
 
     bool enable;
     std::wstring token;
-    ServiceProviderHolder::ServiceProviderHolder::GetInterface<telegram::bot::ITelegramBotSettings>()->GetSettings(enable, token);
+    m_botSettings->GetSettings(enable, token);
 
     const bool bTokenChanged = newToken != token.c_str();
     bool bEnableChanged = newEnableState != enable;
@@ -80,7 +80,7 @@ void CBotSettingDlg::OnOK()
 
     // оповещаем только об изменениях
     if (bTokenChanged || bEnableChanged)
-        ServiceProviderHolder::ServiceProviderHolder::GetInterface<telegram::bot::ITelegramBotSettings>()->SetSettings(newEnableState, newToken.GetString());
+        m_botSettings->SetSettings(newEnableState, newToken.GetString());
 
     CDialogEx::OnOK();
 }

@@ -38,6 +38,8 @@
 #define IDC_RADIO_ENABLE_ON             1026
 #define IDC_RADIO_ENABLE_OFF            1027
 #define IDC_STATIC_GROUP_ENABLE         1029
+#define IDC_BUTTON1                     1031
+#define IDC_SPLITTER                    1031
 #define ID_Menu                         32771
 #define ID_Menu32772                    32772
 #define ID_MENU_OPEN                    32773
@@ -51,7 +53,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        147
 #define _APS_NEXT_COMMAND_VALUE         32778
-#define _APS_NEXT_CONTROL_VALUE         1031
+#define _APS_NEXT_CONTROL_VALUE         1032
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

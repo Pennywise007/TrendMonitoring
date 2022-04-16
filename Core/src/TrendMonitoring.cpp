@@ -16,15 +16,16 @@
 const std::pair<int, int> kReportDataTime = std::make_pair(20, 00);
 
 // Реализация сервиса для мониторинга каналов
-TrendMonitoring::TrendMonitoring(ext::ServiceProvider::Ptr&& serviceProvider)
-    : ServiceProviderHolder(std::move(serviceProvider))
-    , m_appConfig(CreateObject<ApplicationConfiguration>())
+TrendMonitoring::TrendMonitoring(ext::ServiceProvider::Ptr&& serviceProvider,
+                                 std::shared_ptr<IMonitoringTasksService>&& monitoringTasksService)
+    : m_monitoringTasksService(std::move(monitoringTasksService))
+    , m_appConfig(ext::CreateObject<ApplicationConfiguration>(serviceProvider))
 {
     // load configuration from file
     LoadConfiguration();
 
     // initialize the bot after loading the configuration
-    m_telegramBot = GetInterface<telegram::bot::ITelegramBot>();
+    m_telegramBot = ext::GetInterface<telegram::bot::ITelegramBot>(serviceProvider);
 
     // launch tasks for monitoring, make them separate tasks because they can
     // long time to load data for intervals
@@ -624,14 +625,12 @@ void TrendMonitoring::AddMonitoringTaskForChannels(const ChannelParametersList& 
 
     // run data update task
     m_monitoringTasksInfo.try_emplace(
-        GetInterface<IMonitoringTasksService>()->AddTaskList(taskParams, IMonitoringTasksService::TaskPriority::eNormal),
+        m_monitoringTasksService->AddTaskList(taskParams, IMonitoringTasksService::TaskPriority::eNormal),
         taskInfo);
 }
 
 void TrendMonitoring::DelMonitoringTaskForChannel(const ChannelParameters::Ptr& channelParams)
 {
-    auto monitoring = GetInterface<IMonitoringTasksService>();
-
     // Loop through all tasks
     for (auto monitoringTaskIt = m_monitoringTasksInfo.begin(), end = m_monitoringTasksInfo.end();
         monitoringTaskIt != end;)
@@ -655,7 +654,7 @@ void TrendMonitoring::DelMonitoringTaskForChannel(const ChannelParameters::Ptr& 
                 if (std::all_of(taskChannels.begin(), taskChannels.end(), [](const auto& el) { return el == nullptr; }))
                 {
                     // no empty channels left - we will delete the task
-                    monitoring->RemoveTask(monitoringTaskIt->first);
+                    m_monitoringTasksService->RemoveTask(monitoringTaskIt->first);
                     monitoringTaskIt = m_monitoringTasksInfo.erase(monitoringTaskIt);
 
                     break;

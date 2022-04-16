@@ -4,6 +4,7 @@
 #include <list>
 #include <memory>
 
+#include <ext/core/dependency_injection.h>
 #include <ext/core/dispatcher.h>
 
 #include "ChannelStateManager.h"
@@ -98,6 +99,9 @@ struct MonitoringChannelData
 // Interface for data monitoring, used to get and manage the list of channels, see also IMonitoringListEvents
 interface ITrendMonitoring
 {
+    // Trend monitoring ptr holder, allow to avoid cyclic links on objects
+    typedef ext::lazy_weak_interface<ITrendMonitoring> Ptr;
+
     virtual ~ITrendMonitoring() = default;
 
 #pragma region General functions above the channel list

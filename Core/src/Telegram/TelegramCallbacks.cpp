@@ -57,10 +57,12 @@ auto pair = key >> "={" >> value >> '}';
 auto parser = skip(space)[*as<std::pair<TelegramCallbacks::CallBackParams::key_type, TelegramCallbacks::CallBackParams::mapped_type>>[pair]];
 }
 
-TelegramCallbacks::TelegramCallbacks(ext::ServiceProvider::Ptr provider,
+TelegramCallbacks::TelegramCallbacks(ITrendMonitoring::Ptr&& trendMonitoring,
+                                     std::shared_ptr<IMonitoringTasksService>&& monitoringTaskService,
                                      std::shared_ptr<ITelegramThread>&& telegramThread,
                                      std::shared_ptr<users::ITelegramUsersList>&& userList)
-    : ServiceProviderHolder(std::move(provider))
+    : m_trendMonitoring(std::move(trendMonitoring))
+    , m_monitoringTaskService(std::move(monitoringTaskService))
     , m_telegramThread(std::move(telegramThread))
     , m_telegramUsers(std::move(userList))
 {
@@ -208,11 +210,10 @@ void TelegramCallbacks::OnCompleteTask(const TaskId& taskId, IMonitoringTaskEven
                 float alarmingValue = NAN;
 
                 // if the report is detailed - look for what alert value the channel has
-                const auto pMonitoringService = GetInterface<ITrendMonitoring>();
-                for (size_t i = 0, count = pMonitoringService->GetNumberOfMonitoringChannels();
+                for (size_t i = 0, count = m_trendMonitoring->GetNumberOfMonitoringChannels();
                     i < count; ++i)
                 {
-                    const MonitoringChannelData& channelData = pMonitoringService->GetMonitoringChannelData(i);
+                    const MonitoringChannelData& channelData = m_trendMonitoring->GetMonitoringChannelData(i);
                     if (channelData.channelName == channelResData->taskParameters->channelName)
                     {
                         alarmingValue = channelData.alarmingValue;
@@ -330,7 +331,7 @@ void TelegramCallbacks::ExecuteCallbackReport(const TgBot::User::Ptr& /*from*/, 
         throw std::runtime_error(std::narrow(L"Не известный колбэк.").c_str());
 
     // get a list of channels
-    std::list<std::wstring> monitoringChannels = GetInterface<ITrendMonitoring>()->GetNamesOfMonitoringChannels();
+    std::list<std::wstring> monitoringChannels = m_trendMonitoring->GetNamesOfMonitoringChannels();
     if (monitoringChannels.empty())
         throw std::runtime_error(std::narrow(L"Не удалось получить список каналов, попробуйте повторить попытку").c_str());
 
@@ -443,8 +444,8 @@ void TelegramCallbacks::ExecuteCallbackReport(const TgBot::User::Ptr& /*from*/, 
                                       L"Выполняется расчёт данных, это может занять некоторое время.");
 
         m_monitoringTasksInfo.try_emplace(
-            GetInterface<IMonitoringTasksService>()->AddTaskList(channelsForTask, startTime, stopTime,
-                                                        IMonitoringTasksService::TaskPriority::eHigh),
+            m_monitoringTaskService->AddTaskList(channelsForTask, startTime, stopTime,
+                                                 IMonitoringTasksService::TaskPriority::eHigh),
             std::move(taskInfo));
     }
 }
@@ -513,20 +514,18 @@ void TelegramCallbacks::ExecuteCallbackAlert(const TgBot::User::Ptr& /*from*/, c
         throw std::runtime_error(std::narrow(L"Нет необходимого параметра у колбэка управления оповещениями.").c_str());
     // enable/disable alerts
     const bool bEnableAlert = enableParam->second == "true";
-    // monitoring service
-    auto monitoringService = GetInterface<ITrendMonitoring>();
     // message in response to the user
     std::wstring messageText;
     if (channelParam->second == alertEnabling::kValueAllChannels)
     {
         // set alerts for all channels
-        size_t channelsCount = monitoringService->GetNumberOfMonitoringChannels();
+        size_t channelsCount = m_trendMonitoring->GetNumberOfMonitoringChannels();
         if (channelsCount == 0)
             throw std::runtime_error(std::narrow(L"Нет выбранных для мониторинга каналов, обратитесь к администратору").c_str());
 
         for (size_t channelInd = 0; channelInd < channelsCount; ++channelInd)
         {
-            monitoringService->ChangeMonitoringChannelNotify(channelInd, bEnableAlert);
+            m_trendMonitoring->ChangeMonitoringChannelNotify(channelInd, bEnableAlert);
         }
 
         messageText = std::string_swprintf(L"Оповещения для всех каналов %s", bEnableAlert ? L"включены" : L"выключены");
@@ -534,7 +533,7 @@ void TelegramCallbacks::ExecuteCallbackAlert(const TgBot::User::Ptr& /*from*/, c
     else
     {
         // get a list of channels
-        std::list<std::wstring> monitoringChannels = monitoringService->GetNamesOfMonitoringChannels();
+        std::list<std::wstring> monitoringChannels = m_trendMonitoring->GetNamesOfMonitoringChannels();
         if (monitoringChannels.empty())
             throw std::runtime_error(std::narrow(L"Нет выбранных для мониторинга каналов, обратитесь к администратору").c_str());
 
@@ -550,7 +549,7 @@ void TelegramCallbacks::ExecuteCallbackAlert(const TgBot::User::Ptr& /*from*/, c
         if (channelIt == monitoringChannels.cend())
             throw std::runtime_error(std::narrow(L"В данный момент в списке мониторинга нет выбранного вами канала.").c_str());
 
-        monitoringService->ChangeMonitoringChannelNotify(std::distance(monitoringChannels.cbegin(), channelIt),
+        m_trendMonitoring->ChangeMonitoringChannelNotify(std::distance(monitoringChannels.cbegin(), channelIt),
                                                          bEnableAlert);
 
         messageText = std::string_swprintf(L"Оповещения для канала %s %s", callBackChannel.c_str(), bEnableAlert ? L"включены" : L"выключены");
@@ -571,7 +570,7 @@ void TelegramCallbacks::ExecuteCallbackAlarmValue(const TgBot::User::Ptr& /*from
         throw std::runtime_error(std::narrow(L"Нет необходимого параметра у колбэка управления оповещениями.").c_str());
 
     // get a list of channels
-    const std::list<std::wstring> monitoringChannels = GetInterface<ITrendMonitoring>()->GetNamesOfMonitoringChannels();
+    const std::list<std::wstring> monitoringChannels = m_trendMonitoring->GetNamesOfMonitoringChannels();
     if (monitoringChannels.empty())
         throw std::runtime_error(std::narrow(L"Нет выбранных для мониторинга каналов, обратитесь к администратору").c_str());
 
@@ -614,7 +613,7 @@ void TelegramCallbacks::ExecuteCallbackAlarmValue(const TgBot::User::Ptr& /*from
         const float newLevel = getNewLevelFromText(message->text);
         if (!isfinite(newLevel))
         {
-            if (!GetInterface<ITrendMonitoring>()->GetMonitoringChannelData(std::distance(monitoringChannels.cbegin(), channelIt)).bNotify)
+            if (!m_trendMonitoring->GetMonitoringChannelData(std::distance(monitoringChannels.cbegin(), channelIt)).bNotify)
             {
                 messageText = std::string_swprintf(L"Оповещения у канала '%s' уже выключены.", callBackChannel.c_str());
                 m_telegramThread->SendMessage(message->chat->id, messageText);
@@ -648,7 +647,7 @@ void TelegramCallbacks::ExecuteCallbackAlarmValue(const TgBot::User::Ptr& /*from
         if (!isfinite(newLevel))
         {
             messageText = std::string_swprintf(L"Оповещения для канала '%s' выключены", callBackChannel.c_str());
-            GetInterface<ITrendMonitoring>()->ChangeMonitoringChannelNotify(std::distance(monitoringChannels.cbegin(), channelIt), false);
+            m_trendMonitoring->ChangeMonitoringChannelNotify(std::distance(monitoringChannels.cbegin(), channelIt), false);
         }
         else
         {
@@ -656,7 +655,7 @@ void TelegramCallbacks::ExecuteCallbackAlarmValue(const TgBot::User::Ptr& /*from
             newLevelText << newLevel;
 
             messageText = std::string_swprintf(L"Значение %s установлено для канала '%s' успешно", newLevelText.str().c_str(), callBackChannel.c_str());
-            GetInterface<ITrendMonitoring>()->ChangeMonitoringChannelAlarmingValue(std::distance(monitoringChannels.cbegin(), channelIt), newLevel);
+            m_trendMonitoring->ChangeMonitoringChannelAlarmingValue(std::distance(monitoringChannels.cbegin(), channelIt), newLevel);
         }
 
         m_telegramThread->SendMessage(message->chat->id, messageText);

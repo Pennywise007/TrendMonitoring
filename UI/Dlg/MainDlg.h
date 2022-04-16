@@ -7,7 +7,9 @@
 #include "Controls/Tables/ListGroupCtrl/ListGroupCtrl.h"
 #include "Controls/Tables/ListEditSubItems/ListEditSubItems.h"
 #include "Controls/TabControl/TabControl.h"
+#include "Controls/Splitter/Splitter.h"
 
+#include <include/IDirService.h>
 #include <include/ITrendMonitoring.h>
 
 #include <ext/core/dependency_injection.h>
@@ -17,12 +19,13 @@
 // MainDlg dialog
 class MainDlg
     : public CDialogEx
-    , ext::ServiceProviderHolder
     , ext::events::ScopeSubscription<IMonitoringListEvents, ILogEvents, IReportEvents>
 {
 // Construction
 public:
-    MainDlg(ext::ServiceProvider::Ptr serviceProvider, CWnd* pParent = nullptr);	// standard constructor
+    MainDlg(std::shared_ptr<ITrendMonitoring>&& trendMonitoring,
+            std::shared_ptr<IDirService>&& dirServide,
+            CWnd* pParent = nullptr);	// standard constructor
 
 // IMonitoringListEvents
 private:
@@ -94,6 +97,8 @@ private:
     CTabControl m_tabCtrl;
     // вспомогательный класс для показа иконки в трее
     CTrayHelper m_trayHelper;
+    // Splitter between table and tabs
+    CSplitter m_splitter;
 
 private:
     // фдаг необходимости спрятать диалог
@@ -132,4 +137,8 @@ public:
         eTabLog,        // вкладка с логом событий
         eTabReport      // таб с отчетом
     };
+
+private: // dependencies
+    std::shared_ptr<ITrendMonitoring> m_trendMonitoring;
+    std::shared_ptr<IDirService> m_dirServide;
 };
