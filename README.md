@@ -1,13 +1,13 @@
 What is this program for?
 There is a working object on which sensors are installed that take various indicators (flexometers / thickness gauges, etc.). The data from the sensors is transmitted via GSM to a PC and recorded by a separate program in the form of binary files according to a specific scheme. A simplified representation of the operation of this scheme: each sensor has a descriptor file with information about the sensor (its name, sampling rate, unit of measurement, etc.).
 Files are laid out according to a certain hierarchy in the necessary folders and stored there. In the future, using these files, separate programs can build a signal trend from each sensor and look at changes in sensor readings depending on time.
-<p-align="center">
+<p align="center">
 <a href="https://ibb.co/hZPZzgx"><img src="https://i.ibb.co/xfpfT2K/image.png" alt="SignalTrends" border="0"></a>
 <p align="center">1. An example of signal trends.</p>
 </p>
 
 This program monitors the readings of sensors in real time, decrypting data files, provides data in a readable form and notifies operators if the values ​​exceed the allowable level. This allows you not to monitor the readings all the time, but to monitor remotely. The system integrates work with telegram bots, each object runs its own copy of the program with its own bot, which allows you to manage / monitor many systems simultaneously from one (or several devices). In the event of a problem, operators are alerted to the problem, allowing them to take further action. Supports daily reporting on the status of the system with data analysis. This system is currently installed at several sites in Moscow.
-<p-align="center">
+<p align="center">
 <a href="https://ibb.co/gtTR2hF"><img src="https://i.ibb.co/wpWzkjr/image.png" alt="Monitoring" border="0"></a>
 <p align="center">2. A running program is a program.</p>
 </p>
@@ -17,7 +17,7 @@ This program monitors the readings of sensors in real time, decrypting data file
 
 I tried to make the program modular, there are two projects - Core, in which all the "brains" of the program and the UI part are located.
 
-<p-align="center">
+<p align="center">
 <a href="https://ibb.co/wWRPHwR"><img src="https://i.ibb.co/wWRPHwR/image.png" alt="image" border="0"></a>
 <p align="center">3. Program architecture.</p>
 </p>
