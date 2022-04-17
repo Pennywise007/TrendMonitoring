@@ -31,7 +31,7 @@ The static library where all the magic happens. Several services are exposed:
 4. ITelegramBot - a service for sending and receiving data from a telegram bot with various parsers of messages and user commands.
 
 As for the telegram bot, the program is divided into administrators (operators) of the system and ordinary users (customers). This division is intended to minimize customer "twitching" due to problems, because sometimes sensors can give false alarms (a wire may go somewhere, technical work, etc.). Users have a separation of available commands, and some commands support the creation of buttons for quick response or easier interaction with the bot. The resulting callbacks are parsed using boost::spirit and regex. Initially, each request was parsed according to its structures, but there were a lot of requests and everything was unified to simplify support. The main work with the bot, data exchange and work with the telegram API is carried out through my separate DLL, you can read more about it here: https://github.com/Pennywise007/TelegramDLLPublic
-<p-align="center">
+<p align="center">
 <a href="https://ibb.co/wSmV1ZJ"><img src="https://i.ibb.co/N9B5zg1/image.png" alt="BotExample" border="0"></a>
 <p align="center">4. The work of the bot and the reaction to commands.</p>
 </p>
@@ -55,7 +55,7 @@ The project for testing through googletest, performs unit testing of the program
  - checks the results of serialization / deserialization (compares with standards)
  - emulates and checks the work of the bot with the user
  - check the user's work with the list of channels
-<p-align="center">
+<p align="center">
 <a href="https://ibb.co/Pzw4rPR"><img src="https://i.ibb.co/Pzw4rPR/Untitled.png" alt="TestResults" border="0"></a>
 <p align="center">5. Test results.</p>
 </p>
