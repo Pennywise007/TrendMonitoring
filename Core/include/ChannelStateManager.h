@@ -81,7 +81,7 @@ private:
                 if (!errorMessage.empty())
                     errorMessage += L' ';
 
-                errorMessage += std::string_swprintf(L"В течениe %lld часов наблюдается ошибка: ", errorTime);
+                errorMessage += std::string_swprintf(L"В течениe %lld часов наблюдается ошибка: ", (curTime - m_timeOfFirstError).GetTotalHours());
                 m_timeOfLastReporting = std::move(curTime);
                 errorMessage += std::string_swprintf(newErrorFormat, std::forward<Args>(args)...);
             }

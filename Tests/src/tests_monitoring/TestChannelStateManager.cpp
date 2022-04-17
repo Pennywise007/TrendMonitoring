@@ -13,6 +13,7 @@ inline void SetFirstErrorTime(ChannelStateManager& manager, CTime time)
 {
     for (auto&& [errors, info] : manager.channelState)
     {
+        info.m_timeOfFirstError = time;
         info.m_timeOfLastReporting = time;
     }
 }
