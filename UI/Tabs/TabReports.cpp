@@ -7,6 +7,8 @@
 #include "TabReports.h"
 #include "afxdialogex.h"
 
+#include <Controls/Layout/Layout.h>
+
 #include <include/ITrendMonitoring.h>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -55,6 +57,8 @@ int CTabReports::OnCreate(LPCREATESTRUCT lpCreateStruct)
         return -1;
 
     ScopeSubscription::SubscribeAll();
+
+    LayoutLoader::ApplyLayoutFromResource(*this, m_lpszTemplateName);
 
     return 0;
 }
