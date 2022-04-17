@@ -9,7 +9,7 @@
 
 #include "TestMonitoringTasks.h"
 
-#define DONT_TEST_MONITORING_TASKS
+//#define DONT_TEST_MONITORING_TASKS
 
 #define GTEST_COUT(Text) std::cerr << "[          ] [ INFO ] " << Text << std::endl;
 
