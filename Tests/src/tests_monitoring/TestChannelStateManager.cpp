@@ -30,7 +30,7 @@ TEST(ChannelStateManagerTest, TestAddChannelErrorReport)
 
     const auto generateError = [&]()
     {
-        manager.OnAddChannelErrorReport(ChannelStateManager::eFallenOff, errorMessage, L"Format %s", L"тест");
+        manager.OnAddChannelErrorReport(ChannelStateManager::eFallenOff, errorMessage, L"Format тест");
     };
 
     for (int i = 0; i < 3; ++i)
@@ -66,13 +66,13 @@ TEST(ChannelStateManagerTest, TestAddChannelErrorReport)
     EXPECT_STREQ(errorMessage.c_str(), L"В течениe 7 часов наблюдается ошибка: Format тест") << "Should send error";
     errorMessage.clear();
 
-    manager.OnRemoveChannelErrorReport(ChannelStateManager::eFallenOff, errorMessage, L"Data ok %d", 2);
+    manager.OnRemoveChannelErrorReport(ChannelStateManager::eFallenOff, errorMessage, L"Data ok 2");
     EXPECT_STREQ(errorMessage.c_str(), L"Data ok 2") << "Should send information about data normalization";
    
     errorMessage.clear();
     for (int i = 0; i < 123; ++i)
     {
-        manager.OnRemoveChannelErrorReport(ChannelStateManager::eFallenOff, errorMessage, L"Data ok %lf", 2.4f);
+        manager.OnRemoveChannelErrorReport(ChannelStateManager::eFallenOff, errorMessage, L"Data ok 2.4");
     }
     EXPECT_TRUE(errorMessage.empty()) << "We should not send extra normalization reports";
 }

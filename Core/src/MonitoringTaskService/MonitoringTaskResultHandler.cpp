@@ -88,7 +88,7 @@ bool handle_updating_result(const IMonitoringTaskEvent::ResultDataPtr& monitorin
             channelParameters->trendData.lastDataExistTime = monitoringResult->lastDataExistTime;
         }
 
-        // parse new TODO TESTS data
+        // parse new data
         {
             // if notification is set
             if (_finite(channelParameters->alarmingValue) != 0)
@@ -100,13 +100,14 @@ bool handle_updating_result(const IMonitoringTaskEvent::ResultDataPtr& monitorin
                     monitoringResult->maxValue <= channelParameters->alarmingValue))
                 {
                     channelParameters->channelState.OnAddChannelErrorReport(ChannelStateManager::eExcessOfValue, alertText,
-                                                                            L"Превышение допустимых значений. Допустимое значение %.02f, значения [%.02f..%.02f].",
-                                                                            channelParameters->alarmingValue, monitoringResult->minValue, monitoringResult->maxValue);
+                        std::string_swprintf(L"Превышение допустимых значений. Допустимое значение %.02f, значения [%.02f..%.02f].",
+                        channelParameters->alarmingValue, monitoringResult->minValue, monitoringResult->maxValue));
                 }
                 else
                 {
                     channelParameters->channelState.OnRemoveChannelErrorReport(ChannelStateManager::eExcessOfValue, alertText,
-                                                                               L"Данные вернулись в норму, текущие значения [%.02f..%.02f].", monitoringResult->minValue, monitoringResult->maxValue);
+                        std::string_swprintf(L"Данные вернулись в норму, текущие значения [%.02f..%.02f].",
+                        monitoringResult->minValue, monitoringResult->maxValue));
                 }
             }
 
@@ -148,7 +149,9 @@ bool handle_updating_result(const IMonitoringTaskEvent::ResultDataPtr& monitorin
         if (channelParameters->channelState.dataLoaded)
         {
             bDataChanged = true; // update time without data
-            channelParameters->channelState.OnAddChannelErrorReport(ChannelStateManager::eFallenOff, alertText, L"Пропали данные по каналу.");
+
+            channelParameters->channelState.OnAddChannelErrorReport(ChannelStateManager::eFallenOff, alertText,
+                L"Пропали данные по каналу.", channelParameters->trendData.lastDataExistTime);
         }
     }
     break;

@@ -162,7 +162,7 @@ void MainDlg::initControls()
                                        });
     m_monitorChannelsList.InsertColumn(TableColumns::eAlarmingValue,    L"Оповестить при достижении", LVCFMT_CENTER, 90);
     m_monitorChannelsList.InsertColumn(TableColumns::eLastDataExistTime,L"Последние существующие данные",   LVCFMT_CENTER, 140);
-    m_monitorChannelsList.InsertColumn(TableColumns::eNoDataTime,       L"Нет данных",              LVCFMT_CENTER, 120);
+    m_monitorChannelsList.InsertColumn(TableColumns::eNoDataTime,       L"Нет данных(за время наблюдений)", LVCFMT_CENTER, 120);
 
     const int kValueSize = 100;
     m_monitorChannelsList.InsertColumn(TableColumns::eStartValue,       L"Начальное значение",      LVCFMT_CENTER, kValueSize);

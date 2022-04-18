@@ -22,6 +22,7 @@ void imitate_data_loaded_and_prepared_for_next_loading(TrendMonitoring* trendMon
     {
         channelParam->m_loadingParametersIntervalEnd = lastLoadingTime;
         channelParam->channelState.dataLoaded = true;
+        channelParam->trendData.lastDataExistTime = lastLoadingTime;
     }
 }
 
