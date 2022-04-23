@@ -560,7 +560,7 @@ void TelegramCallbacks::ExecuteCallbackAlert(const TgBot::User::Ptr& /*from*/, c
 }
 
 //----------------------------------------------------------------------------//
-void TelegramCallbacks::ExecuteCallbackAlarmValue(const TgBot::User::Ptr& /*from*/, const TgBot::Message::Ptr& message,
+void TelegramCallbacks::ExecuteCallbackAlarmValue(const TgBot::User::Ptr& from, const TgBot::Message::Ptr& message,
                                                   const CallBackParams& params, bool gotAnswer)
 {
     // Callback format kKeyWord kParamChan={'chan1'} kLevel={'5.5'}
@@ -659,6 +659,9 @@ void TelegramCallbacks::ExecuteCallbackAlarmValue(const TgBot::User::Ptr& /*from
         }
 
         m_telegramThread->SendMessage(message->chat->id, messageText);
+
+        // reset command, overwise - after setting value you can`t send non command messages
+        m_telegramUsers->SetUserLastCommand(from, {});
     }
 }
 

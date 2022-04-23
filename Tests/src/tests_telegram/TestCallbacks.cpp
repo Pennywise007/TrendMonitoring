@@ -313,7 +313,7 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
     const TelegramUserMessagesChecker checker(m_telegramThread, &expectedMessage, &expectedReply);
 
     // команда доступна только админам, делаем админа
-    expectedMessage = L"Пользователь успешно авторизован как администратор.\n\n" + m_adminCommandsInfo;;
+    expectedMessage = L"Пользователь успешно авторизован как администратор.\n\n" + m_adminCommandsInfo;
     emulateBroadcastMessage(L"MonitoringAuthAdmin");
 
     // задаем перечень каналов мониторинга чтобы им отключать оповещения
@@ -384,6 +384,10 @@ TEST_F(TestTelegramBot, CheckChangeAllarmingValueCallback)
             // проверяем что число поменялось
             EXPECT_EQ(trendMonitoring->GetMonitoringChannelData(ind).alarmingValue, newValue)
                 << "После изменения уровня оповещений через бота уровень не соответствует заданному!";
+
+            // test if user can send non command messages
+            expectedMessage = L"Неизвестная команда. " + m_adminCommandsInfo;
+            emulateBroadcastMessage(L"12");
         }
 
         {

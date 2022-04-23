@@ -390,7 +390,7 @@ void TrendMonitoring::OnCompleteTask(const TaskId& taskId, ResultsPtrList monito
         {
             // if there is nothing to report, we say that everything is OK
             if (reportTextForAllChannels.empty())
-                reportTextForAllChannels = L"Data is OK.";
+                reportTextForAllChannels = L"Данные в порядке.";
 
             const std::wstring reportDelimer(25, L'*');
 
