@@ -201,7 +201,7 @@ void MainDlg::initControls()
                                 comboBox->AddString(channelName.c_str());
 
                             // получаем текущее имя канала которое выбранно в таблицы
-                            std::wstring curSubItemText = pList->GetItemText(pParams->iItem, pParams->iSubItem).GetString();
+                            const std::wstring& curSubItemText = pList->GetItemText(pParams->iItem, pParams->iSubItem).GetString();
                             if (!curSubItemText.empty())
                             {
                                 // ищем и ставим на текущий выделенный канал выделение в комбобоксе
@@ -211,7 +211,7 @@ void MainDlg::initControls()
                             }
                             return std::static_pointer_cast<CWnd>(comboBox);
                         }
-                        catch (std::exception)
+                        catch (const std::exception&)
                         {
                             MessageBoxW(ext::ManageExceptionText<wchar_t>().c_str(), L"Не удалось найти каналы для мониторинга.", MB_ICONERROR | MB_OK);
                         }
@@ -245,7 +245,7 @@ void MainDlg::initControls()
                 TableColumns::eInterval,
                 [](CListCtrl* pList, CWnd* parentWindow, const LVSubItemParams* pParams) -> std::shared_ptr<CWnd>
                 {
-                    auto comboBox = std::shared_ptr<ComboWithSearch>();
+                    auto comboBox = std::make_shared<ComboWithSearch>();
 
                     comboBox->Create(SubItemEditorControllerBase::getStandartEditorWndStyle() |
                                      CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_AUTOHSCROLL | WS_VSCROLL,
@@ -260,7 +260,7 @@ void MainDlg::initControls()
                     if (!curSubItemText.IsEmpty())
                     {
                         // ищем и ставим на текущий выделенный канал выделение в комбобоксе
-                        auto it = std::find_if(kMonitoringIntervalStrings.begin(),
+                        const auto it = std::find_if(kMonitoringIntervalStrings.begin(),
                                                kMonitoringIntervalStrings.end(),
                                                [&curSubItemText](const auto& intervalPair)
                                                {
@@ -286,7 +286,7 @@ void MainDlg::initControls()
                     pList->SetItemText(pParams->iItem, pParams->iSubItem, text);
 
                     // ищем и сообщаем какой новый интервал мониторинга у канала
-                    auto it = std::find_if(kMonitoringIntervalStrings.begin(),
+                    const auto it = std::find_if(kMonitoringIntervalStrings.begin(),
                                            kMonitoringIntervalStrings.end(),
                                            [&text](const auto& intervalPair)
                                            {
@@ -307,7 +307,7 @@ void MainDlg::initControls()
                     editor->Create(SubItemEditorControllerBase::getStandartEditorWndStyle() |
                         ES_CENTER,
                         CRect(), parentWindow, 0);
-                    return std::shared_ptr<CWnd>(editor);
+                    return std::static_pointer_cast<CWnd>(editor);
                 },
                 [&](CListCtrl* pList,
                    CWnd* editorControl,
