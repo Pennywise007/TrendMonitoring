@@ -47,13 +47,13 @@ private:
         explicit ErrorInfo(const size_t _countOfSuccessToDeleteState,
                            const size_t _countOfIgnoringErrors,
                            CTime&& timeOfFirstError) EXT_NOEXCEPT
-            : m_countOfSuccessBeforeDeleteError(_countOfSuccessToDeleteState)
+            : m_timeOfFirstError(std::move(timeOfFirstError))
             , m_countOfIgnoringErrors(_countOfIgnoringErrors)
-            , m_timeOfFirstError(std::move(timeOfFirstError))
+            , m_countOfSuccessBeforeDeleteError(_countOfSuccessToDeleteState)
         {}
 
         // notify about error
-        void OnAddError(std::wstring& errorMessage, std::wstring&& newError)
+        void OnAddError(std::wstring& errorMessage, std::wstring&& newError) EXT_NOEXCEPT
         {
             auto curTime = CTime::GetCurrentTime();
             // ignore errors that appear more than a day, information about them will be in the reports
@@ -64,41 +64,43 @@ private:
             if (m_countOfIgnoringErrors > 0 && m_countOfIgnoringErrors-- != 0)
                 return;
 
-            if (!m_timeOfLastReporting.has_value())
+            const auto needSendErrorMessage = [&]()
+            {
+                if (!IsUserNotifiedAboutError())
+                    return true;
+                if (const auto errorTime = (curTime - m_timeOfLastReporting.value()).GetTotalHours();
+                    errorTime > kCountOfHoursForIgnoringSimilarError)
+                {
+                    newError = std::string_swprintf(L"В течениe %lld часов наблюдается ошибка: ", hoursSinceFirstError) + newError;
+                    return true;
+                }
+                return false;
+            };
+
+            if (needSendErrorMessage())
             {
                 if (!errorMessage.empty())
                     errorMessage += L' ';
 
-                m_timeOfLastReporting = std::move(curTime);
-                errorMessage += std::move(newError);
-            }
-            else if (const auto errorTime = (curTime - m_timeOfLastReporting.value()).GetTotalHours();
-                     errorTime > kCountOfHoursForIgnoringSimilarError)
-            {
-                if (!errorMessage.empty())
-                    errorMessage += L' ';
-
-                errorMessage += std::string_swprintf(L"В течениe %lld часов наблюдается ошибка: ", hoursSinceFirstError);
                 m_timeOfLastReporting = std::move(curTime);
                 errorMessage += std::move(newError);
             }
         }
 
-        // true если пользователя можно оповестить что проблема решена и удалить информацию об ошибке
-        bool OnRemove()
+        EXT_NODISCARD bool CanRemove() EXT_NOEXCEPT
         {
-            // if m_countOfIgnoringErrors was setted
-            if (!m_timeOfLastReporting.has_value())
+            // if no report has been sent
+            if (!IsUserNotifiedAboutError())
                 return true;
 
-            EXT_ASSERT(m_countOfSuccessBeforeDeleteError > m_currentCountOfDeletingState);
-            return ++m_currentCountOfDeletingState == m_countOfSuccessBeforeDeleteError;
+            EXT_ASSERT(m_countOfSuccessBeforeDeleteError > 0);
+            return --m_countOfSuccessBeforeDeleteError == 0;
         }
 
-        bool OnRemove(std::wstring& errorMessage, std::wstring&& newError)
+        EXT_NODISCARD bool CanRemove(std::wstring& errorMessage, std::wstring&& newError) EXT_NOEXCEPT
         {
-            const auto res = OnRemove();
-            if (res)
+            const auto res = CanRemove();
+            if (res && IsUserNotifiedAboutError())
             {
                 if (!errorMessage.empty())
                     errorMessage += L' ';
@@ -107,24 +109,27 @@ private:
             return res;
         }
 
-        bool operator==(const ErrorInfo& other) const
+        EXT_NODISCARD bool operator==(const ErrorInfo& other) const EXT_NOEXCEPT
         {
-            auto wrap_fields = [](const ErrorInfo& info)
+            const auto wrapFields = [](const ErrorInfo& info)
             {
-                return std::tie(info.m_countOfIgnoringErrors, info.m_countOfSuccessBeforeDeleteError, info.m_currentCountOfDeletingState);
+                return std::tie(info.m_countOfIgnoringErrors, info.m_countOfSuccessBeforeDeleteError);
             };
 
-            return wrap_fields(*this) == wrap_fields(other);
+            return wrapFields(*this) == wrapFields(other);
         }
+
+    private:
+        EXT_NODISCARD bool IsUserNotifiedAboutError() const EXT_NOEXCEPT { return m_timeOfLastReporting.has_value(); }
+
     private:
         CTime m_timeOfFirstError;
         std::optional<CTime> m_timeOfLastReporting;
 
-        // некоторые сообщения будем фильтровать
+        // count of errors before sending error reports
         size_t m_countOfIgnoringErrors;
-        // некоторые состояния могут стрелять часто, например о превышении уровня, не даём спамить ими
+        // count of removing error notification before delete error, prevent from spam
         size_t m_countOfSuccessBeforeDeleteError;
-        size_t m_currentCountOfDeletingState = 0;
 
         friend void testing::SetFirstErrorTime(ChannelStateManager& manager, CTime time);
     };
@@ -152,8 +157,7 @@ inline void ChannelStateManager::OnAddChannelErrorReport(const ReportErrors erro
             it = channelState.emplace(error, ErrorInfo(3, 0, std::move(firstErrorTime))).first;
             break;
         default:
-            EXT_ASSERT(!"Не опознанный тип репорта");
-            return;
+            EXT_UNREACHABLE("Unknown report type");
         }
     }
 
@@ -168,22 +172,22 @@ inline void ChannelStateManager::OnRemoveChannelErrorReport(const ReportErrors e
     if (it == channelState.end())
         return;
 
-    if (it->second.OnRemove(errorMessage, std::move(newErrorMessage)))
+    if (it->second.CanRemove(errorMessage, std::move(newErrorMessage)))
         channelState.erase(it);
 }
 
 inline void ChannelStateManager::OnRemoveChannelErrorReport(const ReportErrors error) EXT_NOEXCEPT
 {
-    if (auto it = channelState.find(error); it != channelState.end() && it->second.OnRemove())
+    if (auto it = channelState.find(error); it != channelState.end() && it->second.CanRemove())
         channelState.erase(it);
 }
 
 inline bool ChannelStateManager::operator==(const ChannelStateManager& other) const
 {
-    auto wrap_fields = [](const ChannelStateManager& manager)
+    const auto wrapFields = [](const ChannelStateManager& manager)
     {
         return std::tie(manager.dataLoaded, manager.loadingDataError, manager.channelState);
     };
 
-    return wrap_fields(*this) == wrap_fields(other);
+    return wrapFields(*this) == wrapFields(other);
 }

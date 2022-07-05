@@ -68,7 +68,7 @@ TEST(ChannelStateManagerTest, TestAddChannelErrorReport)
 
     manager.OnRemoveChannelErrorReport(ChannelStateManager::eFallenOff, errorMessage, L"Data ok 2");
     EXPECT_STREQ(errorMessage.c_str(), L"Data ok 2") << "Should send information about data normalization";
-   
+
     errorMessage.clear();
     for (int i = 0; i < 123; ++i)
     {
@@ -77,3 +77,17 @@ TEST(ChannelStateManagerTest, TestAddChannelErrorReport)
     EXPECT_TRUE(errorMessage.empty()) << "We should not send extra normalization reports";
 }
 
+TEST(ChannelStateManagerTest, TestDataLost)
+{
+    ChannelStateManager manager;
+
+    std::wstring errorMessage;
+    manager.OnAddChannelErrorReport(ChannelStateManager::eLotOfEmptyData, errorMessage, L"Add lot of empty data text");
+    EXPECT_FALSE(errorMessage.empty()) << "Should report about data loss";
+
+    errorMessage.clear();
+    manager.OnAddChannelErrorReport(ChannelStateManager::eFallenOff, errorMessage, L"Add fallen off text");
+
+    manager.OnRemoveChannelErrorReport(ChannelStateManager::eFallenOff, errorMessage, L"Delete text");
+    EXPECT_STREQ(errorMessage.c_str(), L"");
+}
